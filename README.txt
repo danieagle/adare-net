@@ -100,7 +100,7 @@ We will be happy in known where you use Adare_net. :-)
 THANKS
 ------
 
-To Brian "Beejs Jorgensen" Hall, for "the Beej's Guide to Network Programming"
+To Brian "Beejs Jorgensen" Hall, because his book "the Beej's Guide to Network Programming"
 and to All people, past present and future, that made Life better to Live and
 that include the Fellows from Ada Newsgroup. Thanks All!!
 
