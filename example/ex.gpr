@@ -26,12 +26,12 @@ project ex is
       when "debug" =>
         for switches ("Ada")
           use ("-Og", "-g", "-gnat12", "-gnateE", "-gnatef" , "-gnateV",
-               "-gnatf", "-gnaty2abCefhiklmnprst", "-gnatwa");
+               "-gnatf", "-gnaty2abCefhiklM135nprst", "-gnatwa");
 
       when "release" =>
         for switches ("Ada")
           use ("-O3", "-gnat12", "-gnateE", "-gnatef" , "-gnateV",
-               "-gnatf", "-gnaty2abCefhiklmnprst", "-gnatwa");
+               "-gnatf", "-gnaty2abCefhiklM135nprst", "-gnatwa");
       end case;
   end compiler;
 

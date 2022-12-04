@@ -54,6 +54,10 @@ void c_show_error (
 ){
 #ifdef _WIN32
 
+#ifndef _WIN64
+#error OS Need be of 64bit
+#endif
+
   int err = WSAGetLastError ();
 
   char  msg_tmp [256];   // for a message up to 255 bytes.
@@ -84,11 +88,16 @@ void c_show_error (
 }
 
 void c_reuse_address (c_socket_type fd){
-  #if defined (_WIN32) || defined (__sun)
-    char optval = '1';
-  #else
-    int optval = 1;
-  #endif
+#ifdef _WIN32
+
+#ifndef _WIN64
+#error OS Need be of 64bit
+#endif
+  char optval = '1';
+#else
+  int optval = 1;
+#endif
+
   setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 }
 

@@ -1,0 +1,6 @@
+{
+    "ada.defaultCharset": "UTF-8",
+    "ada.projectFile": "adare_net.gpr",
+    "ada.renameInComments": true,
+    "ada.useCompletionSnippets": true
+}

@@ -1,21 +1,19 @@
 
--- Besides this is a multitask and reasonable complete example, from here,
--- you can do more, as: (1) more que one listen socket and polls, (2) more
--- length polls, (3) simultaneous listen event_types,
--- (4) the use of others types beyond String:
--- (4.1) from built-in types and records to
--- (4.2) wide class and tagged types
--- (4.3) and with a more fine treatment, all records, tagged types included,
--- can be endian proof.
--- (5) etc. ^^
--- It is yet up to you to create a yet better real world champion software
--- with Adare_net and we believe you can do it!! ^^
+-- Besides this is a multitask and reasonable complete example with Adare_net, you can do more, as:
+--
+-- (1) More que one listen socket and polls,
+-- (2) More length polls,
+-- (3) Simultaneous listen event_types,
+-- (4) Use of others types beyond String:
+-- (4.1) From built-in types and records to
+-- (4.2) Wide class and tagged types
+-- (4.3) And with a more fine treatment, all records, tagged types included, can be endian proof.
+-- (5) Etc. ^^
+-- But is yet up to you create a yet better real world champion software with Adare_net and you can do it!! ^^
 
 -- Info about this software:
--- Server tcp example. work in pair with client1
--- It choose the first working host address.
--- The working address can be ipv6 or ipv4 automatically. The first working one
--- will be picked.
+-- Tcp server with Adare_net example. It work in pair with client1
+-- The working address can be ipv6 or ipv4, automatically. The first working one will be picked.
 
 with Ada.Text_IO;
 use Ada;
@@ -44,6 +42,7 @@ use Interfaces, Interfaces.C;
 procedure server1
 is
 begin
+
   start_adare_net;
 
   b0 :
@@ -62,8 +61,9 @@ begin
     choosed_remote_addr :  aliased addresses;
   begin
     if host_addr'Length < 1 then
-      Text_IO.Put_Line (" Failed to discover addresses in this " &
-      "host. Quitting.");
+
+      Text_IO.Put_Line (" Failed to discover addresses in this host. Quitting.");
+
       goto end_app_label1;
     end if;
 
@@ -72,9 +72,9 @@ begin
     utils.show_address_and_port (host_addr'Access);
 
     if not init_socket (host_sock, host_addr'Access) then
+
       Text_IO.New_Line;
-      Text_IO.Put_Line (" Failed to initialize socket: ");
-      Text_IO.Put_Line (" " & string_error);
+      Text_IO.Put_Line (" Failed to initialize socket: " & string_error);
 
       goto end_app_label1;
     end if;
@@ -82,6 +82,7 @@ begin
     reuse_address (host_sock);
 
     if not bind (host_sock) then
+
       Text_IO.New_Line;
       Text_IO.Put_Line (" Bind error: " & string_error);
 
@@ -89,34 +90,38 @@ begin
     end if;
 
     if not listen (host_sock, 9) then
+
       Text_IO.New_Line;
       Text_IO.Put_Line (" Listen error: " & string_error);
+
       goto end_app_label1;
     end if;
 
     choosed_remote_addr  :=  get_addresses (host_sock);
 
     Text_IO.New_Line;
-    Text_IO.Put_Line (" Binded and Listening at address "  &
-      get_addresses (choosed_remote_addr'Access) & " and at port " &
-      get_port (choosed_remote_addr'Access));
+
+    Text_IO.Put_Line (" Binded and Listening at address "  & get_addresses (choosed_remote_addr'Access) &
+      " and at port " & get_port (choosed_remote_addr'Access));
 
     b1 :
     declare
-      incomming_socket  : aliased socket;
-      mi_poll           : aliased polls.poll_type (1);
 
-      task type recv_send_task (sock  : not null access socket);
+      incomming_socket  : aliased socket;
+      mi_poll           : aliased polls.poll_type (1); -- each poll_type have a independent range of 1 .. 255
+
+
+      task type recv_send_task (sock  : aliased socket);
+
 
       task body recv_send_task -- See ARM-2012 7.6 (9.2/2)
       is
-        ok2 : constant Boolean := initialized (sock.all)
-          and then connected (sock.all);
       begin
-        if not ok2 then
-          Text_IO.Put_Line (" Incomming socket not initialized " &
-          "and connected.");
+
+        if not (initialized (sock) or else connected (sock)) then
+          Text_IO.Put_Line (" Incomming socket not initialized or connected.");
           Text_IO.Put_Line (" Quitting this working task.");
+
           goto finish2_task_label;
         end if;
 
@@ -125,11 +130,15 @@ begin
 
           use Task_Identification;
 
-          this_task_id_str   : constant String := Image (Current_Task);
-          incomming_sock  : aliased socket  := sock.all;
-          task_poll   : aliased polls.poll_type (1);
-          recv_send_buffer  : aliased socket_buffer (400);
-          recv_send_buffer2 : aliased socket_buffer (430);
+          this_task_id_str  : constant String := Image (Current_Task);
+
+          incomming_sock    : aliased socket  := sock;
+
+          task_poll         : aliased polls.poll_type (1);
+
+          recv_send_buffer  : aliased socket_buffer;
+          recv_send_buffer2 : aliased socket_buffer;
+
           size_tmp          : ssize_t  := 1;
           result_from_poll  : int := 0;
 
@@ -137,61 +146,59 @@ begin
 
           message : Unbounded_String := To_Unbounded_String ("");
         begin
-          Text_IO.Put_Line (" " & this_task_id_str & " remote host " &
-            get_address_and_port (get_addresses (incomming_sock)));
 
-          polls.add_events (task_poll'Access, incomming_sock'Access,
-            polls.receive_ev); -- all *_ev events can be or'ed .
+          Text_IO.Put_Line (" " & this_task_id_str & " remote host " & get_address_and_port (get_addresses (incomming_sock)));
 
-          Text_IO.Put_Line (" " & this_task_id_str &
-          " waiting to receive data.");
+          polls.add_events (task_poll'Access, incomming_sock'Access, polls.receive_ev); -- all *_ev events can be or'ed.
 
-          result_from_poll  := -- 2 seconds time_out
-            polls.start_events_listen (task_poll'Access, 2000); -- block
+          Text_IO.Put_Line (" " & this_task_id_str & " waiting to receive data.");
+
+          result_from_poll  := polls.start_events_listen (task_poll'Access, 2000); -- block, 2 seconds time_out
 
           if result_from_poll > 0 then
+
             size_tmp  := receive (incomming_sock, recv_send_buffer); -- block
 
             Text_IO.Put_Line (" " & this_task_id_str & " received message:");
-            Text_IO.Put_Line (" " & this_task_id_str & " message len " &
-              size_tmp'Image & " bytes.");
+            Text_IO.Put_Line (" " & this_task_id_str & " message len " & size_tmp'Image & " bytes.");
 
             if size_tmp > 0 then
+
               bt1 :
               begin
-                String'Output (recv_send_buffer2'Access,
-                  "Thank you for send ");
+
+                String'Output (recv_send_buffer2'Access, "Thank you for send ");
 
                 loop1 :
                 loop
-                  message := To_Unbounded_String (
-                    String'Input (recv_send_buffer'Access));
+                  message := To_Unbounded_String (String'Input (recv_send_buffer'Access));
 
-                  String'Output (recv_send_buffer2'Access,
-                    To_String (message));
+                  String'Output (recv_send_buffer2'Access, To_String (message));
 
-                  Text_IO.Put_Line (" " & this_task_id_str & " message |" &
-                    To_String (message) & "|");
+                  Text_IO.Put_Line (" " & this_task_id_str & " message |" & To_String (message) & "|");
                 end loop loop1;
 
               exception
+
                 when buffer_insufficient_space_error =>
-                  Text_IO.Put_Line (" " & this_task_id_str &
-                    " all messages showed.");
+
+                  Text_IO.Put_Line (" " & this_task_id_str & " all messages showed.");
+
               end bt1;
 
             end if;
           else
-            Text_IO.Put_Line (" " & this_task_id_str &
-            " failed in receive data.");
+
+            Text_IO.Put_Line (" " & this_task_id_str & " failed in receive data.");
 
             if result_from_poll = 0 then
-              Text_IO.Put_Line (" " & this_task_id_str &
-                " but it is a normal time_out.");
+
+              Text_IO.Put_Line (" " & this_task_id_str & " but it is a normal time_out.");
+
             else
               if polls.hang_up_error (task_poll'Access, incomming_sock'Access) then
-                Text_IO.Put_Line (" " & this_task_id_str &
-                  " remote host closed the connection. Quitting.");
+
+                Text_IO.Put_Line (" " & this_task_id_str & " remote host closed the connection. Quitting.");
 
                 goto finish1_task_label;
               end if;
@@ -200,29 +207,32 @@ begin
 
           polls.clear_all_event_responses (task_poll'Access);
 
-          polls.update (task_poll'Access, incomming_sock'Access,
-            polls.send_ev);
+          polls.update (task_poll'Access, incomming_sock'Access, polls.send_ev);
 
-          Text_IO.Put_Line (" " & this_task_id_str &
-            " waiting to send data to remote host");
+          Text_IO.Put_Line (" " & this_task_id_str & " waiting to send data to remote host");
 
-          result_from_poll  :=
-            polls.start_events_listen (task_poll'Access, 2000); -- 2 seconds
+          result_from_poll  := polls.start_events_listen (task_poll'Access, 2000); -- block, 2 seconds timeout.
 
           if result_from_poll > 0 then
+
             size_tmp  := send (incomming_sock, recv_send_buffer2); -- block
+
             Text_IO.Put_Line (" " & this_task_id_str & " sended messages !");
+
           else
-            Text_IO.Put_Line (" " & this_task_id_str &
-              " failed in send data.");
+
+            Text_IO.Put_Line (" " & this_task_id_str & " failed in send data.");
 
             if result_from_poll = 0 then
-              Text_IO.Put_Line (" " & this_task_id_str &
-                " but it is a normal time_out");
+
+              Text_IO.Put_Line (" " & this_task_id_str & " but it is a normal time_out");
+
             else
+
               if polls.hang_up_error (task_poll'Access, incomming_sock'Access) then
-                Text_IO.Put_Line (" " & this_task_id_str &
-                  " remote host closed the connection. Quitting");
+
+                Text_IO.Put_Line (" " & this_task_id_str & " remote host closed the connection. Quitting");
+
               end if;
             end if;
           end if;
@@ -230,15 +240,22 @@ begin
           <<finish1_task_label>>
 
           if initialized (incomming_sock) then
+
             close (incomming_sock);
+
           end if;
         end bt0;
 
         <<finish2_task_label>>
       end recv_send_task;
 
-      working_task  : access recv_send_task;
+      type recv_send_access is access all recv_send_task
+
+      working_task  : recv_send_access
+        with Unreferenced;
+
     begin
+
       Text_IO.New_Line;
 
       polls.add_events (mi_poll'Access, host_sock'Access, polls.accept_ev);
@@ -247,12 +264,14 @@ begin
 
       loop2 :
       loop
-        if polls.start_events_listen (mi_poll'Access, 15000) < 1 then
-          -- 15 seconds timeout
-          close (host_sock);
+
+        if polls.start_events_listen (mi_poll'Access, 15000) < 1 then -- block, 15 seconds timeout
+
+          close (host_sock); -- to disable 'listen' too.
+
           Text_IO.Put_Line (" Main event 15 seconds Time_out.");
-          Text_IO.Put_Line (" Waiting 5 seconds to allow enough time " &
-          "for working tasks finish.");
+          Text_IO.Put_Line (" Waiting 5 seconds to allow enough time for working tasks finish.");
+
           Text_IO.New_Line;
 
           delay 5.0;
@@ -270,13 +289,16 @@ begin
         end if;
 
         polls.clear_all_event_responses (mi_poll'Access);
+
       end loop loop2;
     end b1;
 
     <<end_app_label1>>
 
     if initialized (host_sock'Access) then
+
       close (host_sock);
+
     end if;
 
     Text_IO.Put (" " & Command_Line.Command_Name);

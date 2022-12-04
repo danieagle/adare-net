@@ -2,7 +2,6 @@
 package adare_net_exceptions
   with Pure
 is
-  buffer_full_error : exception;
   buffer_empty_error : exception;
   buffer_insufficient_space_error : exception;
 

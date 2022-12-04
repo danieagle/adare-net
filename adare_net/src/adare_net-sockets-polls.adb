@@ -16,8 +16,7 @@ is
     (in_poll    : not null access poll_type;
      what       : not null access socket
      ) return Boolean
-  is (for some E of in_poll.pos (1 .. in_poll.count) =>
-      E = get_sock (what.all));
+  is (for some E of in_poll.pos (1 .. in_poll.count) => E = get_sock (what.all));
 
   procedure add_events
     (to_poll    : not null access poll_type;
@@ -26,9 +25,7 @@ is
     )
   is
     sock_tmp    : constant socket_type := get_sock (sock.all);
-    pollfd_tmp  : constant pollfd :=
-      (fd => sock_tmp, events => unsigned_short (with_events_bitmap),
-       revents => 0);
+    pollfd_tmp  : constant pollfd := (fd => sock_tmp, events => unsigned_short (with_events_bitmap), revents => 0);
 
     index : Unsigned_8 := 0;
   begin
@@ -129,8 +126,7 @@ is
   is
   begin
 
-    return  inners.inner_poll (from_poll.poll (1)'Address,
-              int (from_poll.count), time_out);
+    return  inners.inner_poll (from_poll.poll (1)'Address, int (from_poll.count), time_out);
   end start_events_listen;
 
   function receive_event
@@ -210,8 +206,7 @@ is
       exit loop1 when E = sock_tmp;
     end loop loop1;
 
-    return
-      (from_poll.poll (index).revents and unsigned_short (hang_up_err)) > 0;
+    return (from_poll.poll (index).revents and unsigned_short (hang_up_err)) > 0;
   end hang_up_error;
 
   function socket_descritor_error
@@ -229,8 +224,7 @@ is
       exit loop1 when E = sock_tmp;
     end loop loop1;
 
-    return (from_poll.poll (index).revents and
-            unsigned_short (socket_descritor_err)) > 0;
+    return (from_poll.poll (index).revents and unsigned_short (socket_descritor_err)) > 0;
   end socket_descritor_error;
 
 

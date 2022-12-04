@@ -3,7 +3,7 @@ library project adare_net is
 
   for Languages use ("Ada", "C");
 
-  version := "0.0.49";
+  version := "0.0.63";
 
   type os_type is ("linux", "mswindows", "macosx", "bsd", "unix", "other");
 
@@ -69,39 +69,38 @@ library project adare_net is
   for Externally_Built use "false";
 
   type Mode_type is ("debug", "release");
+
   Modu : Mode_type := external ("mod", "release");
 
   package Builder is
   end Builder;
 
-  package Linker is -- ToSee: remove 'case mi_os' ? work ?
+  package Linker is
     case mi_os is
-     when "mswindows" =>
-       for Linker_Options use ("-lws2_32");
+      when "mswindows" =>
+        for Linker_Options use ("-lws2_32");
 
-     when others =>
-       null;
+      when others =>
+        null;
+
     end case;
   end Linker;
 
   package Compiler is
 
-    ada_def := ("-gnat2012", "-gnateE", "-gnatef" , "-gnateV",
-                "-gnatf", "-gnaty2abCefhiklmnprst", "-gnatwa");
-    c_def   := ("-Wall", "-Wextra", "-Wshadow", "-Wuninitialized", "-Wundef",
-      "-march=native");
-
     case Modu is
       when "debug" =>
         for switches ("Ada")
-          use ("-Og", "-g3") & ada_def;
+          use ("-gnat2022", "-Og", "-g3", "-gnateE", "-gnatef", "-gnateV", "-gnatf", "-gnaty2abCefhiklnprstmM135", "-gnatwa");
         for switches ("C")
-          use ("-Og", "-g3") & c_def;
+          use ("-Og", "-g3", "-Wall", "-Wextra", "-Wshadow", "-Wuninitialized", "-Wundef", "-march=native");
+
       when "release" =>
         for switches ("Ada")
-          use ("-O3") & ada_def;
-        for switches ("C")
-            use ("-O3") & c_def;
+          use ("-gnat2022", "-O3", "-gnateE", "-gnatef", "-gnateV", "-gnatf", "-gnaty2abCefhiklnprstmM135", "-gnatwa");
+        for switches ("C") 
+          use ("-O3", "-Wall", "-Wextra", "-Wshadow", "-Wuninitialized", "-Wundef", "-march=native");
+
     end case;
   end compiler;
 
