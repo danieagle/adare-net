@@ -1,0 +1,8 @@
+
+1)  How To send and receive zero Length arrays, included 'String' ?
+  => Substitute 'read() and 'write() attributes with 'input() and
+  'output() attributes.
+
+Thanks!
+GrateFull, Dani and Renan.
+Enjoy!!!

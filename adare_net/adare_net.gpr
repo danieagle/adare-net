@@ -1,0 +1,114 @@
+
+library project adare_net is
+
+  for Languages use ("Ada", "C");
+
+  version := "0.0.49";
+
+  type os_type is ("linux", "mswindows", "macosx", "bsd", "unix", "other");
+
+  mi_os : os_type := external ("mi_os", "linux");
+
+  source0 := ();
+
+  case mi_os is -- only 64bit OS
+    when  "linux" =>
+      source0 := ("src", "src/linux");
+
+    when  "mswindows" =>
+      source0 := ("src", "src/mswindows");
+
+    when  others =>
+      source0 := ("src", "src/linux");
+
+  end case;
+
+  for Source_Dirs use source0;
+  for Object_dir  use "common/obj";
+  for Library_ALI_Dir use "common/ali";
+  for Library_Dir  use "common/lib";
+  for Library_Name use "adare_net";
+  for Library_Kind use "dynamic";
+  for Library_Auto_Init use "false";
+  for Interfaces use (
+    "adare_net.ads",
+    "adare_net_exceptions.ads",
+    "adare_net_init.ads",
+    "adare_net-sockets.adb",
+    "adare_net-sockets.ads",
+    "adare_net_init.adb",
+    "c_adare_net_init.c",
+    "c_adare_net_init.h",
+    "c_initialize_socket.c",
+    "c_initialize_socket.h",
+    "c_vars.c",
+    "socket_types.ads",
+    "adare_net-sockets-polls.ads",
+    "adare_net-sockets-polls.adb",
+    "adare_net-sockets-inners.ads",
+    "adare_net-sockets-utils.ads",
+    "adare_net-sockets-utils.adb"
+    );
+
+  case mi_os is
+    when "linux" | "unix" | "bsd" =>
+      for Library_Version use "libadare_net.so." & version;
+
+    when "mswindows" =>
+      for Library_Version use "libadare_net." & version & ".dll";
+      for Library_Options use ("-lws2_32");
+
+    when "macosx" =>
+      for Library_Version use "libadare_net." & version & ".dylib";
+
+    when "other" =>
+      for Library_Version use "libadare_net." & version;
+
+  end case;
+
+  for Externally_Built use "false";
+
+  type Mode_type is ("debug", "release");
+  Modu : Mode_type := external ("mod", "release");
+
+  package Builder is
+  end Builder;
+
+  package Linker is -- ToSee: remove 'case mi_os' ? work ?
+    case mi_os is
+     when "mswindows" =>
+       for Linker_Options use ("-lws2_32");
+
+     when others =>
+       null;
+    end case;
+  end Linker;
+
+  package Compiler is
+
+    ada_def := ("-gnat2012", "-gnateE", "-gnatef" , "-gnateV",
+                "-gnatf", "-gnaty2abCefhiklmnprst", "-gnatwa");
+    c_def   := ("-Wall", "-Wextra", "-Wshadow", "-Wuninitialized", "-Wundef",
+      "-march=native");
+
+    case Modu is
+      when "debug" =>
+        for switches ("Ada")
+          use ("-Og", "-g3") & ada_def;
+        for switches ("C")
+          use ("-Og", "-g3") & c_def;
+      when "release" =>
+        for switches ("Ada")
+          use ("-O3") & ada_def;
+        for switches ("C")
+            use ("-O3") & c_def;
+    end case;
+  end compiler;
+
+  package Binder is
+  end Binder;
+
+  package Install is
+  end Install;
+
+end adare_net;

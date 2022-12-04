@@ -1,0 +1,11 @@
+v.latest =>
+
+
+v.0.0.49 =>
+
+1) Ubuntu 22.04 Linux AMD64 + gnat 12 + gcc 12 + gprbuild 2021.0.0.0778b109-5
+
+2) Ubuntu 22.10 Linux AMD64 + gnat 12.1 + gcc 12.1 + gprbuild 2022.0.0-7
+
+3) Msys2 (12jul2022) Win10Pro 21H2 (fresh install) + AMD64 + gnat-12.1 +
+  gcc-12.1 + gprbuild 2021

@@ -1,0 +1,8 @@
+common/lib/*
+common/obj/*
+common/ali/*
+**/*.o
+**/*.ali
+**/*.gch
+**/*.stdout
+**/*.stderr

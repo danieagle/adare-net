@@ -1,0 +1,47 @@
+
+with "adare_net";
+
+project ex is
+
+  for Languages use ("Ada");
+
+  for Source_Dirs use ("src");
+  for Object_dir  use "obj";
+  for Exec_Dir use "bin";
+  for main use (
+    "server1",
+    "client1",
+    "server2",
+    "client2"
+    );
+
+  type Mode_type is ("debug", "release");
+  Modu : Mode_type := external ("mod", "release");
+
+  package Builder is
+  end Builder;
+
+  package Compiler is
+    case Modu is
+      when "debug" =>
+        for switches ("Ada")
+          use ("-Og", "-g", "-gnat12", "-gnateE", "-gnatef" , "-gnateV",
+               "-gnatf", "-gnaty2abCefhiklmnprst", "-gnatwa");
+
+      when "release" =>
+        for switches ("Ada")
+          use ("-O3", "-gnat12", "-gnateE", "-gnatef" , "-gnateV",
+               "-gnatf", "-gnaty2abCefhiklmnprst", "-gnatwa");
+      end case;
+  end compiler;
+
+  package Binder is
+  end Binder;
+
+  package Linker is
+  end Linker;
+
+  package Install is
+  end Install;
+
+end ex;
