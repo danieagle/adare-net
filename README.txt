@@ -25,7 +25,7 @@ Maintenance Status: Very Active.
 
 Adare_net is written in Ada2012 and C.
 
-It  need gprbuild to build.
+It need gprbuild to build.
 
 If you don't have a make command, use the commands from Makefile directly or
 use VScode.
@@ -69,14 +69,18 @@ Note from Makefile:
 
   OS_TYPE is one of linux, mswindows, macosx, bsd, unix, other
 
-  Using Gprbuild,OS_TYPE control:
+  When using Gprbuild, the option OS_TYPE control:
     1)  The name of this library
     2.1)  Which libraries need to be linked when building Adare_Net.
     2.2)  When compiling, the link of Adare_Net and libs need by Adare_Net.
 
-  If you need other OS's  or add new features or bug fixes,
-  just file an issue or fork and create pull request in:
-    https://github.com/danieagle/adare-net
+  If you need other OS's or new features or bug fix:
+    Just file an issue and we'll trie reasonable hard to make you
+      Happy.
+    Forking and contribute with Pull Requests is yet the more speedy manner to
+      get things included.
+
+  Main repository => https://github.com/danieagle/adare-net
 
   All help, tests and pull requests Are Welcome!
 
