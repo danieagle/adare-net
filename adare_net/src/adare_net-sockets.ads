@@ -115,13 +115,11 @@ is
     (sock  : not null socket_access;
      addr  : not null addresses_access) return Boolean
      with  pre => initialized (addr);
-     -- if initialized (sock) then close(sock) in body part.
 
   function init_socket
     (sock  : not null socket_access;
      addr  : not null addresses_list_access) return Boolean
-     with  pre => initialized (addr) and then initialized (addr);
-
+     with  pre => initialized (addr);
 
   procedure reuse_address
     (sock  : not null socket_access)
@@ -165,148 +163,90 @@ is
   function sendto
     (sock     : not null socket_access;
      send_to  : not null addresses_access;
-     buffer   : not null stream_element_array_access) return ssize_t;
+     buffer   : not null stream_element_array_access) return ssize_t
      with  pre => initialized (sock) and then initialized (send_to);
 
   function sendto
     (sock     : not null socket_access;
      send_to  : not null addresses_access;
-     buffer   : not null access socket_buffer) return ssize_t
-     with  pre => initialized (sock) and then initialized (send_to);     
-
-  function receive
-    (sock     : not null socket_access;
-     buffer   : not null stream_element_array_access) return ssize_t
-     with  pre => initialized (sock);
-
-  function receive
-    (sock     : not null socket_access;
      buffer   : not null socket_buffer_access) return ssize_t
+     with  pre => initialized (sock) and then initialized (send_to);
+
+  function receive
+    (sock     : not null socket_access;
+     buffer   : stream_element_array_access;
+     max_len  : Stream_Element_Count := 1500) return ssize_t
+     with  pre => initialized (sock);
+
+  function receive
+    (sock     : not null socket_access;
+     buffer   : socket_buffer_access;
+     max_len  : Stream_Element_Count := 1500) return ssize_t
      with  pre => initialized (sock);
 
   function receive_from
     (sock     : not null socket_access;
-     buffer   : out Stream_Element_Array; -- make a new
-     from     : out addresses) return ssize_t
-     with  pre => initialized (sock)
+     buffer   : stream_element_array_access;
+     from     : addresses_access) return ssize_t
+     with  pre => initialized (sock);
 
   function receive_from
-    (sock     : socket;
-     buffer   : in out socket_buffer;
-     from     : out addresses) return ssize_t;
+    (sock     : not null socket_access;
+     buffer   : socket_buffer_access;
+     from     : addresses_access) return ssize_t;
 
   function get_sock
-    (sock : in socket) return socket_type
+    (sock : not null socket_access) return socket_type
      with pre => initialized (sock);
 
   function get_addresses
-    (sock : in socket) return addresses
+    (sock : not null socket_access) return addresses
      with pre => initialized (sock);
-
-
-  --  function initialized
-  --    (sock  :  socket) return Boolean;
 
   function initialized
     (sock  : not null socket_access) return Boolean;
 
   function initialized
-    (addr  : not null addresses_list_access) return Boolean
-  is (addr.all'Length >= 1 and then (not (for some A of addr.all => A = null_addresses)));
-
+    (addr  : not null addresses_list_access) return Boolean;
 
   function connected
-    (sock  : not null access socket) return Boolean;
-
-  function connected
-    (sock  : in socket) return Boolean;
-
+    (sock  : not null socket_access) return Boolean;
 
   function binded
-    (sock  : not null access socket) return Boolean;
-
-  function binded
-    (sock  : in socket) return Boolean;
-
+    (sock  : not null socket_access) return Boolean;
 
   function listened
-    (sock  :  not null access socket) return Boolean;
-
-  function listened
-    (sock  :  in socket) return Boolean;
-
+    (sock  :  not null socket_access) return Boolean;
 
   function is_empty
-    (buffer : not null access socket_buffer) return Boolean;
-
-  function is_empty
-    (buffer : in socket_buffer) return Boolean;
-
+    (buffer : not null socket_buffer_access) return Boolean;
 
   function actual_data_size
-    (buffer : not null access socket_buffer)
-      return Integer_64
-  with Inline;
-
-  function actual_data_size
-    (buffer : in socket_buffer)
-      return Integer_64;
-
-
-  function max_data_length
-    (buffer : not null access socket_buffer)
-      return Integer_64;
-
-  function max_data_length
-    (buffer : in socket_buffer)
-      return Integer_64;
-
-
-  function max_data_length
-    (buffer : not null access socket_buffer)
-      return Stream_Element_Offset;
-
-  function max_data_length
-    (buffer : in socket_buffer)
-      return Stream_Element_Offset;
-
+    (buffer : not null socket_buffer_access) return Integer_64;
 
   function get_buffer_init
-    (buffer : not null access socket_buffer)
-      return socket_buffer;
-
+    (buffer : not null access socket_buffer_access) return socket_buffer;
 
   procedure clean
-    (buffer : in out socket_buffer);
-
-  procedure clean
-    (buffer : not null access socket_buffer);
-
+    (buffer : not null socket_buffer_access);
 
   function add_raw
-    (buffer : in out socket_buffer;
-     raw    : in Stream_Element_Array) return Boolean
-     with pre => raw'Length > 0;
-
-  function add_raw
-    (buffer : not null access socket_buffer;
-     raw    : in Stream_Element_Array) return Boolean
-     with pre => raw'Length > 0;
-
+    (buffer : not null socket_buffer_access;
+     raw    : not null stream_element_array_access) return Boolean;
 
   function get_raw
-    (buffer : in socket_buffer) return Stream_Element_Array
-    with pre => not is_empty (buffer);
-
-  function get_raw
-    (buffer : not null access socket_buffer) return Stream_Element_Array
-    with pre => not is_empty (buffer);
-
+    (buffer : not null socket_buffer_access) return Stream_Element_Array;
 
   function string_error return String;
 
 
 private
+
+  function max_data_length
+    (buffer : not null socket_buffer_access) return Stream_Element_Offset;
+
+  function data_tail_length
+    (buffer : not null socket_buffer_access) return Stream_Element_Offset;
 
   type in_addr is
     record
@@ -366,12 +306,11 @@ private
   with Convention => C;
 
 
-
   type socket_buffer
   is new Root_Stream_Type with
     record
-      data  : sella_access := null;
-      head, tail  : Stream_Element_Count := 0;
+      data  : stream_element_array_access := null;
+      head_first, tail_end  : Stream_Element_Count := 0;
     end record
     with Preelaborable_initialization;
 

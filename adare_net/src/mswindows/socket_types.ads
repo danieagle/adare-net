@@ -16,6 +16,4 @@ is
 
   type socklen_t is new Integer_32;
 
-  send_receive_len : constant int := int'Last - 1;
-
 end socket_types;
