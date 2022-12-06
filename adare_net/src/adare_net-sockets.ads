@@ -187,13 +187,16 @@ is
   function receive_from
     (sock     : not null socket_access;
      buffer   : stream_element_array_access;
-     from     : addresses_access) return ssize_t
+     from     : addresses_access;
+     max_len  : Stream_Element_Count := 1500) return ssize_t
      with  pre => initialized (sock);
 
   function receive_from
     (sock     : not null socket_access;
      buffer   : socket_buffer_access;
-     from     : addresses_access) return ssize_t;
+     from     : addresses_access;
+     max_len  : Stream_Element_Count := 1500) return ssize_t
+     with  pre => initialized (sock);
 
   function get_sock
     (sock : not null socket_access) return socket_type

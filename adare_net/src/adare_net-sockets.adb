@@ -440,22 +440,22 @@ is
     (sock     : not null socket_access;
      buffer   : not null socket_buffer_access) return ssize_t
   is
-    sended_size : ssize_t := 0;
+    len : ssize_t := 0;
   begin
 
     if is_empty (buffer) then
       return 0;
     end if;
 
-    sended_size := send (sock, buffer.data (buffer.head_first .. buffer.tail_end));
+    len := send (sock, buffer.data (buffer.head_first .. buffer.tail_end));
 
-    if sended_size = socket_error then
+    if len = socket_error then
       return socket_error;
     end if;
 
-    buffer.head_first := buffer.head_first + Stream_Element_Count (sended_size);
+    buffer.head_first := buffer.head_first + Stream_Element_Count (len);
 
-    return sended_size;
+    return len;
   end send;
 
 
@@ -501,21 +501,21 @@ is
      send_to  : not null addresses_access;
      buffer   : not null socket_buffer_access) return ssize_t
   is
-    sended_size : ssize_t := 0;
+    len : ssize_t := 0;
   begin
     if is_empty (buffer) then
       return 0;
     end if;
 
-    sended_size := sendto (sock, send_to, buffer.data (buffer.head_first .. buffer.tail_end));
+    len := sendto (sock, send_to, buffer.data (buffer.head_first .. buffer.tail_end));
 
-    if sended_size = socket_error then
+    if len = socket_error then
       return socket_error;
     end if;
 
-    buffer.head_first := buffer.head_first + Stream_Element_Count (sended_size);
+    buffer.head_first := buffer.head_first + Stream_Element_Count (len);
 
-    return sended_size;
+    return len;
   end sendto;
 
 
@@ -524,16 +524,18 @@ is
      buffer   : stream_element_array_access;
      max_len  : Stream_Element_Count := 1500) return ssize_t
   is
-    data_tmp    : Stream_Element_Array := (1 .. max_len => 0);
-    receive_len : ssize_t  := 0;
+    data_tmp  : Stream_Element_Array := (1 .. max_len => 0);
+    len       : ssize_t  := 0;
   begin
-    receive_len :=  inners.inner_recv (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0);
+    len :=  inners.inner_recv (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0);
 
-    if receive_size = socket_error then
+    if len = socket_error then
       return socket_error;
     end if;
 
     buffer := new Stream_Element_Array'(data_tmp (1 .. len));
+
+    return len;
   end receive;
 
 
@@ -543,11 +545,11 @@ is
      max_len  : Stream_Element_Count := 1500) return ssize_t
   is
     data_tmp    : stream_element_array_access := null;
-    receive_len : ssize_t  := 0;
+    len : ssize_t  := 0;
   begin
-    receive_len :=  receive (sock, data_tmp, max_len);
+    len :=  receive (sock, data_tmp, max_len);
 
-    if receive_len = socket_error then
+    if len = socket_error then
       return socket_error;
     end if;
 
@@ -557,20 +559,78 @@ is
 
     Stream_Element_Array'Write (buffer.all'Access, data_tmp.all);
 
-    return receive_len;
+    return len;
   end receive;
 
 
   function receive_from
     (sock     : not null socket_access;
      buffer   : stream_element_array_access;
-     from     : addresses_access) return ssize_t;
+     from     : addresses_access;
+     max_len  : Stream_Element_Count := 1500) return ssize_t
+  is
+    data_tmp  : Stream_Element_Array := (1 .. max_len => 0);
+    len       : ssize_t  := 0;
+    from_tmp  : aliased addresses := sock.storage;
+    len_tmp   : aliased socklen_t := socklen_t (from_tmp.storage'Size / 8);
+
+  begin
+
+    from_tmp.storage.ss_family  := 0;
+    from_tmp.storage.padding    := (others => char'Val (0));
+
+    len :=  inners.inner_recvfrom (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0, from_tmp.storage'Address, len_tmp);
+
+    if len = socket_error then
+      return socket_error;
+    end if;
+
+    from_tmp.address_length := int (len_tmp);
+
+    buffer := new Stream_Element_Array'(data_tmp (1 .. len));
+
+    if from = null then
+      from  :=  new addresses;
+    end if;
+
+    from.all  :=  from_tmp;
+
+    return len;
+
+  end receive_from;
+
 
   function receive_from
     (sock     : not null socket_access;
      buffer   : socket_buffer_access;
-     from     : addresses_access) return ssize_t;
+     from     : addresses_access;
+     max_len  : Stream_Element_Count := 1500) return ssize_t
+  is
+    data_tmp    : stream_element_array_access := null;
+    from_tmp    : addresses_access := null;
+    len : ssize_t  := 0;
+  begin
+    len :=  receive_from (sock, data_tmp, from_tmp, max_len);
 
+    if len = socket_error then
+      return socket_error;
+    end if;
+
+    if buffer = null then
+      buffer := new buffer;
+    end if;
+
+    if from = null then
+      from  := new addresses;
+    end if;
+
+    Stream_Element_Array'Write (buffer.all'Access, data_tmp.all);
+
+    from.all := from_tmp.all;
+
+    return len;
+
+  end receive_from;
 
 
   function get_sock
