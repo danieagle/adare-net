@@ -237,14 +237,13 @@ is
 
 
   function init_socket
-    (sock  : not null socket_access;
+    (sock  : in out socket_access;
      addr  : not null addresses_access) return Boolean
   is
     sockfd    : aliased socket_type  := 0;
     sock_tmp  : socket;
 
   begin
-    clean (sock);
 
     sock_tmp.storage  := addr.all;
     sockfd  :=  inners.inner_socket (int (sock_tmp.storage.storage.ss_family), sock_tmp.storage.socktype, sock_tmp.storage.protocol);
@@ -252,6 +251,12 @@ is
     if sockfd = invalid_socket then
       return False;
     end if;
+
+    if sock = null then
+      sock := new socket;
+    end if;
+
+    clean (sock);
 
     sock_tmp.sock   := sockfd;
     sock.all  := sock_tmp;
@@ -261,14 +266,13 @@ is
 
 
   function init_socket
-    (sock  : not null socket_access;
+    (sock  : in out socket_access;
      addr  : not null addresses_list_access) return Boolean
   is
     sockfd    : aliased socket_type  := 0;
     sock_tmp  : socket;
     ok        : Boolean := False;
   begin
-    clean (sock);
 
     loop1 :
     for addr_tmp of addr.all loop
@@ -286,6 +290,12 @@ is
     if not ok then
       return False;
     end if;
+
+    if sock = null then
+      sock := new socket;
+    end if;
+
+    clean (sock);
 
     sock_tmp.sock   := sockfd;
     sock.all  := sock_tmp;

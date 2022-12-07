@@ -5,8 +5,12 @@
 			"path": "adare_net"
 		},
 		{
-			"name": "examples",
-			"path": "example"
+			"name": "example_tcp1",
+			"path": "examples/tcp1"
+		},
+		{
+			"name": "example_udp1",
+			"path": "examples/udp1"
 		},
 		{
 			"path": "."

@@ -1,7 +1,0 @@
-*.o
-*.ali
-*.stderr
-lib/*
-obj/*
-bin/*
-src/*.gch

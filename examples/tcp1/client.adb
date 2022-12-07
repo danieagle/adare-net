@@ -25,7 +25,7 @@ use socket_types;
 with Interfaces.C;
 use Interfaces.C;
 
-procedure client1
+procedure client
 is
 begin
 
@@ -279,4 +279,4 @@ begin
 
   stop_adare_net;
 
-end client1;
+end client;

@@ -102,12 +102,12 @@ is
   type socket_access is access all socket;
 
   function init_socket
-    (sock  : not null socket_access;
+    (sock  : in out socket_access;
      addr  : not null addresses_access) return Boolean
      with  pre => initialized (addr);
 
   function init_socket
-    (sock  : not null socket_access;
+    (sock  : in out socket_access;
      addr  : not null addresses_list_access) return Boolean
      with  pre => initialized (addr);
 

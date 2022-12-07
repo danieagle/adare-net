@@ -6,14 +6,14 @@
 -- (3) Simultaneous listen event_types,
 -- (4) Use of others types beyond String:
 -- (4.1) From built-in types and records to
--- (4.2) Wide class and tagged types
+-- (4.2) Wide class(es) and tagged types
 -- (4.3) And with a more fine treatment, all records, tagged types included, can be endian proof.
 -- (5) Etc. ^^
 -- But is yet up to you create a yet better real world champion software with Adare_net and you can do it!! ^^
 
 -- Info about this software:
--- Tcp server with Adare_net example. It work in pair with client1
--- The working address can be ipv6 or ipv4, automatically. The first working one will be picked.
+-- Tcp1 server with Adare_net example. It work in pair with tcp1 client
+-- Automatically, the working address can be ipv6 or ipv4. The first working one will be picked.
 
 with Ada.Text_IO;
 use Ada;
@@ -39,7 +39,7 @@ use  adare_net_init;
 with Interfaces.C;
 use Interfaces, Interfaces.C;
 
-procedure server1
+procedure server
 is
 begin
 
@@ -54,11 +54,11 @@ begin
       ai_family   =>  any -- choose ipv4 and ipv6
       );
 
-    host_sock : aliased socket;
+    host_sock : socket_access := null;
 
     ok        : Boolean := False;
 
-    choosed_remote_addr :  aliased addresses;
+    choosed_remote_addr :  addresses_access;
   begin
     if host_addr'Length < 1 then
 
@@ -114,7 +114,7 @@ begin
       task type recv_send_task (sock  : aliased socket);
 
 
-      task body recv_send_task -- See ARM-2012 7.6 (9.2/2)
+      task body recv_send_task  (sock  : aliased socket); -- See ARM-2012 7.6 (9.2/2)
       is
       begin
 
@@ -315,4 +315,4 @@ begin
 
   stop_adare_net;
 
-end server1;
+end server;
