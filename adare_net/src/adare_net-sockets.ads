@@ -102,12 +102,12 @@ is
   type socket_access is access all socket;
 
   function init_socket
-    (sock  : in out socket_access;
+    (sock  : out socket_access;
      addr  : not null addresses_access) return Boolean
      with  pre => initialized (addr);
 
   function init_socket
-    (sock  : in out socket_access;
+    (sock  : out socket_access;
      addr  : not null addresses_list_access) return Boolean
      with  pre => initialized (addr);
 
@@ -126,7 +126,7 @@ is
 
   function accept_socket
     (sock     : not null socket_access;
-     new_sock : in out socket_access) return Boolean
+     new_sock : out socket_access) return Boolean
      with  pre => listened (sock);
 
   function connect
@@ -164,27 +164,27 @@ is
 
   function receive
     (sock     : not null socket_access;
-     buffer   : in out stream_element_array_access;
+     buffer   : out stream_element_array_access;
      max_len  : Stream_Element_Count := 1500) return ssize_t
      with  pre => initialized (sock);
 
   function receive
     (sock     : not null socket_access;
-     buffer   : in out socket_buffer_access;
+     buffer   : not null socket_buffer_access;
      max_len  : Stream_Element_Count := 1500) return ssize_t
      with  pre => initialized (sock);
 
   function receive_from
     (sock     : not null socket_access;
-     buffer   : in out stream_element_array_access;
-     from     : in out addresses_access;
+     buffer   : out stream_element_array_access;
+     from     : out addresses_access;
      max_len  : Stream_Element_Count := 1500) return ssize_t
      with  pre => initialized (sock);
 
   function receive_from
     (sock     : not null socket_access;
-     buffer   : in out socket_buffer_access;
-     from     : in out addresses_access;
+     buffer   : not null socket_buffer_access;
+     from     : out addresses_access;
      max_len  : Stream_Element_Count := 1500) return ssize_t
      with  pre => initialized (sock);
 
@@ -281,7 +281,7 @@ private
   type sockaddr_storage is
     record
       ss_family : aliased Unsigned_16 := 0;
-      padding   : aliased char_array (1 .. 132) := [others => char'Val (0)];
+      padding   : aliased char_array (1 .. 132) := (others => char'Val (0));
     end record
       with Convention => C, Preelaborable_initialization;
 

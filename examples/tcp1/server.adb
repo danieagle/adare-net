@@ -47,18 +47,20 @@ begin
 
   b0 :
   declare
-    host_addr  : aliased addresses_list := init_addresses
-      (ip_or_host =>  "", -- host addresses
-      port        =>  "25000",
-      ai_socktype =>  tcp,
-      ai_family   =>  any -- choose ipv4 and ipv6
-      );
+    host_addr : constant addresses_list_access := new addresses_list'(
+      init_addresses (ip_or_host =>  "", -- host addresses
+                      port        =>  "25000",
+                      ai_socktype =>  tcp,
+                      ai_family   =>  any -- choose ipv4 and ipv6
+                      )
+    );
+
 
     host_sock : socket_access := null;
 
     ok        : Boolean := False;
 
-    choosed_remote_addr :  addresses_access;
+    choosed_remote_addr :  addresses_access := null;
   begin
     if host_addr'Length < 1 then
 
@@ -69,9 +71,9 @@ begin
 
     Text_IO.Put_Line (" Addresses Discovered in this host:");
 
-    utils.show_address_and_port (host_addr'Access);
+    utils.show_address_and_port (host_addr);
 
-    if not init_socket (host_sock, host_addr'Access) then
+    if not init_socket (host_sock, host_addr) then
 
       Text_IO.New_Line;
       Text_IO.Put_Line (" Failed to initialize socket: " & string_error);
@@ -97,28 +99,29 @@ begin
       goto end_app_label1;
     end if;
 
-    choosed_remote_addr  :=  get_addresses (host_sock);
+    choosed_remote_addr  :=  new addresses'(get_addresses (host_sock));
 
     Text_IO.New_Line;
 
-    Text_IO.Put_Line (" Binded and Listening at address "  & get_addresses (choosed_remote_addr'Access) &
-      " and at port " & get_port (choosed_remote_addr'Access));
+    Text_IO.Put_Line (" Binded and Listening at address "  & get_addresses (choosed_remote_addr) &
+      " and at port " & get_port (choosed_remote_addr));
 
     b1 :
     declare
 
-      incomming_socket  : aliased socket;
+      incomming_socket  : socket_access;
       mi_poll           : aliased polls.poll_type (1); -- each poll_type have a independent range of 1 .. 255
 
 
-      task type recv_send_task (sock  : aliased socket);
+      task type recv_send_task (sock  : socket_access);
 
 
-      task body recv_send_task  (sock  : aliased socket); -- See ARM-2012 7.6 (9.2/2)
+      task body recv_send_task -- See ARM-2012 7.6 (9.2/2)
       is
+        incomming_sock : constant socket_access :=  new socket'(sock.all);
       begin
 
-        if not (initialized (sock) or else connected (sock)) then
+        if not (initialized (incomming_sock) or else connected (incomming_sock)) then
           Text_IO.Put_Line (" Incomming socket not initialized or connected.");
           Text_IO.Put_Line (" Quitting this working task.");
 
@@ -132,12 +135,10 @@ begin
 
           this_task_id_str  : constant String := Image (Current_Task);
 
-          incomming_sock    : aliased socket  := sock;
-
           task_poll         : aliased polls.poll_type (1);
 
-          recv_send_buffer  : aliased socket_buffer;
-          recv_send_buffer2 : aliased socket_buffer;
+          recv_send_buffer  : socket_buffer_access := null;
+          recv_send_buffer2 : socket_buffer_access := null;
 
           size_tmp          : ssize_t  := 1;
           result_from_poll  : int := 0;
@@ -147,9 +148,10 @@ begin
           message : Unbounded_String := To_Unbounded_String ("");
         begin
 
-          Text_IO.Put_Line (" " & this_task_id_str & " remote host " & get_address_and_port (get_addresses (incomming_sock)));
+          Text_IO.Put_Line (" " & this_task_id_str & " remote host " &
+            get_address_and_port (new addresses'(get_addresses (incomming_sock))));
 
-          polls.add_events (task_poll'Access, incomming_sock'Access, polls.receive_ev); -- all *_ev events can be or'ed.
+          polls.add_events (task_poll'Access, incomming_sock, polls.receive_ev); -- all *_ev events can be or'ed.
 
           Text_IO.Put_Line (" " & this_task_id_str & " waiting to receive data.");
 
@@ -157,7 +159,14 @@ begin
 
           if result_from_poll > 0 then
 
-            size_tmp  := receive (incomming_sock, recv_send_buffer); -- block
+            size_tmp  := receive (incomming_sock, recv_send_buffer); -- block and initialize recv_send_buffer
+
+            if size_tmp = socket_error then
+              Text_IO.Put_Line (" " & this_task_id_str & " An error occurred during reception.");
+              Text_IO.Put_Line (" " & this_task_id_str & " finishing task.");
+
+              goto finish1_task_label;
+            end if;
 
             Text_IO.Put_Line (" " & this_task_id_str & " received message:");
             Text_IO.Put_Line (" " & this_task_id_str & " message len " & size_tmp'Image & " bytes.");
@@ -167,13 +176,25 @@ begin
               bt1 :
               begin
 
-                String'Output (recv_send_buffer2'Access, "Thank you for send ");
+                --  the following is necessary
+
+                --  if recv_send_buffer = null then
+                --    recv_send_buffer := new socket_buffer;
+                --  end if;
+
+                --  But 'receive' already made It in 'recv_send_buffer' for us.
+
+                String'Output (recv_send_buffer, "Thank you for send ");
+
+                if recv_send_buffer2 = null then
+                  recv_send_buffer2 := new socket_buffer;
+                end if;
 
                 loop1 :
                 loop
-                  message := To_Unbounded_String (String'Input (recv_send_buffer'Access));
+                  message := To_Unbounded_String (String'Input (recv_send_buffer));
 
-                  String'Output (recv_send_buffer2'Access, To_String (message));
+                  String'Output (recv_send_buffer2, To_String (message));
 
                   Text_IO.Put_Line (" " & this_task_id_str & " message |" & To_String (message) & "|");
                 end loop loop1;
@@ -196,7 +217,7 @@ begin
               Text_IO.Put_Line (" " & this_task_id_str & " but it is a normal time_out.");
 
             else
-              if polls.hang_up_error (task_poll'Access, incomming_sock'Access) then
+              if polls.hang_up_error (task_poll'Access, incomming_sock) then
 
                 Text_IO.Put_Line (" " & this_task_id_str & " remote host closed the connection. Quitting.");
 
@@ -207,7 +228,7 @@ begin
 
           polls.clear_all_event_responses (task_poll'Access);
 
-          polls.update (task_poll'Access, incomming_sock'Access, polls.send_ev);
+          polls.update (task_poll'Access, incomming_sock, polls.send_ev);
 
           Text_IO.Put_Line (" " & this_task_id_str & " waiting to send data to remote host");
 
@@ -229,7 +250,7 @@ begin
 
             else
 
-              if polls.hang_up_error (task_poll'Access, incomming_sock'Access) then
+              if polls.hang_up_error (task_poll'Access, incomming_sock) then
 
                 Text_IO.Put_Line (" " & this_task_id_str & " remote host closed the connection. Quitting");
 
@@ -249,7 +270,7 @@ begin
         <<finish2_task_label>>
       end recv_send_task;
 
-      type recv_send_access is access all recv_send_task
+      type recv_send_access is access all recv_send_task;
 
       working_task  : recv_send_access
         with Unreferenced;
@@ -258,7 +279,7 @@ begin
 
       Text_IO.New_Line;
 
-      polls.add_events (mi_poll'Access, host_sock'Access, polls.accept_ev);
+      polls.add_events (mi_poll'Access, host_sock, polls.accept_ev);
 
       ok := True;
 
@@ -282,10 +303,10 @@ begin
           exit loop2;
         end if;
 
-        if accept_socket (host_sock'Access, incomming_socket) then -- block
+        if accept_socket (host_sock, incomming_socket) then -- block
           -- For the curious: We believe the task(s) will not leak.
           -- Reason: ARM-2012 7.6 (9.2/2) :-)
-          working_task  :=  new recv_send_task (incomming_socket'Access);
+          working_task  :=  new recv_send_task (incomming_socket);
         end if;
 
         polls.clear_all_event_responses (mi_poll'Access);
@@ -295,7 +316,7 @@ begin
 
     <<end_app_label1>>
 
-    if initialized (host_sock'Access) then
+    if initialized (host_sock) then
 
       close (host_sock);
 

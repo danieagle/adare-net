@@ -54,7 +54,7 @@ is
     ai_family  : constant  Address_family := Address_family (show.storage.ss_family);
 
     dest : char_array :=
-      [1 .. size_t (if ai_family = v4  then v4_str_length elsif ai_family = v6  then v6_str_length else 0) => char'Val (0)];
+      (1 .. size_t (if ai_family = v4  then v4_str_length elsif ai_family = v6  then v6_str_length else 0) => char'Val (0));
 
     dest_length : size_t := dest'Length;
   begin
@@ -164,7 +164,7 @@ is
     if Item'Length = 0 then
       b1 :
       declare
-        mi_empty  : constant Stream_Element_Array (1 .. 0) := [others => 0];
+        mi_empty  : constant Stream_Element_Array (1 .. 0) := (others => 0);
       begin
         Item := mi_empty;
         Last  := Item'Last;
@@ -189,39 +189,33 @@ is
   is
     item_len : constant Stream_Element_Count := Item'Length;
 
-    old_data : constant Stream_Element_Array :=
-      (if item_len > 0 and then Stream.data /= null and then (item_len > data_tail_length (Stream) or else
-        item_len > max_data_length (Stream))
-        then
-          (declare
-            data_tmp : constant Stream_Element_Array (1 .. Stream_Element_Count (actual_data_size (Stream)))
-            := Stream.data (Stream.head_first .. Stream.tail_end);
-          begin
-            data_tmp
-          )
-        else
-          Stream_Element_Array'(1 .. 0 => 0)
-      );
-      mve : Boolean := False;
+    old_data : stream_element_array_access := null;
+
   begin
     if item_len = 0 then
       return;
     end if;
 
-    if Stream.data = null or else item_len > max_data_length (Stream) then
+    if Stream.data /= null and then (item_len > data_tail_length (Stream) or else item_len > max_data_length (Stream)) then
+      old_data := new Stream_Element_Array (1 .. Stream_Element_Count (actual_data_size (Stream)));
 
-      Stream.data := new Stream_Element_Array'(1 .. Stream_Element_Count'Max (40, item_len + 40) => 0);
+      old_data.all := Stream.data (Stream.head_first .. Stream.tail_end);
+    end if;
+
+    if Stream.data = null or else old_data /= null then
+
+      Stream.data := new Stream_Element_Array'(1 ..
+        Stream_Element_Count'Max (40, Stream_Element_Count (actual_data_size (Stream)) + item_len + 40) => 0);
+
       Stream.head_first := 0;
       Stream.tail_end := 0;
 
-      mve := True;
-
     end if;
 
-    if mve or else item_len > data_tail_length (Stream) then
+    if old_data /= null then
 
-      Stream.data (old_data'Range) := old_data;
-      Stream.data (old_data'Last + 1 .. Stream.data'Last) := [others => 0];
+      Stream.data (old_data.all'Range) := old_data.all;
+      Stream.data (old_data.all'Last + 1 .. Stream.data'Last) := (others => 0);
 
       Stream.head_first := 1;
       Stream.tail_end := old_data'Last;
@@ -235,15 +229,16 @@ is
     Stream.tail_end :=  Stream.tail_end + item_len;
   end Write;
 
-
   function init_socket
-    (sock  : in out socket_access;
+    (sock  : out socket_access;
      addr  : not null addresses_access) return Boolean
   is
-    sockfd    : aliased socket_type  := 0;
-    sock_tmp  : socket;
+    sockfd    : aliased socket_type;
+    sock_tmp  : socket_access :=  new socket;
 
   begin
+
+    clean (sock_tmp);
 
     sock_tmp.storage  := addr.all;
     sockfd  :=  inners.inner_socket (int (sock_tmp.storage.storage.ss_family), sock_tmp.storage.socktype, sock_tmp.storage.protocol);
@@ -252,64 +247,52 @@ is
       return False;
     end if;
 
-    if sock = null then
-      sock := new socket;
-    end if;
+    sock_tmp.sock := sockfd;
 
-    clean (sock);
-
-    sock_tmp.sock   := sockfd;
-    sock.all  := sock_tmp;
+    sock := new socket'(sock_tmp.all);
 
     return True;
   end init_socket;
 
-
   function init_socket
-    (sock  : in out socket_access;
+    (sock  : out socket_access;
      addr  : not null addresses_list_access) return Boolean
   is
-    sockfd    : aliased socket_type  := 0;
-    sock_tmp  : socket;
+    sockfd    : aliased socket_type;
+    sock_tmp  : socket_access := new socket;
     ok        : Boolean := False;
   begin
 
     loop1 :
     for addr_tmp of addr.all loop
 
+      clean (sock_tmp);
+
       sock_tmp.storage  := addr_tmp;
+
       sockfd := inners.inner_socket (int (sock_tmp.storage.storage.ss_family), sock_tmp.storage.socktype, sock_tmp.storage.protocol);
 
       if sockfd /= invalid_socket then
         ok := True;
+        sock_tmp.sock := sockfd;
         exit loop1;
       end if;
-
     end loop loop1;
 
     if not ok then
       return False;
     end if;
 
-    if sock = null then
-      sock := new socket;
-    end if;
-
-    clean (sock);
-
-    sock_tmp.sock   := sockfd;
-    sock.all  := sock_tmp;
+    sock := new socket'(sock_tmp.all);
 
     return True;
   end init_socket;
-
 
   procedure reuse_address
     (sock  : not null socket_access) is
   begin
     inners.inner_reuse_address (sock.sock);
   end reuse_address;
-
 
   function bind
     (sock  : not null socket_access) return Boolean
@@ -323,7 +306,6 @@ is
 
       return True;
   end bind;
-
 
   function listen
     (sock     : not null socket_access;
@@ -339,13 +321,11 @@ is
       return True;
   end listen;
 
-
   function accept_socket
     (sock     : not null socket_access;
-     new_sock : in out socket_access) return Boolean
+     new_sock : out socket_access) return Boolean
   is
     sock_tmp  : socket  := sock.all;
-
     len       : socklen_t := sock_tmp.storage.storage'Size / 8;
   begin
 
@@ -361,15 +341,10 @@ is
     sock_tmp.binded     :=  False;
     sock_tmp.listened   :=  False;
 
-    if new_sock = null then
-      new_sock := new socket;
-    end if;
-
-    new_sock.all := sock_tmp;
+    new_sock := new socket'(sock_tmp);
 
     return True;
   end accept_socket;
-
 
   function connect
     (sock  : not null socket_access) return Boolean
@@ -384,7 +359,6 @@ is
     return True;
   end connect;
 
-
   procedure close
     (sock  : not null socket_access)
   is
@@ -395,7 +369,6 @@ is
     clean (sock);
   end close;
 
-
   procedure clean
     (sock  : not null socket_access)
   is
@@ -403,7 +376,7 @@ is
     sock.sock    := 0;
 
     sock.storage.storage.ss_family  := 0;
-    sock.storage.storage.padding    := [others => char'Val (0)];
+    sock.storage.storage.padding    := (others => char'Val (0));
 
     sock.storage.socktype  := 0;
     sock.storage.protocol  := 0;
@@ -415,12 +388,11 @@ is
     sock.listened  :=  False;
   end clean;
 
-
   function send
     (sock     : not null socket_access;
      buffer   : not null stream_element_array_access) return ssize_t
   is
-      len         : ssize_t  := 0;
+      len         : ssize_t;
       pos         : Stream_Element_Offset  := buffer.all'First;
       remaining   : ssize_t  := buffer.all'Length;
   begin
@@ -450,14 +422,13 @@ is
     return ssize_t (pos - buffer.all'First);
   end send;
 
-
   function send
     (sock     : not null socket_access;
      buffer   : not null socket_buffer_access) return ssize_t
   is
-    len         : ssize_t  := 0;
-    pos         : Stream_Element_Offset  := (if buffer.data /= null then buffer.data'First else 0);
-    remaining   : ssize_t  := (if buffer.data /= null then buffer.data'Length else 0);
+    pos       : Stream_Element_Offset := (if buffer.data /= null then buffer.head_first else 0);
+    len       : ssize_t;
+    remaining : ssize_t := ssize_t (actual_data_size (buffer));
   begin
     if remaining = 0 then
       return 0;
@@ -487,15 +458,14 @@ is
     return ssize_t (pos - buffer.data'First);
   end send;
 
-
   function sendto
     (sock     : not null socket_access;
      send_to  : not null addresses_access;
      buffer   : not null stream_element_array_access) return ssize_t
   is
-    len         : ssize_t  := 0;
-    pos         : Stream_Element_Offset  :=  buffer.all'First;
-    remaining   : ssize_t  := buffer.all'Length;
+    pos       : Stream_Element_Offset :=  buffer.all'First;
+    len       : ssize_t;
+    remaining : ssize_t := buffer.all'Length;
   begin
     if remaining = 0 then
       return 0;
@@ -524,15 +494,14 @@ is
     return ssize_t (pos - buffer.all'First);
   end sendto;
 
-
   function sendto
-    (sock    : not null socket_access;
-    send_to  : not null addresses_access;
-    buffer   : not null socket_buffer_access) return ssize_t
+    (sock     : not null socket_access;
+     send_to  : not null addresses_access;
+     buffer   : not null socket_buffer_access) return ssize_t
   is
-    len         : ssize_t  := 0;
-    pos         : Stream_Element_Offset  := (if buffer.data /= null then buffer.data'First else 0);
-    remaining   : ssize_t  := (if buffer.data /= null then buffer.data'Length else 0);
+    pos       : Stream_Element_Offset := (if buffer.data /= null then buffer.head_first else 0);
+    len       : ssize_t;
+    remaining : ssize_t := ssize_t (actual_data_size (buffer));
   begin
     if remaining = 0 then
       return 0;
@@ -563,14 +532,13 @@ is
     return ssize_t (pos - buffer.data'First);
   end sendto;
 
-
   function receive
     (sock     : not null socket_access;
-     buffer   : in out stream_element_array_access;
+     buffer   : out stream_element_array_access;
      max_len  : Stream_Element_Count := 1500) return ssize_t
   is
-    data_tmp  : Stream_Element_Array := [1 .. max_len => 0];
-    len       : ssize_t  := 0;
+    data_tmp  : aliased Stream_Element_Array := (1 .. max_len => 0);
+    len       : ssize_t;
   begin
     len :=  inners.inner_recv (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0);
 
@@ -578,19 +546,22 @@ is
       return socket_error;
     end if;
 
-    buffer := new Stream_Element_Array'(data_tmp (1 .. Stream_Element_Offset (len)));
+    if len > 0 then
+      buffer := new Stream_Element_Array'(data_tmp (1 .. Stream_Element_Offset (len)));
+    else
+      buffer := new Stream_Element_Array'(1 .. 0 => 0);
+    end if;
 
     return len;
   end receive;
 
-
   function receive
     (sock     : not null socket_access;
-     buffer   : in out socket_buffer_access;
+     buffer   : not null socket_buffer_access;
      max_len  : Stream_Element_Count := 1500) return ssize_t
   is
-    data_tmp  : Stream_Element_Array := [1 .. max_len => 0];
-    len       : ssize_t  := 0;
+    data_tmp  : aliased Stream_Element_Array := (1 .. max_len => 0);
+    len       : ssize_t;
   begin
     len :=  inners.inner_recv (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0);
 
@@ -598,31 +569,28 @@ is
       return socket_error;
     end if;
 
-    if buffer = null then
-      buffer := new socket_buffer;
+    if len > 0 then
+      Stream_Element_Array'Write (buffer, data_tmp (1 .. Stream_Element_Offset (len)));
     end if;
-
-    Stream_Element_Array'Write (buffer, data_tmp (1 .. Stream_Element_Offset (len)));
 
     return len;
   end receive;
-
 
   function receive_from
     (sock     : not null socket_access;
-     buffer   : in out stream_element_array_access;
-     from     : in out addresses_access;
+     buffer   : out stream_element_array_access;
+     from     : out addresses_access;
      max_len  : Stream_Element_Count := 1500) return ssize_t
   is
-    data_tmp  : Stream_Element_Array := [1 .. max_len => 0];
-    len       : ssize_t  := 0;
+    data_tmp  : aliased Stream_Element_Array := (1 .. max_len => 0);
+    len       : ssize_t;
     from_tmp  : aliased addresses := sock.storage;
     len_tmp   : aliased socklen_t := socklen_t (from_tmp.storage'Size / 8);
 
   begin
 
     from_tmp.storage.ss_family  := 0;
-    from_tmp.storage.padding    := [others => char'Val (0)];
+    from_tmp.storage.padding    := (others => char'Val (0));
 
     len :=  inners.inner_recvfrom (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0,
       from_tmp.storage'Address, len_tmp);
@@ -633,33 +601,32 @@ is
 
     from_tmp.address_length := int (len_tmp);
 
-    buffer := new Stream_Element_Array'(data_tmp (1 .. Stream_Element_Offset (len)));
-
-    if from = null then
-      from  :=  new addresses;
+    if len > 0 then
+      buffer := new Stream_Element_Array'(data_tmp (1 .. Stream_Element_Offset (len)));
+    else
+      buffer := new Stream_Element_Array'(1 .. 0 => 0);
     end if;
 
-    from.all  :=  from_tmp;
+    from := new addresses'(from_tmp);
 
     return len;
   end receive_from;
 
-
   function receive_from
     (sock     : not null socket_access;
-     buffer   : in out socket_buffer_access;
-     from     : in out addresses_access;
+     buffer   : not null socket_buffer_access;
+     from     : out addresses_access;
      max_len  : Stream_Element_Count := 1500) return ssize_t
   is
-    data_tmp  : Stream_Element_Array := [1 .. max_len => 0];
-    len       : ssize_t  := 0;
+    data_tmp  : Stream_Element_Array := (1 .. max_len => 0);
+    len       : ssize_t;
     from_tmp  : aliased addresses := sock.storage;
     len_tmp   : aliased socklen_t := socklen_t (from_tmp.storage'Size / 8);
 
   begin
 
     from_tmp.storage.ss_family  := 0;
-    from_tmp.storage.padding    := [others => char'Val (0)];
+    from_tmp.storage.padding    := (others => char'Val (0));
 
     len :=  inners.inner_recvfrom (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0,
       from_tmp.storage'Address, len_tmp);
@@ -670,31 +637,22 @@ is
 
     from_tmp.address_length := int (len_tmp);
 
-    if from = null then
-      from  := new addresses;
+    if len > 0 then
+      Stream_Element_Array'Write (buffer, data_tmp (1 .. Stream_Element_Offset (len)));
     end if;
 
-    if buffer = null then
-      buffer  := new socket_buffer;
-    end if;
-
-    Stream_Element_Array'Write (buffer, data_tmp (1 .. Stream_Element_Offset (len)));
-
-    from.all  :=  from_tmp;
+    from := new addresses'(from_tmp);
 
     return len;
   end receive_from;
-
 
   function get_sock
     (sock : not null socket_access) return socket_type
   is (sock.sock);
 
-
   function get_addresses
     (sock : not null socket_access) return addresses
   is (sock.storage);
-
 
   function initialized
     (sock  : not null socket_access) return Boolean
@@ -708,27 +666,21 @@ is
     (addr  : not null addresses_access) return Boolean
   is (addr.all /= null_addresses);
 
-
   function connected
     (sock  : not null socket_access) return Boolean
   is (sock.connected);
-
 
   function binded
     (sock  : not null socket_access) return Boolean
   is (sock.binded);
 
-
   function listened
     (sock  :  not null socket_access) return Boolean
   is (sock.listened);
 
-
   function is_empty
     (buffer : not null socket_buffer_access) return Boolean
   is (buffer.data = null or else buffer.tail_end < buffer.data'First or else buffer.head_first < buffer.data'First);
-
-
 
   function actual_data_size
     (buffer : not null socket_buffer_access) return Integer_64
@@ -738,16 +690,13 @@ is
     (buffer : socket_buffer) return Integer_64
   is (if buffer.data /= null then (Integer_64 ((buffer.tail_end + 1) - buffer.head_first)) else 0);
 
-
   function max_data_length
     (buffer : socket_buffer) return Stream_Element_Offset
   is (if buffer.data /= null then (buffer.head_first - buffer.data'First) + (buffer.data'Last - buffer.tail_end) else 0);
 
-
   function data_tail_length
     (buffer : socket_buffer) return Stream_Element_Offset
   is (if buffer.data /= null then buffer.data'Last - buffer.tail_end else 0);
-
 
   function get_buffer_init
     (buffer : not null socket_buffer_access) return socket_buffer
@@ -772,7 +721,6 @@ is
       );
   end get_buffer_init;
 
-
   procedure clean
     (buffer : not null socket_buffer_access)
   is
@@ -781,7 +729,6 @@ is
     buffer.tail_end := 0;
     buffer.data := null;
   end clean;
-
 
   function add_raw
     (buffer : not null socket_buffer_access;
@@ -796,7 +743,6 @@ is
     return True;
   end add_raw;
 
-
   function get_raw
     (buffer : not null socket_buffer_access) return Stream_Element_Array
   is
@@ -804,7 +750,7 @@ is
     if buffer.data = null then
       b1 :
       declare
-        mi_data : Stream_Element_Array :=  [1 .. 0 => 0];
+        mi_data : Stream_Element_Array :=  (1 .. 0 => 0);
       begin
         return mi_data;
       end b1;
@@ -813,16 +759,13 @@ is
     return buffer.data (buffer.head_first .. buffer.tail_end);
   end get_raw;
 
-
   function string_error return String is
-    message_a : aliased char_array (1 .. 260) := [others => char'Val (0)];
+    message_a : aliased char_array (1 .. 260) := (others => char'Val (0));
     length_a  : aliased int :=  int (message_a'Last) - 1;
   begin
     inners.inner_show_error (message_a, length_a);
 
     return To_Ada (message_a (message_a'First .. message_a'First + size_t (length_a)));
   end string_error;
-
-
 
 end adare_net.sockets;
