@@ -6,3 +6,5 @@ common/ali/*
 **/*.gch
 **/*.stdout
 **/*.stderr
+**/*.d
+**/*.bexch

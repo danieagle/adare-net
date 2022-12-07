@@ -46,20 +46,22 @@ is
 
   type stream_element_array_access is access all Stream_Element_Array;
 
-  function init_addresses
-    (ip_or_host : String;
-     port       : String;
+  procedure init_addresses
+    (ip_or_host   : String;
+     port         : String;
      ai_socktype  : Address_type;
-     ai_family    : Address_family
-    ) return addresses_list
+     ai_family    : Address_family;
+     addr         : out addresses_list_access
+    )
     with pre => (ai_socktype = tcp or else ai_socktype = udp) and then (ai_family = any or else ai_family = v4 or else ai_family = v6);
 
-  function init_addresses
+  procedure init_addresses
     (ip_or_host : String;
      port       : String;
      ai_socktype  : Address_type;
-     ai_family    : Address_family
-    ) return addresses
+     ai_family    : Address_family;
+     addr         : out addresses_access
+    )
     with pre => (ai_socktype = tcp or else ai_socktype = udp) and then (ai_family = any or else ai_family = v4 or else ai_family = v6);
 
   function get_addresses
@@ -95,6 +97,17 @@ is
   procedure Write
     (Stream : in out socket_buffer;
      Item   : in Stream_Element_Array);
+
+  type rewind_t is private;
+
+  function get_read_rewind
+    (from : not null socket_buffer_access) return rewind_t
+     with pre => not is_empty (from);
+
+  function read_rewind
+    (who : not null socket_buffer_access;
+     rewind_at  : rewind_t) return Boolean
+     with pre => not is_empty (who);
 
   type socket is private
     with Preelaborable_initialization;
@@ -240,6 +253,8 @@ is
 
 
 private
+
+  type rewind_t is new Stream_Element_Offset;
 
   function max_data_length
     (buffer : socket_buffer) return Stream_Element_Offset;

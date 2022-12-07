@@ -8,12 +8,13 @@ package body adare_net.sockets
   with Preelaborate
 is
 
-  function init_addresses
-    (ip_or_host : String;
-     port       : String;
+  procedure init_addresses
+    (ip_or_host   : String;
+     port         : String;
      ai_socktype  : Address_type;
-     ai_family    : Address_family
-    ) return addresses_list
+     ai_family    : Address_family;
+     addr         : out addresses_list_access
+    )
   is
       list_length : aliased int := inners.a_list'Length - 1;
       list  : aliased inners.a_list;
@@ -24,17 +25,18 @@ is
 
       inners.inner_init_address (i_or_o'Address, pc'Address, int (ai_socktype), int (ai_family), list_length, list);
 
-      return list (1 .. Integer (list_length));
+      addr := new addresses_list'(list (1 .. Integer (list_length)));
 
   end init_addresses;
 
 
-  function init_addresses
+  procedure init_addresses
     (ip_or_host : String;
      port       : String;
      ai_socktype  : Address_type;
-     ai_family    : Address_family
-    ) return addresses
+     ai_family    : Address_family;
+     addr         : out addresses_access
+    )
   is
       list_length : aliased int := 2;
       list        : aliased inners.a_list;
@@ -44,7 +46,7 @@ is
   begin
       inners.inner_init_address (i_or_o'Address, pc'Address, int (ai_socktype), int (ai_family), list_length, list);
 
-      return list (1);
+      addr := new addresses'(list (1));
   end init_addresses;
 
 
@@ -228,6 +230,24 @@ is
     Stream.data (Stream.tail_end + 1 .. Stream.tail_end + item_len)  :=  Item;
     Stream.tail_end :=  Stream.tail_end + item_len;
   end Write;
+
+  function get_read_rewind
+    (from : not null socket_buffer_access) return rewind_t
+  is (rewind_t (from.head_first));
+
+  function read_rewind
+    (who : not null socket_buffer_access;
+     rewind_at  : rewind_t) return Boolean
+  is
+  begin
+    if Stream_Element_Offset (rewind_at) > who.head_first then
+      return False;
+    end if;
+
+    who.head_first := Stream_Element_Offset (rewind_at);
+
+    return True;
+  end read_rewind;
 
   function init_socket
     (sock  : out socket_access;
