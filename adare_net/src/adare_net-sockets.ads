@@ -37,17 +37,14 @@ is
 
   null_addresses  : constant addresses;
 
-  type addresses_access is access all addresses
-    with Default_Value => null, Preelaborable_initialization;
+  type addresses_access is access all addresses;
 
   type addresses_list is array (Positive range <>) of aliased addresses
      with Preelaborable_initialization;
 
-  type addresses_list_access is access all addresses_list
-    with Preelaborable_initialization;
+  type addresses_list_access is access all addresses_list;
 
-  type stream_element_array_access is access all Stream_Element_Array
-    with Default_Value => null, Preelaborable_initialization;
+  type stream_element_array_access is access all Stream_Element_Array;
 
   function init_addresses
     (ip_or_host : String;
@@ -55,9 +52,7 @@ is
      ai_socktype  : Address_type;
      ai_family    : Address_family
     ) return addresses_list
-
-    with pre => (port /= "" or else ip_or_host /= "") and then (ai_socktype = tcp or else ai_socktype = udp) and then
-                (ai_family = any or else ai_family = v4 or else ai_family = v6);
+    with pre => (ai_socktype = tcp or else ai_socktype = udp) and then (ai_family = any or else ai_family = v4 or else ai_family = v6);
 
   function init_addresses
     (ip_or_host : String;
@@ -65,10 +60,7 @@ is
      ai_socktype  : Address_type;
      ai_family    : Address_family
     ) return addresses
-
-    with pre => (port /= "" or else ip_or_host /= "") and then (ai_socktype = tcp or else ai_socktype = udp) and then
-                (ai_family = any or else ai_family = v4 or else ai_family = v6);
-
+    with pre => (ai_socktype = tcp or else ai_socktype = udp) and then (ai_family = any or else ai_family = v4 or else ai_family = v6);
 
   function get_addresses
     (show  : not null addresses_access) return String
@@ -91,8 +83,7 @@ is
 
   type socket_buffer  is new Root_Stream_Type with private;
 
-  type socket_buffer_access is access all socket_buffer
-    with Default_Value => null, Preelaborable_initialization;
+  type socket_buffer_access is access all socket_buffer;
 
   overriding
   procedure Read
@@ -108,8 +99,7 @@ is
   type socket is private
     with Preelaborable_initialization;
 
-  type socket_access is access all socket
-    with Default_Value => null, Preelaborable_initialization;
+  type socket_access is access all socket;
 
   function init_socket
     (sock  : not null socket_access;
@@ -136,7 +126,7 @@ is
 
   function accept_socket
     (sock     : not null socket_access;
-     new_sock : socket_access) return Boolean -- if new_socket = null then new_socket = new socket'(tmp_socket) else new_sock.all = tmp_socket end if
+     new_sock : in out socket_access) return Boolean
      with  pre => listened (sock);
 
   function connect
@@ -174,27 +164,27 @@ is
 
   function receive
     (sock     : not null socket_access;
-     buffer   : stream_element_array_access;
+     buffer   : in out stream_element_array_access;
      max_len  : Stream_Element_Count := 1500) return ssize_t
      with  pre => initialized (sock);
 
   function receive
     (sock     : not null socket_access;
-     buffer   : socket_buffer_access;
+     buffer   : in out socket_buffer_access;
      max_len  : Stream_Element_Count := 1500) return ssize_t
      with  pre => initialized (sock);
 
   function receive_from
     (sock     : not null socket_access;
-     buffer   : stream_element_array_access;
-     from     : addresses_access;
+     buffer   : in out stream_element_array_access;
+     from     : in out addresses_access;
      max_len  : Stream_Element_Count := 1500) return ssize_t
      with  pre => initialized (sock);
 
   function receive_from
     (sock     : not null socket_access;
-     buffer   : socket_buffer_access;
-     from     : addresses_access;
+     buffer   : in out socket_buffer_access;
+     from     : in out addresses_access;
      max_len  : Stream_Element_Count := 1500) return ssize_t
      with  pre => initialized (sock);
 
@@ -212,6 +202,9 @@ is
   function initialized
     (addr  : not null addresses_list_access) return Boolean;
 
+  function initialized
+    (addr  : not null addresses_access) return Boolean;
+
   function connected
     (sock  : not null socket_access) return Boolean;
 
@@ -227,8 +220,11 @@ is
   function actual_data_size
     (buffer : not null socket_buffer_access) return Integer_64;
 
+  function actual_data_size
+    (buffer : socket_buffer) return Integer_64;
+
   function get_buffer_init
-    (buffer : not null access socket_buffer_access) return socket_buffer;
+    (buffer : not null socket_buffer_access) return socket_buffer;
 
   procedure clean
     (buffer : not null socket_buffer_access);
@@ -246,10 +242,10 @@ is
 private
 
   function max_data_length
-    (buffer : not null socket_buffer_access) return Stream_Element_Offset;
+    (buffer : socket_buffer) return Stream_Element_Offset;
 
   function data_tail_length
-    (buffer : not null socket_buffer_access) return Stream_Element_Offset;
+    (buffer : socket_buffer) return Stream_Element_Offset;
 
   type in_addr is
     record
@@ -312,7 +308,7 @@ private
   type socket_buffer
   is new Root_Stream_Type with
     record
-      data  : stream_element_array_access := null;
+      data  : aliased stream_element_array_access := null;
       head_first, tail_end  : Stream_Element_Count := 0;
     end record
     with Preelaborable_initialization;

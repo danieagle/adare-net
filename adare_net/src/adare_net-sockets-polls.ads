@@ -39,29 +39,28 @@ is
 
   function is_in
     (in_poll    : not null access poll_type;
-     what       : not null access socket
-     ) return Boolean;
+     what       : not null socket_access) return Boolean
+     with  pre => initialized (what);
 
   procedure add_events
     (to_poll    : not null access poll_type;
-     sock       : not null access socket;
+     sock       : not null socket_access;
      with_events_bitmap : in event_type
     )
-    with pre => not is_full (to_poll) and then initialized (sock)
-      and then (not is_in (to_poll, sock));
+    with pre => not is_full (to_poll) and then initialized (sock) and then (not is_in (to_poll, sock));
 
   procedure clear_all_event_responses
     (to_poll    : not null access poll_type);
 
   procedure remove
     (from_poll   : not null access poll_type;
-     what         : not null access socket
+     what         : not null socket_access
     )
     with pre => not is_empty (from_poll) and then is_in (from_poll, what);
 
   procedure update
     (from_poll    : not null access poll_type;
-     for_sock     : not null access socket;
+     for_sock     : not null socket_access;
      with_events_bitmap : in event_type
     )
     with pre => initialized (for_sock) and then is_in (from_poll, for_sock);
@@ -80,33 +79,33 @@ is
 
   function receive_event
     (from_poll    : not null access poll_type;
-     for_sock     : not null access socket
-    ) return Boolean;
+     for_sock     : not null socket_access) return Boolean
+     with  pre => initialized (for_sock);
 
   function accept_event
     (from_poll    : not null access poll_type;
-     for_sock     : not null access socket
-    ) return Boolean;
+     for_sock     : not null socket_access) return Boolean
+     with  pre => initialized (for_sock);
 
   function send_event
     (from_poll    : not null access poll_type;
-     for_sock     : not null access socket
-    ) return Boolean;
+     for_sock     : not null socket_access) return Boolean
+     with  pre => initialized (for_sock);
 
   function poll_error
     (from_poll    : not null access poll_type;
-     for_sock     : not null access socket
-    ) return Boolean;
+     for_sock     : not null socket_access) return Boolean
+     with  pre => initialized (for_sock);
 
   function hang_up_error
     (from_poll    : not null access poll_type;
-     for_sock     : not null access socket
-    ) return Boolean;
+     for_sock     : not null socket_access) return Boolean
+     with  pre => initialized (for_sock);
 
   function socket_descritor_error
     (from_poll    : not null access poll_type;
-     for_sock     : not null access socket
-    ) return Boolean;
+     for_sock     : not null socket_access) return Boolean
+     with  pre => initialized (for_sock);
 
 private
 

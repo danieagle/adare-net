@@ -98,7 +98,7 @@ library project adare_net is
       when "release" =>
         for switches ("Ada")
           use ("-gnat2022", "-O3", "-gnateE", "-gnatef", "-gnateV", "-gnatf", "-gnaty2abCefhiklnprstmM135", "-gnatwa");
-        for switches ("C") 
+        for switches ("C")
           use ("-O3", "-Wall", "-Wextra", "-Wshadow", "-Wuninitialized", "-Wundef", "-march=native");
 
     end case;
