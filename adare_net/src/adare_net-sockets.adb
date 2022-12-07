@@ -602,7 +602,7 @@ is
       buffer := new socket_buffer;
     end if;
 
-    Stream_Element_Array'Write (buffer.all'Access, data_tmp (1 .. Stream_Element_Offset (len)));
+    Stream_Element_Array'Write (buffer, data_tmp (1 .. Stream_Element_Offset (len)));
 
     return len;
   end receive;
@@ -678,7 +678,7 @@ is
       buffer  := new socket_buffer;
     end if;
 
-    Stream_Element_Array'Write (buffer.all'Access, data_tmp (1 .. Stream_Element_Offset (len)));
+    Stream_Element_Array'Write (buffer, data_tmp (1 .. Stream_Element_Offset (len)));
 
     from.all  :=  from_tmp;
 
@@ -791,7 +791,7 @@ is
     if raw.all'Length = 0 then
       return True;
     end if;
-    Stream_Element_Array'Write (buffer.all'Access, raw.all);
+    Stream_Element_Array'Write (buffer, raw.all);
 
     return True;
   end add_raw;
