@@ -281,7 +281,7 @@ private
   type sockaddr_storage is
     record
       ss_family : aliased Unsigned_16 := 0;
-      padding   : aliased char_array (1 .. 132) := (others => char'Val (0));
+      padding   : aliased char_array (1 .. 132) := [others => char'Val (0)];
     end record
       with Convention => C, Preelaborable_initialization;
 

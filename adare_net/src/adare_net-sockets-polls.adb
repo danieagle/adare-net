@@ -112,8 +112,8 @@ is
   procedure reset_all (who  : not null access poll_type)
   is
   begin
-    who.pos   := (others => 0);
-    who.poll  := (others => null_pollfd);
+    who.pos   := [others => 0];
+    who.poll  := [others => null_pollfd];
     who.count := 0;
   end reset_all;
 

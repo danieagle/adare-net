@@ -12,7 +12,7 @@
 -- But is yet up to you create a yet better real world champion software with Adare_net and you can do it!! ^^
 
 -- Info about this software:
--- Ucp server with Adare_net example. It work in pair with client2
+-- Ucp server with Adare_net example. It work in pair with client1
 -- The working address can be ipv6 or ipv4, automatically. The first working one will be picked.
 
 with Ada.Text_IO;
@@ -40,7 +40,7 @@ use  adare_net_init;
 with Interfaces.C;
 use Interfaces, Interfaces.C;
 
-procedure server2
+procedure server1
 is
 begin
   start_adare_net;
@@ -320,4 +320,4 @@ begin
 
   stop_adare_net;
 
-end server2;
+end server1;

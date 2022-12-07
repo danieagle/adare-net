@@ -54,7 +54,7 @@ is
     ai_family  : constant  Address_family := Address_family (show.storage.ss_family);
 
     dest : char_array :=
-      (1 .. size_t (if ai_family = v4  then v4_str_length elsif ai_family = v6  then v6_str_length else 0) => char'Val (0));
+      [1 .. size_t (if ai_family = v4  then v4_str_length elsif ai_family = v6  then v6_str_length else 0) => char'Val (0)];
 
     dest_length : size_t := dest'Length;
   begin
@@ -164,7 +164,7 @@ is
     if Item'Length = 0 then
       b1 :
       declare
-        mi_empty  : constant Stream_Element_Array (1 .. 0) := (others => 0);
+        mi_empty  : constant Stream_Element_Array (1 .. 0) := [others => 0];
       begin
         Item := mi_empty;
         Last  := Item'Last;
@@ -221,7 +221,7 @@ is
     if mve or else item_len > data_tail_length (Stream) then
 
       Stream.data (old_data'Range) := old_data;
-      Stream.data (old_data'Last + 1 .. Stream.data'Last) := (others => 0);
+      Stream.data (old_data'Last + 1 .. Stream.data'Last) := [others => 0];
 
       Stream.head_first := 1;
       Stream.tail_end := old_data'Last;
@@ -393,7 +393,7 @@ is
     sock.sock    := 0;
 
     sock.storage.storage.ss_family  := 0;
-    sock.storage.storage.padding    := (others => char'Val (0));
+    sock.storage.storage.padding    := [others => char'Val (0)];
 
     sock.storage.socktype  := 0;
     sock.storage.protocol  := 0;
@@ -559,7 +559,7 @@ is
      buffer   : in out stream_element_array_access;
      max_len  : Stream_Element_Count := 1500) return ssize_t
   is
-    data_tmp  : Stream_Element_Array := (1 .. max_len => 0);
+    data_tmp  : Stream_Element_Array := [1 .. max_len => 0];
     len       : ssize_t  := 0;
   begin
     len :=  inners.inner_recv (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0);
@@ -579,7 +579,7 @@ is
      buffer   : in out socket_buffer_access;
      max_len  : Stream_Element_Count := 1500) return ssize_t
   is
-    data_tmp  : Stream_Element_Array := (1 .. max_len => 0);
+    data_tmp  : Stream_Element_Array := [1 .. max_len => 0];
     len       : ssize_t  := 0;
   begin
     len :=  inners.inner_recv (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0);
@@ -604,7 +604,7 @@ is
      from     : in out addresses_access;
      max_len  : Stream_Element_Count := 1500) return ssize_t
   is
-    data_tmp  : Stream_Element_Array := (1 .. max_len => 0);
+    data_tmp  : Stream_Element_Array := [1 .. max_len => 0];
     len       : ssize_t  := 0;
     from_tmp  : aliased addresses := sock.storage;
     len_tmp   : aliased socklen_t := socklen_t (from_tmp.storage'Size / 8);
@@ -612,7 +612,7 @@ is
   begin
 
     from_tmp.storage.ss_family  := 0;
-    from_tmp.storage.padding    := (others => char'Val (0));
+    from_tmp.storage.padding    := [others => char'Val (0)];
 
     len :=  inners.inner_recvfrom (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0,
       from_tmp.storage'Address, len_tmp);
@@ -641,7 +641,7 @@ is
      from     : in out addresses_access;
      max_len  : Stream_Element_Count := 1500) return ssize_t
   is
-    data_tmp  : Stream_Element_Array := (1 .. max_len => 0);
+    data_tmp  : Stream_Element_Array := [1 .. max_len => 0];
     len       : ssize_t  := 0;
     from_tmp  : aliased addresses := sock.storage;
     len_tmp   : aliased socklen_t := socklen_t (from_tmp.storage'Size / 8);
@@ -649,7 +649,7 @@ is
   begin
 
     from_tmp.storage.ss_family  := 0;
-    from_tmp.storage.padding    := (others => char'Val (0));
+    from_tmp.storage.padding    := [others => char'Val (0)];
 
     len :=  inners.inner_recvfrom (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0,
       from_tmp.storage'Address, len_tmp);
@@ -794,7 +794,7 @@ is
     if buffer.data = null then
       b1 :
       declare
-        mi_data : Stream_Element_Array :=  (1 .. 0 => 0);
+        mi_data : Stream_Element_Array :=  [1 .. 0 => 0];
       begin
         return mi_data;
       end b1;
@@ -805,7 +805,7 @@ is
 
 
   function string_error return String is
-    message_a : aliased char_array (1 .. 260) := (others => char'Val (0));
+    message_a : aliased char_array (1 .. 260) := [others => char'Val (0)];
     length_a  : aliased int :=  int (message_a'Last) - 1;
   begin
     inners.inner_show_error (message_a, length_a);
