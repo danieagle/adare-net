@@ -47,22 +47,18 @@ begin
 
   b0 :
   declare
-    host_addr : constant addresses_list_access := new addresses_list'(
-      init_addresses (ip_or_host =>  "", -- host addresses
-                      port        =>  "25000",
-                      ai_socktype =>  tcp,
-                      ai_family   =>  any -- choose ipv4 and ipv6
-                      )
-    );
-
-
+    host_addr : addresses_list_access := null;
     host_sock : socket_access := null;
-
     ok        : Boolean := False;
-
     choosed_remote_addr :  addresses_access := null;
   begin
-    if host_addr'Length < 1 then
+    init_addresses (ip_or_host =>  "", -- host addresses
+                      port        =>  "25000",
+                      ai_socktype =>  tcp,
+                      ai_family   =>  any, -- choose ipv4 and ipv6
+                      addr        =>  host_addr);
+
+    if host_addr.all'Length < 1 then
 
       Text_IO.Put_Line (" Failed to discover addresses in this host. Quitting.");
 
@@ -110,18 +106,16 @@ begin
     declare
 
       incomming_socket  : socket_access;
-      mi_poll           : aliased polls.poll_type (1); -- each poll_type have a independent range of 1 .. 255
-
+      mi_poll           : aliased polls.poll_type (1);
 
       task type recv_send_task (sock  : socket_access);
 
-
-      task body recv_send_task -- See ARM-2012 7.6 (9.2/2)
+      task body recv_send_task
       is
-        incomming_sock : constant socket_access :=  new socket'(sock.all);
+        connected_sock : socket_access :=  new socket'(sock.all);
       begin
 
-        if not (initialized (incomming_sock) or else connected (incomming_sock)) then
+        if not (initialized (connected_sock) or else connected (connected_sock)) then
           Text_IO.Put_Line (" Incomming socket not initialized or connected.");
           Text_IO.Put_Line (" Quitting this working task.");
 
@@ -137,8 +131,8 @@ begin
 
           task_poll         : aliased polls.poll_type (1);
 
-          recv_send_buffer  : socket_buffer_access := null;
-          recv_send_buffer2 : socket_buffer_access := null;
+          recv_send_buffer  : socket_buffer_access := new socket_buffer;
+          recv_send_buffer2 : socket_buffer_access := new socket_buffer;
 
           size_tmp          : ssize_t  := 1;
           result_from_poll  : int := 0;
@@ -147,21 +141,24 @@ begin
 
           message : Unbounded_String := To_Unbounded_String ("");
         begin
+          clean (recv_send_buffer);
+          clean (recv_send_buffer2);
 
           Text_IO.Put_Line (" " & this_task_id_str & " remote host " &
-            get_address_and_port (new addresses'(get_addresses (incomming_sock))));
+            get_address_and_port (new addresses'(get_addresses (connected_sock))));
 
-          polls.add_events (task_poll'Access, incomming_sock, polls.receive_ev); -- all *_ev events can be or'ed.
+          polls.add_events (task_poll'Access, connected_sock, polls.receive_ev); -- all *_ev events can be or'ed.
 
           Text_IO.Put_Line (" " & this_task_id_str & " waiting to receive data.");
 
-          result_from_poll  := polls.start_events_listen (task_poll'Access, 2000); -- block, 2 seconds time_out
+          result_from_poll  := polls.start_events_listen (task_poll'Access, 3000); -- block, 3 seconds time_out
 
           if result_from_poll > 0 then
 
-            size_tmp  := receive (incomming_sock, recv_send_buffer); -- block and initialize recv_send_buffer
+            size_tmp  := receive (connected_sock, recv_send_buffer); -- block and initialize recv_send_buffer
 
             if size_tmp = socket_error then
+
               Text_IO.Put_Line (" " & this_task_id_str & " An error occurred during reception.");
               Text_IO.Put_Line (" " & this_task_id_str & " finishing task.");
 
@@ -175,20 +172,7 @@ begin
 
               bt1 :
               begin
-
-                --  the following is necessary
-
-                --  if recv_send_buffer = null then
-                --    recv_send_buffer := new socket_buffer;
-                --  end if;
-
-                --  But 'receive' already made It in 'recv_send_buffer' for us.
-
-                String'Output (recv_send_buffer, "Thank you for send ");
-
-                if recv_send_buffer2 = null then
-                  recv_send_buffer2 := new socket_buffer;
-                end if;
+                String'Output (recv_send_buffer2, "Thank you for send ");
 
                 loop1 :
                 loop
@@ -217,7 +201,7 @@ begin
               Text_IO.Put_Line (" " & this_task_id_str & " but it is a normal time_out.");
 
             else
-              if polls.hang_up_error (task_poll'Access, incomming_sock) then
+              if polls.hang_up_error (task_poll'Access, connected_sock) then
 
                 Text_IO.Put_Line (" " & this_task_id_str & " remote host closed the connection. Quitting.");
 
@@ -228,15 +212,15 @@ begin
 
           polls.clear_all_event_responses (task_poll'Access);
 
-          polls.update (task_poll'Access, incomming_sock, polls.send_ev);
+          polls.update (task_poll'Access, connected_sock, polls.send_ev);
 
           Text_IO.Put_Line (" " & this_task_id_str & " waiting to send data to remote host");
 
-          result_from_poll  := polls.start_events_listen (task_poll'Access, 2000); -- block, 2 seconds timeout.
+          result_from_poll  := polls.start_events_listen (task_poll'Access, 3000); -- block, 3 seconds timeout.
 
           if result_from_poll > 0 then
 
-            size_tmp  := send (incomming_sock, recv_send_buffer2); -- block
+            size_tmp  := send (connected_sock, recv_send_buffer2); -- block
 
             Text_IO.Put_Line (" " & this_task_id_str & " sended messages !");
 
@@ -250,7 +234,7 @@ begin
 
             else
 
-              if polls.hang_up_error (task_poll'Access, incomming_sock) then
+              if polls.hang_up_error (task_poll'Access, connected_sock) then
 
                 Text_IO.Put_Line (" " & this_task_id_str & " remote host closed the connection. Quitting");
 
@@ -260,9 +244,9 @@ begin
 
           <<finish1_task_label>>
 
-          if initialized (incomming_sock) then
+          if initialized (connected_sock) then
 
-            close (incomming_sock);
+            close (connected_sock);
 
           end if;
         end bt0;

@@ -3,7 +3,7 @@
 -- but is yet up to you create a real world champion software with Adare_net and you can do it!! ^^
 
 -- Info about this software:
--- Tcp client with Adare_net example. It work in pair with server1
+-- Tcp client with Adare_net example. It work in pair with tcp server
 
 with Ada.Command_Line;
 with Ada.Text_IO;
@@ -54,36 +54,37 @@ begin
 
   b0 :
   declare
-    buffer  : aliased socket_buffer;
+    buffer  : socket_buffer_access := new socket_buffer;
   begin
+    clean (buffer);
 
     for qtd in 3 .. Argument_Count loop
-      String'Output (buffer'Access, Argument (qtd)); -- automatic conversion
+      String'Output (buffer, Argument (qtd)); -- automatic conversion
     end loop;
 
     b1 :
     declare
-      remote_addr  : aliased addresses_list :=
-        init_addresses
-          (ip_or_host   =>  Argument (1),
-           port         =>  Argument (2),
-           ai_socktype  =>  tcp,
-           ai_family    =>  any
-          );
+      remote_addr  : addresses_list_access;
 
       ok  :  Boolean := False;
 
-      host_sock             : aliased socket;
-      choosed_remote_addr   : aliased addresses;
+      host_sock             : socket_access     := null;
+      choosed_remote_addr   : addresses_access  := null;
 
       bytes_tmp : ssize_t :=  0;
 
-      host_poll   : aliased polls.poll_type (2);
+      host_poll : aliased polls.poll_type (2);
 
       result_from_poll : int := 0;
-
     begin
-      if remote_addr'Length < 1 then
+      init_addresses
+        (ip_or_host    =>  Argument (1),
+         port         =>  Argument (2),
+         ai_socktype  =>  tcp,
+         ai_family    =>  any,
+         addr         =>  remote_addr);
+
+      if remote_addr.all'Length < 1 then
 
         Text_IO.New_Line;
         Text_IO.Put_Line (" Failed to discover remote host addresses.");
@@ -95,9 +96,9 @@ begin
 
       Text_IO.Put_Line (" Remote host addresses discovered:");
 
-      utils.show_address_and_port (remote_addr'Access);
+      utils.show_address_and_port (remote_addr);
 
-      if not init_socket (host_sock, remote_addr'Access) then
+      if not init_socket (host_sock, remote_addr) then
 
         Text_IO.New_Line;
         Text_IO.Put_Line (" Error while trying initialize socket:");
@@ -117,18 +118,18 @@ begin
         goto end_app_label1;
       end if;
 
-      choosed_remote_addr  :=  get_addresses (host_sock);
+      choosed_remote_addr  :=  new addresses'(get_addresses (host_sock));
 
       Text_IO.New_Line;
 
-      Text_IO.Put_Line (" Connected at address :=  "  & get_addresses (choosed_remote_addr'Access) &
-        " and at port := " & get_port (choosed_remote_addr'Access));
+      Text_IO.Put_Line (" Connected at address :=  "  & get_addresses (choosed_remote_addr) &
+        " and at port := " & get_port (choosed_remote_addr));
 
       Text_IO.New_Line;
 
       Text_IO.Put_Line (" Waiting to send messages. ");
 
-      polls.add_events (host_poll'Access, host_sock'Access, polls.send_ev);
+      polls.add_events (host_poll'Access, host_sock, polls.send_ev);
 
       result_from_poll := polls.start_events_listen (host_poll'Access, 2500); -- block, 2.5 seconds timeout.
 
@@ -136,13 +137,21 @@ begin
 
         bytes_tmp := send (host_sock, buffer);
 
+        if bytes_tmp = socket_error then
+
+          Text_IO.Put_Line (" An error occurred during sending data.");
+          Text_IO.Put_Line (" Finishing task.");
+
+          goto end_app_label1;
+        end if;
+
         if bytes_tmp > 0 then
 
           Text_IO.Put_Line (" Successfull sended " & bytes_tmp'Image & " bytes.");
 
         else
 
-          Text_IO.Put_Line (" Failed in send messages to " & get_address_and_port (choosed_remote_addr'Access));
+          Text_IO.Put_Line (" Failed in send messages to " & get_address_and_port (choosed_remote_addr));
 
           if bytes_tmp = 0 then
 
@@ -157,7 +166,7 @@ begin
 
       else
 
-        Text_IO.Put_Line (" Failed to send to remote host " & get_address_and_port (choosed_remote_addr'Access));
+        Text_IO.Put_Line (" Failed to send to remote host " & get_address_and_port (choosed_remote_addr));
 
         if result_from_poll = 0 then
 
@@ -165,9 +174,9 @@ begin
 
         else
 
-          if polls.hang_up_error (host_poll'Access, host_sock'Access) then
+          if polls.hang_up_error (host_poll'Access, host_sock) then
 
-            Text_IO.Put_Line (" Remote Host " & get_address_and_port (choosed_remote_addr'Access) & " closed the connection. ");
+            Text_IO.Put_Line (" Remote Host " & get_address_and_port (choosed_remote_addr) & " closed the connection. ");
 
             Text_IO.Put_Line (" Nothing more to do. Quitting.");
 
@@ -181,17 +190,25 @@ begin
 
       Text_IO.Put_Line (" Waiting to receive message(s). ");
 
-      polls.update (host_poll'Access, host_sock'Access, polls.receive_ev);
+      polls.update (host_poll'Access, host_sock, polls.receive_ev);
 
-      result_from_poll := polls.start_events_listen (host_poll'Access, 2500); --block, 2.5 seconds timout
+      result_from_poll := polls.start_events_listen (host_poll'Access, 2500); -- block, 2.5 seconds timout
 
       if result_from_poll > 0 then
 
         bytes_tmp  := receive (host_sock, buffer); -- block
 
+        if bytes_tmp = socket_error then
+
+          Text_IO.Put_Line (" An error occurred during receiving data.");
+          Text_IO.Put_Line (" Finishing task.");
+
+          goto end_app_label1;
+        end if;
+
         if bytes_tmp > 0 then
 
-          Text_IO.Put_Line (" Received message(s) from " & get_address_and_port (choosed_remote_addr'Access));
+          Text_IO.Put_Line (" Received message(s) from " & get_address_and_port (choosed_remote_addr));
 
           Text_IO.Put_Line (" Messages length " & bytes_tmp'Image & " bytes.");
 
@@ -205,7 +222,7 @@ begin
             loop3 :
             loop
 
-              Text_IO.Put_Line (" |" & String'Input (buffer'Access) & "|");
+              Text_IO.Put_Line (" |" & String'Input (buffer) & "|");
 
             end loop loop3;
 
@@ -213,14 +230,14 @@ begin
             when buffer_insufficient_space_error =>
 
               Text_IO.New_Line;
-              Text_IO.Put_Line (" All messages received from " & get_address_and_port (choosed_remote_addr'Access) & " showed.");
+              Text_IO.Put_Line (" All messages received from " & get_address_and_port (choosed_remote_addr) & " showed.");
           end b2;
 
           ok := True;
 
         else
 
-          Text_IO.Put_Line (" Failed in receive messages from " & get_address_and_port (choosed_remote_addr'Access));
+          Text_IO.Put_Line (" Failed in receive messages from " & get_address_and_port (choosed_remote_addr));
 
           if bytes_tmp = 0 then
 
@@ -236,7 +253,7 @@ begin
 
       else
 
-        Text_IO.Put_Line (" Failed in receive messages from " & get_address_and_port (choosed_remote_addr'Access));
+        Text_IO.Put_Line (" Failed in receive messages from " & get_address_and_port (choosed_remote_addr));
 
         if result_from_poll = 0 then
 
@@ -246,9 +263,9 @@ begin
 
         else
 
-          if polls.hang_up_error (host_poll'Access, host_sock'Access) then
+          if polls.hang_up_error (host_poll'Access, host_sock) then
 
-            Text_IO.Put_Line (" Remote Host " & get_address_and_port (choosed_remote_addr'Access) & " closed the connection. ");
+            Text_IO.Put_Line (" Remote Host " & get_address_and_port (choosed_remote_addr) & " closed the connection. ");
 
             Text_IO.Put_Line (" Besides reconnect, nothing to do in this case." & " quitting.");
 
