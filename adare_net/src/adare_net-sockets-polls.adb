@@ -14,21 +14,18 @@ is
 
   function is_in
     (in_poll    : not null access poll_type;
-     what       : not null access socket
+     what       : not null socket_access
      ) return Boolean
-  is (for some E of in_poll.pos (1 .. in_poll.count) =>
-      E = get_sock (what.all));
+  is (for some E of in_poll.pos (1 .. in_poll.count) => E = get_sock (what));
 
   procedure add_events
     (to_poll    : not null access poll_type;
-     sock       : not null access socket;
+     sock       : not null socket_access;
      with_events_bitmap : in event_type
     )
   is
-    sock_tmp    : constant socket_type := get_sock (sock.all);
-    pollfd_tmp  : constant pollfd :=
-      (fd => sock_tmp, events => unsigned_short (with_events_bitmap),
-       revents => 0);
+    sock_tmp    : constant socket_type := get_sock (sock);
+    pollfd_tmp  : constant pollfd := (fd => sock_tmp, events => unsigned_short (with_events_bitmap), revents => 0);
 
     index : Unsigned_8 := 0;
   begin
@@ -66,10 +63,10 @@ is
 
   procedure remove
     (from_poll   : not null access poll_type;
-     what         : not null access socket
+     what         : not null socket_access
     )
   is
-    sock_tmp    : constant socket_type := get_sock (what.all);
+    sock_tmp    : constant socket_type := get_sock (what);
 
     index1  : constant Unsigned_8 := from_poll.count;
     index   : Unsigned_8 := index1;
@@ -93,11 +90,11 @@ is
 
   procedure update
     (from_poll    : not null access poll_type;
-     for_sock     : not null access socket;
+     for_sock     : not null socket_access;
      with_events_bitmap : in event_type
     )
   is
-    sock_tmp    : constant socket_type := get_sock (for_sock.all);
+    sock_tmp    : constant socket_type := get_sock (for_sock);
     index : Unsigned_8 := 0;
   begin
 
@@ -129,16 +126,15 @@ is
   is
   begin
 
-    return  inners.inner_poll (from_poll.poll (1)'Address,
-              int (from_poll.count), time_out);
+    return  inners.inner_poll (from_poll.poll (1)'Address, int (from_poll.count), time_out);
   end start_events_listen;
 
   function receive_event
     (from_poll    : not null access poll_type;
-     for_sock     : not null access socket
+     for_sock     : not null socket_access
     ) return Boolean
   is
-    sock_tmp    : constant socket_type := get_sock (for_sock.all);
+    sock_tmp    : constant socket_type := get_sock (for_sock);
     index : Unsigned_8 := 0;
   begin
 
@@ -154,16 +150,16 @@ is
 
   function accept_event
     (from_poll    : not null access poll_type;
-     for_sock     : not null access socket
+     for_sock     : not null socket_access
     ) return Boolean
   is (receive_event (from_poll, for_sock));
 
   function send_event
     (from_poll    : not null access poll_type;
-     for_sock     : not null access socket
+     for_sock     : not null socket_access
     ) return Boolean
   is
-    sock_tmp    : constant socket_type := get_sock (for_sock.all);
+    sock_tmp    : constant socket_type := get_sock (for_sock);
     index : Unsigned_8 := 0;
   begin
 
@@ -179,10 +175,10 @@ is
 
   function poll_error
     (from_poll    : not null access poll_type;
-     for_sock     : not null access socket
+     for_sock     : not null socket_access
     ) return Boolean
   is
-    sock_tmp    : constant socket_type := get_sock (for_sock.all);
+    sock_tmp    : constant socket_type := get_sock (for_sock);
     index : Unsigned_8 := 0;
   begin
 
@@ -197,10 +193,10 @@ is
 
   function hang_up_error
     (from_poll    : not null access poll_type;
-     for_sock     : not null access socket
+     for_sock     : not null socket_access
     ) return Boolean
   is
-    sock_tmp    : constant socket_type := get_sock (for_sock.all);
+    sock_tmp    : constant socket_type := get_sock (for_sock);
     index : Unsigned_8 := 0;
   begin
 
@@ -210,16 +206,15 @@ is
       exit loop1 when E = sock_tmp;
     end loop loop1;
 
-    return
-      (from_poll.poll (index).revents and unsigned_short (hang_up_err)) > 0;
+    return (from_poll.poll (index).revents and unsigned_short (hang_up_err)) > 0;
   end hang_up_error;
 
   function socket_descritor_error
     (from_poll    : not null access poll_type;
-     for_sock     : not null access socket
+     for_sock     : not null socket_access
     ) return Boolean
   is
-    sock_tmp    : constant socket_type := get_sock (for_sock.all);
+    sock_tmp    : constant socket_type := get_sock (for_sock);
     index : Unsigned_8 := 0;
   begin
 
@@ -229,8 +224,7 @@ is
       exit loop1 when E = sock_tmp;
     end loop loop1;
 
-    return (from_poll.poll (index).revents and
-            unsigned_short (socket_descritor_err)) > 0;
+    return (from_poll.poll (index).revents and unsigned_short (socket_descritor_err)) > 0;
   end socket_descritor_error;
 
 

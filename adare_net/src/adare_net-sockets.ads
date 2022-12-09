@@ -16,95 +16,76 @@ is
   use Interfaces.C;
   use socket_types;
 
-
   type ports  is new  Unsigned_16;
-
 
   type Address_family is new Unsigned_16;
 
-  any : constant Address_family with Import => True, Convention => C,
-                                     external_name => "c_af_unspec";
-  v4  : constant Address_family with Import => True, Convention => C,
-                                     external_name => "c_af_inet";
-  v6  : constant Address_family with Import => True, Convention => C,
-                                     external_name => "c_af_inet6";
-
+  any : constant Address_family with Import => True, Convention => C, external_name => "c_af_unspec";
+  v4  : constant Address_family with Import => True, Convention => C, external_name => "c_af_inet";
+  v6  : constant Address_family with Import => True, Convention => C, external_name => "c_af_inet6";
 
   type Address_type is new int;
 
-  tcp : constant Address_type with Import => True, Convention => C,
-                                   external_name => "c_sock_stream";
-  udp : constant Address_type with Import => True, Convention => C,
-                                   external_name => "c_sock_dgram";
+  tcp : constant Address_type with Import => True, Convention => C, external_name => "c_sock_stream";
+  udp : constant Address_type with Import => True, Convention => C, external_name => "c_sock_dgram";
 
-
-  v6_str_length : constant int with Import => True, Convention => C,
-                                    External_Name => "c_v6_str_length";
-  v4_str_length : constant int with Import => True, Convention => C,
-                                    External_Name => "c_v4_addrstrlen";
-
+  v6_str_length : constant int with Import => True, Convention => C, External_Name => "c_v6_str_length";
+  v4_str_length : constant int with Import => True, Convention => C, External_Name => "c_v4_addrstrlen";
 
   type addresses  is  private
     with Preelaborable_initialization;
 
+  null_addresses  : constant addresses;
+
+  type addresses_access is access all addresses;
+
   type addresses_list is array (Positive range <>) of aliased addresses
      with Preelaborable_initialization;
 
-  null_addresses  : constant addresses;
+  type addresses_list_access is access all addresses_list;
 
-  function init_addresses
+  type stream_element_array_access is access all Stream_Element_Array;
+
+  procedure init_addresses
+    (ip_or_host   : String;
+     port         : String;
+     ai_socktype  : Address_type;
+     ai_family    : Address_family;
+     addr         : out addresses_list_access
+    )
+    with pre => (ai_socktype = tcp or else ai_socktype = udp) and then (ai_family = any or else ai_family = v4 or else ai_family = v6);
+
+  procedure init_addresses
     (ip_or_host : String;
      port       : String;
      ai_socktype  : Address_type;
-     ai_family    : Address_family
-    ) return addresses_list
-    with pre => (port /= "" or else ip_or_host /= "")
-      and then (ai_socktype = tcp or else ai_socktype = udp)
-      and then (ai_family = any or else ai_family = v4 or else ai_family = v6);
-
-  function init_addresses
-    (ip_or_host : String;
-     port       : String;
-     ai_socktype  : Address_type;
-     ai_family    : Address_family
-    ) return addresses
-    with pre => (port /= "" or else ip_or_host /= "")
-      and then (ai_socktype = tcp or else ai_socktype = udp)
-      and then (ai_family = any or else ai_family = v4 or else ai_family = v6);
+     ai_family    : Address_family;
+     addr         : out addresses_access
+    )
+    with pre => (ai_socktype = tcp or else ai_socktype = udp) and then (ai_family = any or else ai_family = v4 or else ai_family = v6);
 
   function get_addresses
-    (show  : not null access addresses) return String;
-
-  function get_addresses
-    (show  : in addresses) return String;
+    (show  : not null addresses_access) return String
+     with Pre =>  initialized (show);
 
   function get_port
-    (show  : not null access addresses) return String;
-
-  function get_port
-    (show  : in addresses) return String;
+    (show  : not null addresses_access) return String
+     with Pre =>  initialized (show);
 
   function get_address_and_port
-    (show  : not null access addresses) return String;
-
-  function get_address_and_port
-    (show  : in addresses) return String;
+    (show  : not null addresses_access) return String
+     with Pre =>  initialized (show);
 
   function get_address_family
-    (show  : not null access addresses) return Address_family;
-
-  function get_address_family
-    (show  : in addresses) return Address_family;
+    (show  : not null addresses_access) return Address_family
+     with Pre =>  initialized (show);
 
   function is_null
-    (addr  : not null access addresses) return Boolean;
+    (addr  : not null addresses_access) return Boolean;
 
-  function is_null
-    (addr  : in addresses) return Boolean;
+  type socket_buffer  is new Root_Stream_Type with private;
 
-
-  type socket_buffer (buffer_length : Stream_Element_Count)
-  is new Root_Stream_Type with private;
+  type socket_buffer_access is access all socket_buffer;
 
   overriding
   procedure Read
@@ -117,217 +98,173 @@ is
     (Stream : in out socket_buffer;
      Item   : in Stream_Element_Array);
 
+  type rewind_t is private;
+
+  function get_read_rewind
+    (from : not null socket_buffer_access) return rewind_t
+     with pre => not is_empty (from);
+
+  function read_rewind
+    (who : not null socket_buffer_access;
+     rewind_at  : rewind_t) return Boolean
+     with pre => not is_empty (who);
 
   type socket is private
     with Preelaborable_initialization;
 
-  function init_socket
-    (sock  : in out socket;
-     addr  : not null access addresses) return Boolean
-     with  pre => not initialized (sock);
+  type socket_access is access all socket;
 
   function init_socket
-    (sock   : in out socket;
-     addr   : not null access addresses_list) return Boolean
-     with  pre => not initialized (sock);
+    (sock  : out socket_access;
+     addr  : not null addresses_access) return Boolean
+     with  pre => initialized (addr);
 
+  function init_socket
+    (sock  : out socket_access;
+     addr  : not null addresses_list_access) return Boolean
+     with  pre => initialized (addr);
 
   procedure reuse_address
-    (sock  : in out socket)
-     with  pre => (initialized (sock))
-      and then (not binded (sock));
+    (sock  : not null socket_access)
+     with  pre => (initialized (sock)) and then (not binded (sock));
 
   function bind
-    (sock  : in out socket) return Boolean
-    with  pre => (initialized (sock)) and then  (not binded (sock)) and then
-                 (not connected (sock)) and then (not listened (sock));
+    (sock  : not null socket_access) return Boolean
+     with  pre => (initialized (sock)) and then (not binded (sock)) and then (not connected (sock)) and then (not listened (sock));
 
   function listen
-    (sock     : in out socket;
+    (sock     : not null socket_access;
      backlog  : int) return Boolean
-    with  pre => (binded (sock)) and then (not listened (sock))
-                and then backlog >= 0;
+     with  pre => (binded (sock)) and then (not listened (sock)) and then backlog >= 0;
 
   function accept_socket
-    (sock     : not null access socket;
-     new_sock : in out socket) return Boolean
-  with  pre => listened (sock);
+    (sock     : not null socket_access;
+     new_sock : out socket_access) return Boolean
+     with  pre => listened (sock);
 
   function connect
-    (sock  : in out socket) return Boolean
-    with  pre => (initialized (sock)) and then  (not binded (sock)) and then
-                 (not connected (sock)) and then (not listened (sock));
+    (sock  : not null socket_access) return Boolean
+     with  pre => (initialized (sock)) and then (not binded (sock)) and then (not connected (sock)) and then (not listened (sock));
 
   procedure close
-    (sock  : in out socket)
+    (sock  : not null socket_access)
      with  pre => initialized (sock);
 
   procedure clean
-    (sock  : in out socket);
+    (sock  : not null socket_access);
 
   function send
-    (sock     : socket;
-     buffer   : in Stream_Element_Array
-    ) return ssize_t;
+    (sock     : not null socket_access;
+     buffer   : not null stream_element_array_access) return ssize_t
+     with  pre => initialized (sock);
 
   function send
-    (sock     : socket;
-     buffer   : in out socket_buffer
-    ) return ssize_t;
+    (sock     : not null socket_access;
+     buffer   : not null socket_buffer_access) return ssize_t
+     with  pre => initialized (sock);
 
   function sendto
-    (sock     : socket;
-     send_to  : addresses;
-     buffer   : in Stream_Element_Array) return ssize_t;
+    (sock     : not null socket_access;
+     send_to  : not null addresses_access;
+     buffer   : not null stream_element_array_access) return ssize_t
+     with  pre => initialized (sock) and then initialized (send_to);
 
   function sendto
-    (sock     : socket;
-     send_to  : addresses;
-     buffer   : in out socket_buffer) return ssize_t;
+    (sock     : not null socket_access;
+     send_to  : not null addresses_access;
+     buffer   : not null socket_buffer_access) return ssize_t
+     with  pre => initialized (sock) and then initialized (send_to);
 
   function receive
-    (sock     : socket;
-     buffer   : in out Stream_Element_Array
-    ) return ssize_t;
+    (sock     : not null socket_access;
+     buffer   : out stream_element_array_access;
+     max_len  : Stream_Element_Count := 1500) return ssize_t
+     with  pre => initialized (sock);
 
   function receive
-    (sock     : socket;
-     buffer   : in out socket_buffer
-    ) return ssize_t
-    with pre => not is_full (buffer);
+    (sock     : not null socket_access;
+     buffer   : not null socket_buffer_access;
+     max_len  : Stream_Element_Count := 1500) return ssize_t
+     with  pre => initialized (sock);
 
   function receive_from
-    (sock     : socket;
-     buffer   : in out Stream_Element_Array;
-     from     : out addresses) return ssize_t;
+    (sock     : not null socket_access;
+     buffer   : out stream_element_array_access;
+     from     : out addresses_access;
+     max_len  : Stream_Element_Count := 1500) return ssize_t
+     with  pre => initialized (sock);
 
   function receive_from
-    (sock     : socket;
-     buffer   : in out socket_buffer;
-     from     : out addresses) return ssize_t
-     with pre => not is_full (buffer);
+    (sock     : not null socket_access;
+     buffer   : not null socket_buffer_access;
+     from     : out addresses_access;
+     max_len  : Stream_Element_Count := 1500) return ssize_t
+     with  pre => initialized (sock);
 
   function get_sock
-    (sock : in socket) return socket_type
+    (sock : not null socket_access) return socket_type
      with pre => initialized (sock);
 
   function get_addresses
-    (sock : in socket) return addresses
+    (sock : not null socket_access) return addresses
      with pre => initialized (sock);
 
+  function get_addresses
+    (sock : not null socket_access) return addresses_access
+     with pre => initialized (sock);
 
   function initialized
-    (sock  :  socket) return Boolean;
+    (sock  : not null socket_access) return Boolean;
 
   function initialized
-    (sock  : not null access socket) return Boolean;
+    (addr  : not null addresses_list_access) return Boolean;
 
+  function initialized
+    (addr  : not null addresses_access) return Boolean;
 
   function connected
-    (sock  : not null access socket) return Boolean;
-
-  function connected
-    (sock  : in socket) return Boolean;
-
+    (sock  : not null socket_access) return Boolean;
 
   function binded
-    (sock  : not null access socket) return Boolean;
-
-  function binded
-    (sock  : in socket) return Boolean;
-
+    (sock  : not null socket_access) return Boolean;
 
   function listened
-    (sock  :  not null access socket) return Boolean;
-
-  function listened
-    (sock  :  in socket) return Boolean;
-
+    (sock  :  not null socket_access) return Boolean;
 
   function is_empty
-    (buffer : not null access socket_buffer) return Boolean;
-
-  function is_empty
-    (buffer : in socket_buffer) return Boolean;
-
-
-  function is_full
-    (buffer : not null access socket_buffer) return Boolean;
-
-  function is_full
-    (buffer : in socket_buffer) return Boolean;
-
+    (buffer : not null socket_buffer_access) return Boolean;
 
   function actual_data_size
-    (buffer : not null access socket_buffer)
-      return Integer_64
-  with Inline;
+    (buffer : not null socket_buffer_access) return Integer_64;
 
   function actual_data_size
-    (buffer : in socket_buffer)
-      return Integer_64;
-
-
-  function max_data_length
-    (buffer : not null access socket_buffer)
-      return Integer_64;
-
-  function max_data_length
-    (buffer : in socket_buffer)
-      return Integer_64;
-
-
-  function max_data_length
-    (buffer : not null access socket_buffer)
-      return Stream_Element_Offset;
-
-  function max_data_length
-    (buffer : in socket_buffer)
-      return Stream_Element_Offset;
-
+    (buffer : socket_buffer) return Integer_64;
 
   function get_buffer_init
-    (buffer : not null access socket_buffer)
-      return socket_buffer;
-
+    (buffer : not null socket_buffer_access) return socket_buffer;
 
   procedure clean
-    (buffer : in out socket_buffer);
-
-  procedure clean
-    (buffer : not null access socket_buffer);
-
-
-  procedure flush_buffer
-    (buffer : in out socket_buffer);
-
+    (buffer : not null socket_buffer_access);
 
   function add_raw
-    (buffer : in out socket_buffer;
-     raw    : in Stream_Element_Array) return Boolean
-     with pre => raw'Length > 0;
-
-  function add_raw
-    (buffer : not null access socket_buffer;
-     raw    : in Stream_Element_Array) return Boolean
-     with pre => raw'Length > 0;
-
+    (buffer : not null socket_buffer_access;
+     raw    : not null stream_element_array_access) return Boolean;
 
   function get_raw
-    (buffer : in socket_buffer) return Stream_Element_Array
-    with pre => not is_empty (buffer);
-
-  function get_raw
-    (buffer : not null access socket_buffer) return Stream_Element_Array
-    with pre => not is_empty (buffer);
-
-
-  procedure reset_errno;
+    (buffer : not null socket_buffer_access) return Stream_Element_Array;
 
   function string_error return String;
 
 
 private
+
+  type rewind_t is new Stream_Element_Offset;
+
+  function max_data_length
+    (buffer : socket_buffer) return Stream_Element_Offset;
+
+  function data_tail_length
+    (buffer : socket_buffer) return Stream_Element_Offset;
 
   type in_addr is
     record
@@ -386,11 +323,12 @@ private
   end record
   with Convention => C;
 
-  type socket_buffer (buffer_length : Stream_Element_Count)
+
+  type socket_buffer
   is new Root_Stream_Type with
     record
-      data  : Stream_Element_Array (1 .. buffer_length);
-      head, tail  : Stream_Element_Count := 0;
+      data  : aliased stream_element_array_access := null;
+      head_first, tail_end  : Stream_Element_Count := 0;
     end record
     with Preelaborable_initialization;
 
