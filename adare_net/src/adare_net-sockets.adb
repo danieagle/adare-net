@@ -254,7 +254,7 @@ is
      addr  : not null addresses_access) return Boolean
   is
     sockfd    : aliased socket_type;
-    sock_tmp  : socket_access :=  new socket;
+    sock_tmp  : constant socket_access :=  new socket;
 
   begin
 
@@ -279,7 +279,7 @@ is
      addr  : not null addresses_list_access) return Boolean
   is
     sockfd    : aliased socket_type;
-    sock_tmp  : socket_access := new socket;
+    sock_tmp  : constant socket_access := new socket;
     ok        : Boolean := False;
   begin
 
@@ -737,6 +737,29 @@ is
     end if;
 
     return
+      socket_buffer'(
+        Root_Stream_Type with
+        data  => null,
+        head_first  => buffer.head_first,
+        tail_end  => buffer.tail_end
+      );
+  end get_buffer_init;
+
+  function get_buffer_init
+    (buffer : not null socket_buffer_access) return socket_buffer_access
+  is
+  begin
+    if buffer.data /= null then
+      return new
+        socket_buffer'(
+          Root_Stream_Type with
+          data  => new Stream_Element_Array'(buffer.data.all),
+          head_first  => buffer.head_first,
+          tail_end  => buffer.tail_end
+        );
+    end if;
+
+    return new
       socket_buffer'(
         Root_Stream_Type with
         data  => null,

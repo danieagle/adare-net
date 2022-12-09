@@ -243,6 +243,9 @@ is
   function get_buffer_init
     (buffer : not null socket_buffer_access) return socket_buffer;
 
+  function get_buffer_init
+    (buffer : not null socket_buffer_access) return socket_buffer_access;
+
   procedure clean
     (buffer : not null socket_buffer_access);
 
