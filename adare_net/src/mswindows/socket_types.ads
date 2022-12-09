@@ -1,6 +1,6 @@
 
-with Interfaces.C;
-use Interfaces, Interfaces.C;
+with Interfaces;
+use Interfaces;
 
 package socket_types
   with  Pure
