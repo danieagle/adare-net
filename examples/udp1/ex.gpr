@@ -8,10 +8,7 @@ project ex is
   for Source_Dirs use (".");
   for Object_dir  use "obj";
   for Exec_Dir use "bin";
-  for main use (
-    "server1",
-    "client1"
-    );
+  for main use ("server", "client");
 
   type Mode_type is ("debug", "release");
   Modu : Mode_type := external ("mod", "release");

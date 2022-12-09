@@ -12,14 +12,13 @@
 -- But is yet up to you create a yet better real world champion software with Adare_net and you can do it!! ^^
 
 -- Info about this software:
--- Ucp server with Adare_net example. It work in pair with client1
+-- Udp server with Adare_net example. It work in pair with udp client
 -- The working address can be ipv6 or ipv4, automatically. The first working one will be picked.
 
 with Ada.Text_IO;
 use Ada;
 
 with Ada.Task_Identification;
-with Ada.Streams;
 
 with Ada.Command_Line;
 with Ada.Strings.Unbounded;
@@ -40,26 +39,27 @@ use  adare_net_init;
 with Interfaces.C;
 use Interfaces, Interfaces.C;
 
-procedure server1
+procedure server
 is
 begin
   start_adare_net;
 
   b0 :
   declare
-    host_address  : aliased addresses_list := init_addresses
-      (ip_or_host =>  "", -- host addresses
-      port        =>  "25000",
-      ai_socktype =>  udp,
-      ai_family   =>  any -- choose ipv4 and ipv6
-      );
-
+    host_address  : addresses_list_access := null;
+    host_socket   : socket_access := null;
     ok            : Boolean :=  False;
-    host_socket   : aliased socket;
 
   begin
 
-    if host_address'Length < 1 then
+    init_addresses
+      (ip_or_host =>  "", -- host addresses
+      port        =>  "25000",
+      ai_socktype =>  udp,
+      ai_family   =>  any, -- choose ipv4 and ipv6
+      addr        => host_address);
+
+    if host_address.all'Length < 1 then
 
       Text_IO.Put_Line (" Failed to discover addresses in this host");
       Text_IO.Put_Line (" Quitting.");
@@ -69,9 +69,9 @@ begin
 
     Text_IO.Put_Line (" Addresses Discovered in this host:");
 
-    utils.show_address_and_port (host_address'Access);
+    utils.show_address_and_port (host_address);
 
-    if not init_socket (host_socket, host_address'Access) then
+    if not init_socket (host_socket, host_address) then
 
       Text_IO.New_Line;
 
@@ -101,8 +101,8 @@ begin
 
       task type recv_send_task (
         host_address_family : Address_family;
-        remote_addr : not null access addresses;
-        host_buff   : not null access socket_buffer
+        remote_addr : not null addresses_access;
+        host_buff   : not null socket_buffer_access
       );
 
       task body recv_send_task -- See ARM-2012 7.6 (9.2/2)
@@ -110,8 +110,9 @@ begin
         use Task_Identification;
 
         this_task_id_str    : constant String   := Image (Current_Task);
-        remote_actual_addr  : aliased addresses := remote_addr.all;
-        host_old_buff   : aliased socket_buffer := get_buffer_init (host_buff);
+        remote_actual_addr  : addresses_access  := new addresses'(remote_addr.all);
+        host_old_buff       : socket_buffer_access := new socket_buffer'(get_buffer_init (host_buff));
+        --  host_old_buff       : socket_buffer_access := new socket_buffer'(get_buffer_init (host_buff));
 
         use  Ada.Strings.Unbounded;
 
@@ -133,30 +134,29 @@ begin
           goto finish2_task_label;
         end if;
 
-        Text_IO.Put_Line (" " & this_task_id_str & " remote host " & get_address_and_port (remote_actual_addr'Access));
+        Text_IO.Put_Line (" " & this_task_id_str & " remote host " & get_address_and_port (remote_actual_addr));
 
         Text_IO.Put_Line (" " & this_task_id_str & " received messages:");
 
         bt0 :
         declare
-
-          use Streams;
-
-          remote_buff : aliased socket_buffer;
+          remote_buff : socket_buffer_access := new socket_buffer;
 
         begin
+
+          clean (remote_buff);
 
           bt1 :
           begin
 
-            String'Output (remote_buff'Access, "Thank you for send ");
+            String'Output (remote_buff, "Thank you for send ");
 
             loop1 :
             loop
 
-              message := To_Unbounded_String ( String'Input (host_old_buff'Access));
+              message := To_Unbounded_String (String'Input (host_old_buff));
 
-              String'Output (remote_buff'Access, To_String (message));
+              String'Output (remote_buff, To_String (message));
 
               Text_IO.Put_Line (" " & this_task_id_str & " message |" & To_String (message) & "|");
 
@@ -172,22 +172,23 @@ begin
           bt2 :
           declare
 
-            host_local_address  : aliased addresses_list := init_addresses
-              (ip_or_host => "", -- host addresses.
-              port        =>  "0", -- ignored without 'bind'
-              ai_socktype =>  udp,
-              ai_family   =>  host_address_family
-              );
+            host_local_address  : addresses_list_access;
 
-            socket_send   : aliased socket;
+            socket_send   : socket_access;
             poll_send     : aliased polls.poll_type (1);
 
             poll_result   : int := 0;
             bytes_send    : ssize_t := 0;
 
           begin
+            init_addresses
+              (ip_or_host   => "", -- host addresses.
+               port         =>  "0", -- ignored without 'bind'
+               ai_socktype  =>  udp,
+               ai_family    =>  host_address_family,
+               addr         =>  host_local_address);
 
-            if host_local_address'Length < 1 then
+            if host_local_address.all'Length < 1 then
 
               Text_IO.Put_Line (" " & this_task_id_str & " Failed to get server host address.");
 
@@ -196,7 +197,7 @@ begin
               goto finish2_task_label;
             end if;
 
-            if not init_socket (socket_send, host_local_address'Access) then
+            if not init_socket (socket_send, host_local_address) then
 
               Text_IO.Put_Line (" " & this_task_id_str & " Failed to create temporary socket.");
 
@@ -205,7 +206,7 @@ begin
               goto finish2_task_label;
             end if;
 
-            polls.add_events (poll_send'Access, socket_send'Access, polls.send_ev);
+            polls.add_events (poll_send'Access, socket_send, polls.send_ev);
 
             Text_IO.Put_Line (" " & this_task_id_str & " waiting to send data to remote host");
 
@@ -242,18 +243,21 @@ begin
         <<finish2_task_label>>
       end recv_send_task;
 
-      working_task  : access recv_send_task;
+      working_task  : access recv_send_task
+        with Unreferenced;
 
-      remote_address  : aliased addresses;
-      host_buffer     : aliased socket_buffer;
-      host_poll       : aliased polls.poll_type (1);
-      host_socket_family  : constant Address_family  := get_address_family (get_addresses (host_socket));
+      host_socket_family  : constant Address_family := get_address_family (get_addresses (host_socket));
+      remote_address      : addresses_access        := null;
+      host_buffer         : socket_buffer_access    :=  new socket_buffer;
+      host_poll           : aliased polls.poll_type (1);
 
     begin
 
+      clean (host_buffer);
+
       Text_IO.New_Line;
 
-      polls.add_events (host_poll'Access, host_socket'Access, polls.receive_ev);
+      polls.add_events (host_poll'Access, host_socket, polls.receive_ev);
 
       ok := True;
 
@@ -287,7 +291,7 @@ begin
           -- For the curious: We believe the task(s) will not leak.
           -- Reason: ARM-2012 7.6 (9.2/2) :-)
 
-          working_task  := new recv_send_task (host_socket_family, remote_address'Access, host_buffer'Access);
+          working_task  := new recv_send_task (host_socket_family, remote_address, host_buffer);
 
         end if;
 
@@ -320,4 +324,4 @@ begin
 
   stop_adare_net;
 
-end server1;
+end server;

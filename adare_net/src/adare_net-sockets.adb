@@ -674,6 +674,10 @@ is
     (sock : not null socket_access) return addresses
   is (sock.storage);
 
+  function get_addresses
+    (sock : not null socket_access) return addresses_access
+  is (new addresses'(sock.storage));
+
   function initialized
     (sock  : not null socket_access) return Boolean
   is (sock.sock /= 0 and then sock.sock /= invalid_socket);

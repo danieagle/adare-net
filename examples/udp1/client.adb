@@ -1,9 +1,9 @@
 
--- This is an over simplified example of tcp client with Adare_net, :-)
+-- This is an over simplified example of udp client with Adare_net, :-)
 -- but is yet up to you create a real world champion software with Adare_net and you can do it!! ^^
 
 -- Info about this software:
--- Udp client with Adare_net example. It work in pair with server2
+-- Udp client with Adare_net example. It work in pair with udp server
 
 
 with Ada.Command_Line;
@@ -26,7 +26,7 @@ use socket_types;
 with Interfaces.C;
 use Interfaces.C;
 
-procedure client1
+procedure client
 is
 begin
 
@@ -56,45 +56,45 @@ begin
   b0 :
   declare
 
-    buffer  : aliased socket_buffer;
+    buffer  : socket_buffer_access  := new socket_buffer;
 
   begin
 
+    clean (buffer);
+
     for qtd in 3 .. Argument_Count loop
-      String'Output (buffer'Access, Argument (qtd)); -- automatic conversion
+      String'Output (buffer, Argument (qtd)); -- automatic conversion
     end loop;
 
     b1 :
     declare
-      remote_addr  : aliased addresses :=
-        init_addresses
-          (ip_or_host   =>  Argument (1),
-           port         =>  Argument (2),
-           ai_socktype  =>  udp,
-           ai_family    =>  any
-          );
+      local_addr    : addresses_list_access := null;
+      remote_addr   : addresses_access  := null;
+      remote_addr2  : addresses_access  := null;
+      local_sock    : socket_access := null;
 
-      local_addr  : aliased addresses_list :=
-        init_addresses
-          (ip_or_host   =>  "",
-           port         =>  "0", -- ignored without 'bind'
-           ai_socktype  =>  udp,
-           ai_family    =>  get_address_family (remote_addr)
-          );
+      bytes_tmp     : ssize_t :=  0;
 
-      remote_addr2 : aliased addresses;
+      local_poll    : aliased polls.poll_type (2);
+
+      poll_result   : int := 0;
 
       ok  : Boolean := False;
-
-      local_sock  : aliased socket;
-
-      bytes_tmp : ssize_t :=  0;
-
-      local_poll   : aliased polls.poll_type (2);
-
-      poll_result  : int := 0;
-
     begin
+
+      init_addresses
+        (ip_or_host   =>  Argument (1),
+         port         =>  Argument (2),
+         ai_socktype  =>  udp,
+         ai_family    =>  any,
+         addr         => remote_addr);
+
+      init_addresses
+        (ip_or_host   =>  "",
+         port         =>  "0", -- ignored without 'bind'
+         ai_socktype  =>  udp,
+         ai_family    =>  get_address_family (remote_addr),
+         addr         =>  local_addr);
 
       if is_null (remote_addr) then
 
@@ -107,11 +107,11 @@ begin
         goto end_app_label1;
       end if;
 
-      if local_addr'Length < 1 then
+      if local_addr.all'Length < 1 then
 
         Text_IO.New_Line;
 
-        Text_IO.Put_Line (" Failed to discover host addresses. Quitting.");
+        Text_IO.Put_Line (" Failed to discover local host addresses. Quitting.");
 
         Text_IO.New_Line;
 
@@ -120,17 +120,17 @@ begin
 
       Text_IO.Put_Line (" Remote host addresses discovered:");
 
-      utils.show_address_and_port (remote_addr'Access);
+      utils.show_address_and_port (remote_addr);
 
       Text_IO.New_Line;
 
       Text_IO.Put_Line (" Host addresses discovered:");
 
-      utils.show_address_and_port (local_addr'Access);
+      utils.show_address_and_port (local_addr);
 
       Text_IO.New_Line;
 
-      if not init_socket (local_sock, local_addr'Access) then
+      if not init_socket (local_sock, local_addr) then
 
         Text_IO.New_Line;
 
@@ -151,30 +151,37 @@ begin
 
       polls.reset_all (local_poll'Access);
 
-      polls.add_events (local_poll'Access, local_sock'Access, polls.send_ev);
+      polls.add_events (local_poll'Access, local_sock, polls.send_ev);
 
-      poll_result :=
-        polls.start_events_listen (local_poll'Access, 2500); -- block, 2.5 seconds timeout.
+      poll_result :=  polls.start_events_listen (local_poll'Access, 2500); -- block, 2.5 seconds timeout.
 
       if poll_result > 0 then
 
         bytes_tmp := sendto (local_sock, remote_addr, buffer);
 
+        if bytes_tmp = socket_error then
+
+          Text_IO.Put_Line (" An error occurred during sending data.");
+          Text_IO.Put_Line (" Finishing task.");
+
+          goto end_app_label1;
+        end if;
+
         Text_IO.Put_Line (" Successfull sended " & bytes_tmp'Image & " bytes.");
 
       else
 
-        Text_IO.Put_Line (" Failed to send to remote host " & get_address_and_port (remote_addr'Access));
+        Text_IO.Put_Line (" Failed to send to remote host " & get_address_and_port (remote_addr));
 
         if poll_result = 0 then
 
-          Text_IO.Put_Line (" But it is just only a normal 2.5 seconds " & "time_out");
+          Text_IO.Put_Line (" But it is just only a normal 2.5 seconds time_out");
 
         else
 
-          if polls.hang_up_error (local_poll'Access, local_sock'Access) then
+          if polls.hang_up_error (local_poll'Access, local_sock) then
 
-            Text_IO.Put_Line (" Remote Host " & get_address_and_port (remote_addr'Access) & " closed the connection. ");
+            Text_IO.Put_Line (" Remote Host " & get_address_and_port (remote_addr) & " closed the connection. ");
 
             Text_IO.Put_Line (" Nothing more to do. Quitting.");
 
@@ -188,17 +195,27 @@ begin
 
       polls.clear_all_event_responses (local_poll'Access);
 
-      polls.update (local_poll'Access, local_sock'Access, polls.receive_ev);
+      polls.update (local_poll'Access, local_sock, polls.receive_ev);
 
       poll_result := polls.start_events_listen (local_poll'Access, 2500); -- block, 2.5 seconds timeout.
 
       if poll_result > 0 then
 
+        clean (buffer);
+
         bytes_tmp  := receive_from (local_sock, buffer, remote_addr2); -- block
+
+        if bytes_tmp = socket_error then
+
+          Text_IO.Put_Line (" An error occurred during receiving data.");
+          Text_IO.Put_Line (" Finishing task.");
+
+          goto end_app_label1;
+        end if;
 
         if bytes_tmp > 0 then
 
-          Text_IO.Put_Line (" Received message(s) from " & get_address_and_port (remote_addr2'Access));
+          Text_IO.Put_Line (" Received message(s) from " & get_address_and_port (remote_addr2));
 
           Text_IO.Put_Line (" Messages length " & bytes_tmp'Image & " bytes.");
 
@@ -211,7 +228,7 @@ begin
             loop1 :
             loop
 
-              Text_IO.Put_Line (" |" & String'Input (buffer'Access) & "|");
+              Text_IO.Put_Line (" |" & String'Input (buffer) & "|");
 
             end loop loop1;
 
@@ -220,7 +237,7 @@ begin
 
               Text_IO.New_Line;
 
-              Text_IO.Put_Line (" All messages received from " & get_address_and_port (remote_addr2'Access) & " showed.");
+              Text_IO.Put_Line (" All messages received from " & get_address_and_port (remote_addr2) & " showed.");
 
           end b2;
 
@@ -228,7 +245,7 @@ begin
 
         else
 
-          Text_IO.Put_Line (" Failed in receive messages from " & get_address_and_port (remote_addr'Access));
+          Text_IO.Put_Line (" Failed in receive messages from " & get_address_and_port (remote_addr));
 
           if bytes_tmp = 0 then
 
@@ -245,7 +262,7 @@ begin
 
       else
 
-        Text_IO.Put_Line (" Failed in receive messages from " & get_address_and_port (remote_addr'Access));
+        Text_IO.Put_Line (" Failed in receive messages from " & get_address_and_port (remote_addr));
 
         if poll_result = 0 then
 
@@ -255,9 +272,9 @@ begin
 
         else
 
-          if polls.hang_up_error (local_poll'Access, local_sock'Access) then
+          if polls.hang_up_error (local_poll'Access, local_sock) then
 
-            Text_IO.Put_Line (" Remote Host " & get_address_and_port (remote_addr'Access) & " closed the connection. ");
+            Text_IO.Put_Line (" Remote Host " & get_address_and_port (remote_addr) & " closed the connection. ");
 
             Text_IO.Put_Line (" Besides reconnect, nothing to do in this case." & " quitting.");
 
@@ -291,4 +308,4 @@ begin
 
   stop_adare_net;
 
-end client1;
+end client;

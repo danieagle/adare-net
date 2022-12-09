@@ -209,6 +209,10 @@ is
     (sock : not null socket_access) return addresses
      with pre => initialized (sock);
 
+  function get_addresses
+    (sock : not null socket_access) return addresses_access
+     with pre => initialized (sock);
+
   function initialized
     (sock  : not null socket_access) return Boolean;
 
