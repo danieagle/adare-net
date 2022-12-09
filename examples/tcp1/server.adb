@@ -47,10 +47,10 @@ begin
 
   b0 :
   declare
-    host_addr : addresses_list_access := null;
-    host_sock : socket_access := null;
-    ok        : Boolean := False;
-    choosed_remote_addr :  addresses_access := null;
+    host_addr           : addresses_list_access := null;
+    choosed_remote_addr : addresses_access := null;
+    host_sock           : socket_access := null;
+    ok                  : Boolean := False;
   begin
     init_addresses (ip_or_host =>  "", -- host addresses
                       port        =>  "25000",
@@ -95,7 +95,7 @@ begin
       goto end_app_label1;
     end if;
 
-    choosed_remote_addr  :=  new addresses'(get_addresses (host_sock));
+    choosed_remote_addr  :=  get_addresses (host_sock);
 
     Text_IO.New_Line;
 
@@ -108,11 +108,11 @@ begin
       incomming_socket  : socket_access;
       mi_poll           : aliased polls.poll_type (1);
 
-      task type recv_send_task (sock  : socket_access);
+      task type recv_send_task (connected_sock  : socket_access);
 
       task body recv_send_task
       is
-        connected_sock : socket_access :=  new socket'(sock.all);
+        remote_address  : addresses_access := get_addresses (connected_sock);
       begin
 
         if not (initialized (connected_sock) or else connected (connected_sock)) then
@@ -145,7 +145,7 @@ begin
           clean (recv_send_buffer2);
 
           Text_IO.Put_Line (" " & this_task_id_str & " remote host " &
-            get_address_and_port (new addresses'(get_addresses (connected_sock))));
+            get_address_and_port (remote_address));
 
           polls.add_events (task_poll'Access, connected_sock, polls.receive_ev); -- all *_ev events can be or'ed.
 
@@ -287,7 +287,7 @@ begin
           exit loop2;
         end if;
 
-        if accept_socket (host_sock, incomming_socket) then -- block
+        if accept_socket (host_sock, incomming_socket) then -- block. accepted socket incomming_socket is allways a new one.
           -- For the curious: We believe the task(s) will not leak.
           -- Reason: ARM-2012 7.6 (9.2/2) :-)
           working_task  :=  new recv_send_task (incomming_socket);

@@ -118,7 +118,7 @@ begin
         goto end_app_label1;
       end if;
 
-      choosed_remote_addr  :=  get_addresses (host_sock);
+      choosed_remote_addr  :=  new addresses'(get_addresses (host_sock));
 
       Text_IO.New_Line;
 

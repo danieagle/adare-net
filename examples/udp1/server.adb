@@ -101,8 +101,8 @@ begin
 
       task type recv_send_task (
         host_address_family : Address_family;
-        remote_addr : not null addresses_access;
-        host_buff   : not null socket_buffer_access
+        remote_actual_addr  : not null addresses_access;
+        host_old_buff       : not null socket_buffer_access
       );
 
       task body recv_send_task -- See ARM-2012 7.6 (9.2/2)
@@ -110,9 +110,6 @@ begin
         use Task_Identification;
 
         this_task_id_str    : constant String   := Image (Current_Task);
-        remote_actual_addr  : addresses_access  := new addresses'(remote_addr.all);
-        host_old_buff       : socket_buffer_access := new socket_buffer'(get_buffer_init (host_buff));
-        --  host_old_buff       : socket_buffer_access := new socket_buffer'(get_buffer_init (host_buff));
 
         use  Ada.Strings.Unbounded;
 
@@ -291,7 +288,7 @@ begin
           -- For the curious: We believe the task(s) will not leak.
           -- Reason: ARM-2012 7.6 (9.2/2) :-)
 
-          working_task  := new recv_send_task (host_socket_family, remote_address, host_buffer);
+          working_task  := new recv_send_task (host_socket_family, remote_address, get_buffer_init (host_buffer));
 
         end if;
 

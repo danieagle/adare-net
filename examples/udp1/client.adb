@@ -69,6 +69,7 @@ begin
     b1 :
     declare
       local_addr    : addresses_list_access := null;
+      local_addr2   : addresses_access := null;
       remote_addr   : addresses_access  := null;
       remote_addr2  : addresses_access  := null;
       local_sock    : socket_access := null;
@@ -140,10 +141,12 @@ begin
         goto end_app_label1;
       end if;
 
+      local_addr2 := get_addresses (local_sock);
+
       Text_IO.New_Line;
 
-      Text_IO.Put_Line (" Host address choosed :=  "  & get_addresses (get_addresses (local_sock)) &
-        " and at port := " & get_port (get_addresses (local_sock)));
+      Text_IO.Put_Line (" Host address choosed :=  "  & get_addresses (local_addr2) &
+        " and at port := " & get_port (local_addr2));
 
       Text_IO.New_Line;
 
