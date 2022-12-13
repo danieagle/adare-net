@@ -13,13 +13,18 @@
 			"path": "examples/udp1"
 		},
 		{
+			"name": "Doc",
+			"path": "Doc"
+		},
+		{
 			"path": "."
 		}
 	],
 	"settings": {
 		"editor.formatOnType": true,
 		"editor.formatOnPaste": true,
-		"makefile.extensionOutputFolder": "./.vscode"
+		"makefile.extensionOutputFolder": "./.vscode",
+		"pandoc.pdfOptString": ""
 
 	}
 }
