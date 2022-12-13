@@ -2,7 +2,7 @@
 Adare_Net
 =====================
 
-Version: 0.0.109
+Version: 0.0.112
 
 This is a small, portable and easy to use Ada network lib.
 It supports ipv4 ipv6 udp and tcp, Socket Synchronous I/O Multiplexing

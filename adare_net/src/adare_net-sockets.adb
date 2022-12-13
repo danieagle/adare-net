@@ -422,7 +422,7 @@ is
 
     loop1 :
     loop
-      len := inners.inner_send (sock.sock, buffer.all (pos)'Address, size_t (remaining), 0);
+      len := ssize_t (inners.inner_send (sock.sock, buffer.all (pos)'Address, size_t (remaining), 0));
 
       exit loop1 when len < 1 or else len = socket_error;
 
@@ -456,7 +456,7 @@ is
 
     loop1 :
     loop
-      len := inners.inner_send (sock.sock, buffer.data (pos)'Address, size_t (remaining), 0);
+      len := ssize_t (inners.inner_send (sock.sock, buffer.data (pos)'Address, size_t (remaining), 0));
 
       exit loop1 when len < 1 or else len = socket_error;
 
@@ -493,8 +493,8 @@ is
 
     loop1 :
     loop
-      len :=  inners.inner_sendto (sock.sock, buffer.all (pos)'Address, size_t (remaining), 0, send_to.storage'Address,
-        socklen_t (send_to.address_length));
+      len :=  ssize_t (inners.inner_sendto (sock.sock, buffer.all (pos)'Address, size_t (remaining), 0, send_to.storage'Address,
+        socklen_t (send_to.address_length)));
 
       exit loop1 when len < 1 or else len = socket_error;
 
@@ -529,8 +529,8 @@ is
 
     loop1 :
     loop
-      len :=  inners.inner_sendto (sock.sock, buffer.data (pos)'Address, size_t (remaining), 0, send_to.storage'Address,
-        socklen_t (send_to.address_length));
+      len :=  ssize_t (inners.inner_sendto (sock.sock, buffer.data (pos)'Address, size_t (remaining), 0, send_to.storage'Address,
+        socklen_t (send_to.address_length)));
 
       exit loop1 when len < 1 or else len = socket_error;
 
@@ -560,7 +560,7 @@ is
     data_tmp  : aliased Stream_Element_Array := (1 .. max_len => 0);
     len       : ssize_t;
   begin
-    len :=  inners.inner_recv (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0);
+    len :=  ssize_t (inners.inner_recv (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0));
 
     if len = socket_error then
       return socket_error;
@@ -583,7 +583,7 @@ is
     data_tmp  : aliased Stream_Element_Array := (1 .. max_len => 0);
     len       : ssize_t;
   begin
-    len :=  inners.inner_recv (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0);
+    len :=  ssize_t (inners.inner_recv (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0));
 
     if len = socket_error then
       return socket_error;
@@ -612,8 +612,8 @@ is
     from_tmp.storage.ss_family  := 0;
     from_tmp.storage.padding    := (others => char'Val (0));
 
-    len :=  inners.inner_recvfrom (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0,
-      from_tmp.storage'Address, len_tmp);
+    len :=  ssize_t (inners.inner_recvfrom (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0,
+      from_tmp.storage'Address, len_tmp));
 
     if len = socket_error then
       return socket_error;
@@ -648,8 +648,8 @@ is
     from_tmp.storage.ss_family  := 0;
     from_tmp.storage.padding    := (others => char'Val (0));
 
-    len :=  inners.inner_recvfrom (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0,
-      from_tmp.storage'Address, len_tmp);
+    len :=  ssize_t (inners.inner_recvfrom (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0,
+      from_tmp.storage'Address, len_tmp));
 
     if len = socket_error then
       return socket_error;

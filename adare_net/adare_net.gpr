@@ -3,11 +3,12 @@ library project adare_net is
 
   for Languages use ("Ada", "C");
 
-  version := "0.0.109";
+  version := "0.0.112";
 
   type os_type is ("linux", "mswindows", "macosx", "bsd", "unix", "other");
 
-  mi_os : os_type := external ("mi_os", "linux");
+  -- mi_os : os_type := external ("mi_os", "linux");
+  mi_os : os_type := external ("mi_os", "mswindows");
 
   source0 := ();
 
