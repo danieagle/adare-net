@@ -1,6 +1,6 @@
 # Adare_net Manual
 
-# version 0.0.120
+# version 0.0.128
 
 ## Preparing a party
 * Create a network address and port
@@ -24,7 +24,7 @@
 * receive
 * send
 * receive_from
-* send_to
+* sendto
 * plain raw data, vulgo stream_element_array
 * buffered data, vulgo socket_buffer
 * plain raw data ou buffered data ?
@@ -59,7 +59,7 @@
 
 ### Create a network address and port
 
-* Many ( actually until 10 addresses )
+* Many ( actually until 10 addresses by each addresses_list)
 
 ~~~~
 

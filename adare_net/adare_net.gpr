@@ -3,7 +3,7 @@ library project adare_net is
 
   for Languages use ("Ada", "C");
 
-  version := "0.0.120";
+  version := "0.0.128";
 
   type os_type is ("linux", "mswindows", "macosx", "bsd", "unix", "other");
 

@@ -435,12 +435,8 @@ is
       exit loop1 when remaining < 1;
     end loop loop1;
 
-    if len = socket_error then
-      return socket_error;
-    end if;
-
-    if len = 0 then
-      return 0;
+    if len = socket_error or else len < 1 then
+      return len;
     end if;
 
     return buffer.all'Length;
@@ -474,12 +470,8 @@ is
       exit loop1 when remaining < 1;
     end loop loop1;
 
-    if len = socket_error then
-      return socket_error;
-    end if;
-
-    if len = 0 then
-      return 0;
+    if len = socket_error or else len < 1 then
+      return len;
     end if;
 
     buffer.head_first := buffer.head_first + Stream_Element_Count (len_orig);
@@ -516,12 +508,8 @@ is
       exit loop1 when remaining < 1;
     end loop loop1;
 
-    if len = socket_error then
-      return socket_error;
-    end if;
-
-    if len = 0 then
-      return 0;
+    if len = socket_error or else len < 1 then
+      return len;
     end if;
 
     return buffer.all'Length;
@@ -557,12 +545,8 @@ is
       exit loop1 when remaining < 1;
     end loop loop1;
 
-    if len = socket_error then
-      return socket_error;
-    end if;
-
-    if len = 0 then
-      return 0;
+    if len = socket_error or else len < 1 then
+      return len;
     end if;
 
     buffer.head_first := buffer.head_first + Stream_Element_Count (len_orig);
@@ -576,22 +560,14 @@ is
      max_len  : Stream_Element_Count := 1500) return ssize_t
   is
     data_tmp  : aliased Stream_Element_Array := (1 .. max_len => 0);
-    len       : ssize_t;
+    len : ssize_t;
   begin
-    len :=  ssize_t (inners.inner_recv (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0));
+    len := ssize_t (inners.inner_recv (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0));
 
-    if len = socket_error then
-      return socket_error;
-    end if;
-
-    if len = 0 then
-      return 0;
-    end if;
-
-    if len > 0 then
-      buffer := new Stream_Element_Array'(data_tmp (1 .. Stream_Element_Offset (len)));
-    else
+    if len < 1  or else len = socket_error then
       buffer := new Stream_Element_Array'(1 .. 0 => 0);
+    else
+      buffer := new Stream_Element_Array'(data_tmp (1 .. Stream_Element_Offset (len)));
     end if;
 
     return len;
@@ -603,19 +579,11 @@ is
      max_len  : Stream_Element_Count := 1500) return ssize_t
   is
     data_tmp  : aliased Stream_Element_Array := (1 .. max_len => 0);
-    len       : ssize_t;
+    len : ssize_t;
   begin
-    len :=  ssize_t (inners.inner_recv (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0));
+    len := ssize_t (inners.inner_recv (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0));
 
-    if len = socket_error then
-      return socket_error;
-    end if;
-
-    if len = 0 then
-      return 0;
-    end if;
-
-    if len > 0 then
+    if not (len = socket_error or else len < 1) then
       Stream_Element_Array'Write (buffer, data_tmp (1 .. Stream_Element_Offset (len)));
     end if;
 
@@ -641,20 +609,12 @@ is
     len :=  ssize_t (inners.inner_recvfrom (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0,
       from_tmp.storage'Address, len_tmp));
 
-    if len = socket_error then
-      return socket_error;
-    end if;
-
-    if len = 0 then
-      return 0;
-    end if;
-
     from_tmp.address_length := int (len_tmp);
 
-    if len > 0 then
-      buffer := new Stream_Element_Array'(data_tmp (1 .. Stream_Element_Offset (len)));
-    else
+    if len < 1  or else len = socket_error then
       buffer := new Stream_Element_Array'(1 .. 0 => 0);
+    else
+      buffer := new Stream_Element_Array'(data_tmp (1 .. Stream_Element_Offset (len)));
     end if;
 
     from := new addresses'(from_tmp);
@@ -681,17 +641,9 @@ is
     len :=  ssize_t (inners.inner_recvfrom (sock.sock, data_tmp (data_tmp'First)'Address, size_t (data_tmp'Length), 0,
       from_tmp.storage'Address, len_tmp));
 
-    if len = socket_error then
-      return socket_error;
-    end if;
-
-    if len = 0 then
-      return 0;
-    end if;
-
     from_tmp.address_length := int (len_tmp);
 
-    if len > 0 then
+    if not (len = socket_error or else len < 1) then
       Stream_Element_Array'Write (buffer, data_tmp (1 .. Stream_Element_Offset (len)));
     end if;
 
