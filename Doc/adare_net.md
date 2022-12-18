@@ -1,8 +1,8 @@
 # Adare_net Manual
 
-# version 0.0.109
+# version 0.0.120
 
-## Preparing a party {#1}
+## Preparing a party
 * Create a network address and port
   * many
   * just one
@@ -29,7 +29,7 @@
 * buffered data, vulgo socket_buffer
 * plain raw data ou buffered data ?
 
-### Apendixes
+## Apendixes
 
 * Full Client and Server TCP/IP example
 * Full Client and Server UDP/IP example
@@ -38,7 +38,7 @@
   * Gnat-sockets
   * A minimum gnat project to work with.
   * Use a task pool
-  * Use Ada Class Wide types (Tagged Type) and Stream Socket_Buffer to see the real power of Adare_Net.
+  * Use Ada Class Wide types (Tagged Types) and Stream Socket_Buffer to see the real power of Adare_Net.
 \
 \
 \
@@ -253,7 +253,7 @@
             end if
 
             if not init_socket (host_sock, server_address) then
-              TEXT_IO.Put_Line (" cannot connect to server ");
+              TEXT_IO.Put_Line (" cannot init point of presence ");
               TEXT_IO.Put_Line (" error => " & string_error);
               return;
             end if;
@@ -293,7 +293,7 @@
             end if
 
             if not init_socket (host_sock, server_address) then
-              TEXT_IO.Put_Line (" cannot connect to server ");
+              TEXT_IO.Put_Line (" cannot init point of presence ");
               TEXT_IO.Put_Line (" error => " & string_error);
               return;
             end if;
@@ -314,7 +314,7 @@
 
 ## Party Start!
 
-# receive
+### receive
 
 ~~~~
   function receive
@@ -324,15 +324,16 @@
      with  pre => initialized (sock);
 
     sock    => an initialized socket.
-    buffer  => a stream_element_array_access variable. the length is equal to returned value or 0
-               buffer allways return a new buffer in this function, but don't touch the old value.
-               can be a null stream_element_array_access variable.
+    buffer  => a stream_element_array_access variable. the length is equal to
+               returned value or 0. buffer allways return a new buffer in this function,
+               but don't touch the old value. buffer can be a null
+               stream_element_array_access variable.
     max_len => the _maximum_ length to receive in one go.
 
     return value =>
       'socket_error' when error
       '0' when remote node closed the remote socket
-      se ok return size received, 1 or more.
+       if ok return size received, 1 or more.
 
   eg.:
 
@@ -340,7 +341,7 @@
       mi_buff : stream_element_array_access := null;
       count_receive : ssize_t;
     begin
-      count_receive := (host_sock, mi_buff);
+      count_receive := receive (host_sock, mi_buff);
       -- verify count_receive =>   equal 0? or else equal socket_error?
       -- yes ? show  string_error function
       -- no? just use buffer.
@@ -359,13 +360,14 @@
      with  pre => initialized (sock);
 
     sock    => an initialized socket.
-    buffer  => an initialized socket_buffer. the received data will appended to It. automatically extended.
+    buffer  => an initialized socket_buffer. the received data will be
+               automatically appended to It.
     max_len => the _maximum_ length to receive in one go.
 
     return value =>
       'socket_error' when error
       '0' when remote node closed the remote socket
-      se ok return size received, 1 or more.
+       if ok return size received, 1 or more.
 
   eg.:
 
@@ -373,8 +375,8 @@
       mi_buff : socket_buffer_access := new socket_buffer;
       count_receive : ssize_t;
     begin
-      clean (mi_mi_buff);
-      count_receive := (host_sock, mi_buff);
+      clean (mi_buff);
+      count_receive := receive (host_sock, mi_buff);
       -- verify count_receive =>   equal 0? or else equal socket_error?
       -- yes ? show  string_error function
       -- no? just use buffer.
@@ -382,10 +384,65 @@
 
 ~~~~
 
+### send
+
+~~~~
+
+  function send
+    (sock     : not null socket_access;
+     buffer   : not null stream_element_array_access) return ssize_t
+     with  pre => initialized (sock);
+
+    sock    => an initialized socket.
+    buffer  => an not null stream_stream_element_array_access.
+               send(), by Itself, will try send _all_ data in buffer.
+               buffer data remain untouched.
+
+    return value =>
+      'socket_error' when error
+      '0' when remote node closed the remote socket
+       if ok return size sended => buffer.all'length
+
+  eg.:
+
+  declare
+    mi_buff : stream_element_array_access := new stream_element_array'(1 .. 4 => 0);
+    count_sended  : ssize_t;
+  begin
+    count_sended := send (host_sock, mi_buff);
+    -- verify count_sended =>   equal 0? or else equal socket_error?
+    -- yes ? show  string_error function
+    -- no? just do more work.
+  end;
+
+~~~~
+
+* or
+
+~~~~
+
+  function send
+    (sock     : not null socket_access;
+     buffer   : not null socket_buffer_access) return ssize_t
+     with  pre => initialized (sock);
+
+    sock    => an initialized socket.
+    buffer  => an initialized socket_buffer.
+               send(), by Itself, will try send _all_ data in buffer.
+                if all data was sended, buffer becomes empty,
+                otherwise buffer data remain untouched.
+
+    return value =>
+      'socket_error' when error
+      '0' when remote node closed the remote socket
+       if ok return size sended, old actual_data_size (buffer).
 
 
-* send
-* receive_from
+~~~~
+
+### receive_from
+
+
 * send_to
 * plain raw data, vulgo stream_element_array
 * buffered data, vulgo socket_buffer

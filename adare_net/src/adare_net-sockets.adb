@@ -412,7 +412,7 @@ is
     (sock     : not null socket_access;
      buffer   : not null stream_element_array_access) return ssize_t
   is
-      len         : ssize_t;
+      len         : ssize_t := 0;
       pos         : Stream_Element_Offset  := buffer.all'First;
       remaining   : ssize_t  := buffer.all'Length;
   begin
@@ -439,16 +439,21 @@ is
       return socket_error;
     end if;
 
-    return ssize_t (pos - buffer.all'First);
+    if len = 0 then
+      return 0;
+    end if;
+
+    return buffer.all'Length;
   end send;
 
   function send
     (sock     : not null socket_access;
      buffer   : not null socket_buffer_access) return ssize_t
   is
-    pos       : Stream_Element_Offset := (if buffer.data /= null then buffer.head_first else 0);
+    pos       : Stream_Element_Offset := buffer.head_first;
     len       : ssize_t;
-    remaining : ssize_t := ssize_t (actual_data_size (buffer));
+    remaining : ssize_t           := ssize_t (actual_data_size (buffer));
+    len_orig  : constant ssize_t  := remaining;
   begin
     if remaining = 0 then
       return 0;
@@ -473,9 +478,13 @@ is
       return socket_error;
     end if;
 
-    buffer.head_first := buffer.head_first + Stream_Element_Count (len);
+    if len = 0 then
+      return 0;
+    end if;
 
-    return ssize_t (pos - buffer.data'First);
+    buffer.head_first := buffer.head_first + Stream_Element_Count (len_orig);
+
+    return len_orig;
   end send;
 
   function sendto
@@ -511,17 +520,22 @@ is
       return socket_error;
     end if;
 
-    return ssize_t (pos - buffer.all'First);
+    if len = 0 then
+      return 0;
+    end if;
+
+    return buffer.all'Length;
   end sendto;
 
   function sendto
-    (sock     : not null socket_access;
-     send_to  : not null addresses_access;
-     buffer   : not null socket_buffer_access) return ssize_t
+   (sock    : not null socket_access;
+    send_to : not null addresses_access;
+    buffer  : not null socket_buffer_access) return ssize_t
   is
-    pos       : Stream_Element_Offset := (if buffer.data /= null then buffer.head_first else 0);
+    pos       : Stream_Element_Offset := buffer.head_first;
     len       : ssize_t;
-    remaining : ssize_t := ssize_t (actual_data_size (buffer));
+    remaining : ssize_t           := ssize_t (actual_data_size (buffer));
+    len_orig  : constant ssize_t  := remaining;
   begin
     if remaining = 0 then
       return 0;
@@ -530,7 +544,7 @@ is
     loop1 :
     loop
       len :=  ssize_t (inners.inner_sendto (sock.sock, buffer.data (pos)'Address, size_t (remaining), 0, send_to.storage'Address,
-        socklen_t (send_to.address_length)));
+                      socklen_t (send_to.address_length)));
 
       exit loop1 when len < 1 or else len = socket_error;
 
@@ -538,7 +552,7 @@ is
 
       exit loop1 when remaining = len;
 
-      remaining :=  remaining - len;
+      remaining := remaining - len;
 
       exit loop1 when remaining < 1;
     end loop loop1;
@@ -547,9 +561,13 @@ is
       return socket_error;
     end if;
 
-    buffer.head_first := buffer.head_first + Stream_Element_Count (len);
+    if len = 0 then
+      return 0;
+    end if;
 
-    return ssize_t (pos - buffer.data'First);
+    buffer.head_first := buffer.head_first + Stream_Element_Count (len_orig);
+
+    return len_orig;
   end sendto;
 
   function receive
@@ -564,6 +582,10 @@ is
 
     if len = socket_error then
       return socket_error;
+    end if;
+
+    if len = 0 then
+      return 0;
     end if;
 
     if len > 0 then
@@ -587,6 +609,10 @@ is
 
     if len = socket_error then
       return socket_error;
+    end if;
+
+    if len = 0 then
+      return 0;
     end if;
 
     if len > 0 then
@@ -617,6 +643,10 @@ is
 
     if len = socket_error then
       return socket_error;
+    end if;
+
+    if len = 0 then
+      return 0;
     end if;
 
     from_tmp.address_length := int (len_tmp);
@@ -653,6 +683,10 @@ is
 
     if len = socket_error then
       return socket_error;
+    end if;
+
+    if len = 0 then
+      return 0;
     end if;
 
     from_tmp.address_length := int (len_tmp);
