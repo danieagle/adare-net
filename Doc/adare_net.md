@@ -151,9 +151,8 @@
           end if
       end;
 
-~~~~
 
-\
+~~~~
 
 ## The server part of the party
 
@@ -198,7 +197,9 @@
         end if
     end;
 
+
 ~~~~
+
 
 
 ### I Want accepted you! But I'm so Busy! Thanks for connecting or Bye!
@@ -226,8 +227,8 @@
         end if
     end;
 
+
 ~~~~
-\
 
 ## The client part of the party
 
@@ -309,6 +310,7 @@
 
       end;
 
+
 ~~~~
 
 
@@ -347,6 +349,7 @@
       -- no? just use buffer.
     end;
 
+
 ~~~~
 
   * or
@@ -375,7 +378,7 @@
       mi_buff : socket_buffer_access := new socket_buffer;
       count_receive : ssize_t;
     begin
-      clean (mi_buff);
+      clean (mi_buff); -- optional. will wipe all data.
       count_receive := receive (host_sock, mi_buff);
       -- verify count_receive =>   equal 0? or else equal socket_error?
       -- yes ? show  string_error function
@@ -415,6 +418,7 @@
     -- no? just do more work.
   end;
 
+
 ~~~~
 
 * or
@@ -437,16 +441,306 @@
       '0' when remote node closed the remote socket
        if ok return size sended, old actual_data_size (buffer).
 
+  eg.:
+
+    declare
+      mi_buff : socket_buffer_access := new socket_buffer;
+      count_receive : ssize_t;
+    begin
+      clean (mi_buff); -- optional. will wipe all data.
+      String'Output (mi_buff, "Dani & Cia"); -- automatic conversion
+      Integer'Output (mi_buff, 738); -- automatic conversion
+
+      count_sended := send (host_sock, mi_buff);
+      -- verify count_sended =>   equal 0? or else equal socket_error?
+      -- yes ? show  string_error function
+      -- no? just do more work.
+    end;
 
 ~~~~
 
 ### receive_from
 
+~~~~
 
-* send_to
-* plain raw data, vulgo stream_element_array
-* buffered data, vulgo socket_buffer
-* plain raw data ou buffered data ?
+  function receive_from
+    (sock     : not null socket_access;
+     buffer   : out stream_element_array_access;
+     from     : out addresses_access;
+     max_len  : Stream_Element_Count := 1500) return ssize_t
+     with  pre => initialized (sock);
+
+    sock    => an initialized socket.
+    buffer  => a stream_element_array_access variable. the length is equal to
+               returned value or 0. buffer allways return a new buffer in this function,
+               but don't touch the old value. buffer can be a null
+               stream_element_array_access variable.
+    from    => return a new socket_access value. It don´t touch the old value.
+    max_len => the _maximum_ length to receive in one go.
+
+    return value =>
+      'socket_error' when error
+      '0' when remote node closed the remote socket
+       if ok return size received, 1 or more.
+
+  eg.:
+
+    declare
+      mi_buff   : stream_element_array_access := null;
+      from_sock : socket_access := null; -- or from someone else.
+      count_receive : ssize_t;
+    begin
+      count_receive := receive_from (host_sock, mi_buff, from_sock);
+      -- verify count_receive =>   equal 0? or else equal socket_error?
+      -- yes ? show  string_error function
+      -- no? just use buffer.
+    end;
+
+
+~~~~
+
+* or
+
+~~~~
+
+  function receive_from
+    (sock     : not null socket_access;
+     buffer   : not null socket_buffer_access;
+     from     : out addresses_access;
+     max_len  : Stream_Element_Count := 1500) return ssize_t
+     with  pre => initialized (sock);
+
+    sock    => an initialized socket.
+    buffer  => an initialized socket_buffer. the received data will be
+               automatically appended to It.
+    from    => return a new socket_access value. receive_from() don´t touch the old value.
+    max_len => the _maximum_ length to receive in one go.
+
+    return value =>
+      'socket_error' when error
+      '0' when remote node closed the remote socket
+       if ok return size received, 1 or more.
+
+  eg.:
+
+    declare
+      mi_buff   : socket_buffer_access  := new socket_buffer; -- or from someone else
+      from_sock : socket_access         := null; -- or from someone else.
+      count_receive : ssize_t;
+    begin
+      count_receive := receive_from (host_sock, mi_buff, from_sock);
+      -- verify count_receive =>   equal 0? or else equal socket_error?
+      -- yes ? show  string_error function
+      -- no? just use buffer.
+    end;
+
+~~~~
+
+\
+
+### sendto
+
+~~~~
+
+function sendto
+    (sock     : not null socket_access;
+     send_to  : not null addresses_access;
+     buffer   : not null stream_element_array_access) return ssize_t
+     with  pre => initialized (sock) and then initialized (send_to);
+
+    sock    => an initialized socket.
+    send_to => an initialized addresses.
+    buffer  => an not null stream_stream_element_array_access.
+               sendto(), by Itself, will try send _all_ data in buffer.
+               buffer data remain untouched.
+
+    return value =>
+      'socket_error' when error
+      '0' when remote node closed the remote socket
+       if ok return size sended => buffer.all'length
+
+  eg.:
+
+  declare
+    mi_buff : stream_element_array_access := new stream_element_array'(1 .. 4 => 0);
+    to_addr : addresses_access := null;
+    count_sended  : ssize_t;
+  begin
+    init_addresses
+            (ip_or_host   =>  "127.0.0.1",
+             port         =>  "25000",
+             ai_socktype  =>  tcp, -- or udp
+             ai_family    =>  v4, -- or any
+             addr         =>  to_addr
+            );
+    count_sended := sendto (host_sock, to_addr, mi_buff);
+    -- verify count_sended =>   equal 0? or else equal socket_error?
+    -- yes ? show  string_error function
+    -- no? just do more work.
+  end;
+
+
+~~~~
+
+* or
+
+~~~~
+
+function sendto
+    (sock     : not null socket_access;
+     send_to  : not null addresses_access;
+     buffer   : not null stream_element_array_access) return ssize_t
+     with  pre => initialized (sock) and then initialized (send_to);
+
+    sock    => an initialized socket.
+    send_to => an initialized addresses.
+    buffer  => an not null stream_stream_element_array_access.
+               sendto(), by Itself, will try send _all_ data in buffer.
+               buffer data remain untouched.
+
+    return value =>
+      'socket_error' when error
+      '0' when remote node closed the remote socket
+       if ok return size sended => buffer.all'length
+
+
+  eg.:
+
+  declare
+    mi_buff : stream_element_array_access := new stream_element_array'(1 .. 4 => 0);
+    to_addr : addresses_access := null;
+    count_sended  : ssize_t;
+  begin
+    init_addresses
+            (ip_or_host   =>  "::1",
+             port         =>  "25000",
+             ai_socktype  =>  tcp, -- or udp
+             ai_family    =>  v6, -- or any
+             addr         =>  to_addr
+            );
+    count_sended := sendto (host_sock, to_addr, mi_buff);
+    -- verify count_sended =>   equal 0? or else equal socket_error?
+    -- yes ? show  string_error function
+    -- no? just do more work.
+  end;
+
+
+~~~~
+
+* or
+
+
+~~~~
+
+  function sendto
+    (sock     : not null socket_access;
+     send_to  : not null addresses_access;
+     buffer   : not null socket_buffer_access) return ssize_t
+     with  pre => initialized (sock) and then initialized (send_to);
+
+    sock    => an initialized socket.
+    send_to => an initialized addresses.
+    buffer  => an initialized socket_buffer.
+    buffer  => sendto(), by Itself, will try send _all_ data in buffer.
+                if all data was sended, buffer becomes empty,
+                otherwise buffer data remain untouched.
+
+    return value =>
+      'socket_error' when error
+      '0' when remote node closed the remote socket
+       if ok return size sended => buffer.all'length
+
+  eg.:
+
+  declare
+    mi_buff : socket_buffer_access := new socket_buffer;
+    to_addr : addresses_access := null;
+    count_sended  : ssize_t;
+  begin
+    init_addresses
+            (ip_or_host   =>  "127.0.0.1",
+             port         =>  "25000",
+             ai_socktype  =>  tcp, -- or udp
+             ai_family    =>  v4, -- or any
+             addr         =>  to_addr
+            );
+    clean (mi_buff); -- optional. will wipe all data.
+    String'Output (mi_buff, "Dani & Cia"); -- automatic conversion
+    Integer'Output (mi_buff, 738); -- automatic conversion
+
+    count_sended := sendto (host_sock, to_addr, mi_buff);
+    -- verify count_sended =>   equal 0? or else equal socket_error?
+    -- yes ? show  string_error function
+    -- no? just do more work.
+  end;
+
+~~~~
+
+* or
+
+~~~~
+
+  function sendto
+    (sock     : not null socket_access;
+     send_to  : not null addresses_access;
+     buffer   : not null socket_buffer_access) return ssize_t
+     with  pre => initialized (sock) and then initialized (send_to);
+
+    sock    => an initialized socket.
+    send_to => an initialized addresses.
+    buffer  => an initialized socket_buffer.
+    buffer  => sendto(), by Itself, will try send _all_ data in buffer.
+                if all data was sended, buffer becomes empty,
+                otherwise buffer data remain untouched.
+
+    return value =>
+      'socket_error' when error
+      '0' when remote node closed the remote socket
+       if ok return size sended => buffer.all'length
+
+  eg.:
+
+  declare
+    mi_buff : socket_buffer_access := new socket_buffer;
+    to_addr : addresses_access := null;
+    count_sended  : ssize_t;
+  begin
+    init_addresses
+            (ip_or_host   =>  "::1",
+             port         =>  "25000",
+             ai_socktype  =>  tcp, -- or udp
+             ai_family    =>  v6, -- or any
+             addr         =>  to_addr
+            );
+    clean (mi_buff); -- optional. will wipe all data.
+    String'Output (mi_buff, "Dani & Cia"); -- automatic conversion
+    Integer'Output (mi_buff, 738); -- automatic conversion
+
+    count_sended := sendto (host_sock, to_addr, mi_buff);
+    -- verify count_sended =>   equal 0? or else equal socket_error?
+    -- yes ? show  string_error function
+    -- no? just do more work.
+  end;
+
+~~~~
+
+### Hints about plain raw data, vulgo stream_element_array and about buffered data, vulgo socket_buffer
+
+    You can read more length chunks, eg.: a file and send it 'as is' to a node,
+  without need to read (and write) stream by stream from filesystem storage.
+
+    The data received or sended can be used as buffer, and if are missing data, you can
+  'rewind' last read, before get/write more data in buffer. the raw data can be setted in buffer
+  with add_raw() and getted with get_raw() from buffer.
+
+  To Fill buffer with data is the Standard Ada Streams 'write and 'output.
+  To get data from buffer is the Standard Ada Streams 'read and 'input.
+
+
+### plain raw data ou buffered data ?
+
+    Both are OK. It depends more on your project and your needs. Other than that
+  it's more a matter of which way you like it best.
 
 
 
