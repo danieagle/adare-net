@@ -1,3 +1,5 @@
-* Update Buffer Type
-* More improvements
-* create a Manual in pdf.
+announce in Ada Lang newsgroup.
+  ask for help in testing in:
+    MSWindows (Win10_22H2_x64 and up)
+    Linux
+    MACOSX

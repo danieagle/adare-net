@@ -42,9 +42,14 @@ or
 
 To Install only runtime (as root or admin user):
   make AOS=OS_TYPE install <enter>
+or
+  make AOS=OS_TYPE install-debug <enter>
+
 
 To Install runtime, adare_net.gpr and development files (as root or admin user):
   make AOS=OS_TYPE install-dev <enter>
+or
+  make AOS=OS_TYPE install-dev-debug <enter>
 
 
 To Uninstall (as root or admin user):
@@ -68,12 +73,18 @@ Note from Makefile:
 
   Main repository => https://github.com/danieagle/adare-net
 
-  All help, tests and pull requests Are Welcome!
+  All help, tests and pull requests Are Welcome, but the main need now
+    is testing in MSWindows (from Win10_22H2_x64), Linux and MACOSX
+    for release the upcoming v.0.1.0
 
-  Volunteers Are Welcome :-) what you want do ?
+  Volunteers Are Welcome :-) you want do above ? Very Very Very Thanks!!
 
-For documentation, examples and how compile in your own
-projects, see example/ex.gpr and example/src/*.adb and src/*
+For documentation, see Doc/adare_net.pdf
+
+For examples and how compile in your own projects, see:
+  adare_net/src/*.ad{s,b}
+  example/tcp1/ex.gpr and example/tcp1/*.adb
+  example/udp1/ex.gpr and example/udp1/*.adb
 
   Enjoy!!
 
