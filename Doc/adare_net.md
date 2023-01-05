@@ -13,7 +13,7 @@
 * I'm at port (bind)
 * I'm listening you! Please connect!
 * I accepted you! I waited you forever! thanks for connecting!
-* I accepted you! But I'm so Busy! Thanks for connecting or Bye!
+* I Want accepted you! But I'm so Busy! Thanks for connecting or Bye!
 
 ## The client part of the party
 
@@ -27,7 +27,7 @@
 * sendto
 * plain raw data, vulgo stream_element_array
 * buffered data, vulgo socket_buffer
-* plain raw data ou buffered data ?
+* plain raw data or buffered data ?
 
 ## Apendixes
 
@@ -2057,7 +2057,7 @@ end server;
     2.  There are just one universal socket type.
         1. initialize it with the addresses above.
     3.  bind has just one parameter
-    4.  use raw data in fuctions send/sendto receive/receive
+    4.  use raw data in fuctions send/sendto receive/receive_from
     7.  obs.: you can listen() in IPv6 too.
     5.  That's It.
 
@@ -2079,3 +2079,4 @@ end server;
 #### Obs.: Use Ada Class Wide types (Tagged Types) and Stream Socket_Buffer,
 #### with dispatching calls and automatic discover about data to see the real power of Adare_Net.
 
+#### Thanks All!! and Enjoy!! ^^
