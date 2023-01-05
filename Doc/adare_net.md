@@ -107,7 +107,7 @@
             return;
           end if
 
-          utils.show_address_and_port (many_addresses);
+          utils.show_address_and_port (mi_address);
       end;
 
 
@@ -926,7 +926,8 @@ begin
 
           if polls.hang_up_error (host_poll'Access, host_sock) then
 
-            Text_IO.Put_Line (" Remote Host " & get_address_and_port (choosed_remote_addr) & " closed the connection. ");
+            Text_IO.Put_Line (" Remote Host " & get_address_and_port (choosed_remote_addr) &
+              " closed the connection. ");
 
             Text_IO.Put_Line (" Nothing more to do. Quitting.");
 
@@ -980,14 +981,17 @@ begin
             when buffer_insufficient_space_error =>
 
               Text_IO.New_Line;
-              Text_IO.Put_Line (" All messages received from " & get_address_and_port (choosed_remote_addr) & " showed.");
+              Text_IO.Put_Line (" All messages received from " &
+                get_address_and_port (choosed_remote_addr) & " showed.");
           end b2;
 
           ok := True;
 
         else
 
-          Text_IO.Put_Line (" Failed in receive messages from " & get_address_and_port (choosed_remote_addr));
+          Text_IO.Put_Line (" Failed in receive messages from " &
+
+          get_address_and_port (choosed_remote_addr));
 
           if bytes_tmp = 0 then
 
@@ -1015,9 +1019,10 @@ begin
 
           if polls.hang_up_error (host_poll'Access, host_sock) then
 
-            Text_IO.Put_Line (" Remote Host " & get_address_and_port (choosed_remote_addr) & " closed the connection. ");
+            Text_IO.Put_Line (" Remote Host " & get_address_and_port (choosed_remote_addr) &
+              " closed the connection. ");
 
-            Text_IO.Put_Line (" Besides reconnect, nothing to do in this case." & " quitting.");
+            Text_IO.Put_Line (" Besides reconnect, nothing to do in this case. quitting.");
 
           end if;
         end if;
@@ -1199,15 +1204,18 @@ begin
           Text_IO.Put_Line (" " & this_task_id_str & " remote host " &
             get_address_and_port (remote_address));
 
-          polls.add_events (task_poll'Access, connected_sock, polls.receive_ev); -- all *_ev events can be or'ed.
+          polls.add_events (task_poll'Access, connected_sock, polls.receive_ev);
+          -- all *_ev events can be or'ed.
 
           Text_IO.Put_Line (" " & this_task_id_str & " waiting to receive data.");
 
-          result_from_poll  := polls.start_events_listen (task_poll'Access, 3000); -- block, 3 seconds time_out
+          result_from_poll  := polls.start_events_listen (task_poll'Access, 3000);
+          -- block, 3 seconds time_out
 
           if result_from_poll > 0 then
 
-            size_tmp  := receive (connected_sock, recv_send_buffer); -- block and initialize recv_send_buffer
+            size_tmp  := receive (connected_sock, recv_send_buffer);
+               -- block and initialize recv_send_buffer
 
             if size_tmp = socket_error then
 
@@ -1268,7 +1276,8 @@ begin
 
           Text_IO.Put_Line (" " & this_task_id_str & " waiting to send data to remote host");
 
-          result_from_poll  := polls.start_events_listen (task_poll'Access, 3000); -- block, 3 seconds timeout.
+          result_from_poll  := polls.start_events_listen (task_poll'Access, 3000);
+            -- block, 3 seconds timeout.
 
           if result_from_poll > 0 then
 
@@ -1339,7 +1348,8 @@ begin
           exit loop2;
         end if;
 
-        if accept_socket (host_sock, incomming_socket) then -- block. accepted socket incomming_socket is allways a new one.
+        if accept_socket (host_sock, incomming_socket) then
+          -- block. accepted socket incomming_socket is allways a new one.
           -- For the curious: We believe the task(s) will not leak.
           -- Reason: ARM-2012 7.6 (9.2/2) :-)
           working_task  :=  new recv_send_task (incomming_socket);
@@ -1567,7 +1577,8 @@ begin
 
           if polls.hang_up_error (local_poll'Access, local_sock) then
 
-            Text_IO.Put_Line (" Remote Host " & get_address_and_port (remote_addr) & " closed the connection. ");
+            Text_IO.Put_Line (" Remote Host " & get_address_and_port (remote_addr) &
+              " closed the connection. ");
 
             Text_IO.Put_Line (" Nothing more to do. Quitting.");
 
@@ -1623,7 +1634,8 @@ begin
 
               Text_IO.New_Line;
 
-              Text_IO.Put_Line (" All messages received from " & get_address_and_port (remote_addr2) & " showed.");
+              Text_IO.Put_Line (" All messages received from " & get_address_and_port (remote_addr2) &
+                " showed.");
 
           end b2;
 
@@ -1660,7 +1672,8 @@ begin
 
           if polls.hang_up_error (local_poll'Access, local_sock) then
 
-            Text_IO.Put_Line (" Remote Host " & get_address_and_port (remote_addr) & " closed the connection. ");
+            Text_IO.Put_Line (" Remote Host " & get_address_and_port (remote_addr) &
+              " closed the connection. ");
 
             Text_IO.Put_Line (" Besides reconnect, nothing to do in this case." & " quitting.");
 
@@ -1908,7 +1921,8 @@ begin
 
             Text_IO.Put_Line (" " & this_task_id_str & " waiting to send data to remote host");
 
-            poll_result  := polls.start_events_listen (poll_send'Access, 2500); -- block, 2.5 seconds timeout.
+            poll_result  := polls.start_events_listen (poll_send'Access, 2500);
+              -- block, 2.5 seconds timeout.
 
             if poll_result > 0 then
 
