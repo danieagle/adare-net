@@ -1,5 +1,5 @@
 
-.PHONY: all all-debug clean install install-dev install-debug install-dev-debug uninstall os-verify
+.PHONY: all all-debug clean install install-dev uninstall os-verify
 
 all: clean
 	gprbuild -j8 -Xmod=release -p -Xmi_os=${AOS} -Padare_net

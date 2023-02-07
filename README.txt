@@ -42,14 +42,10 @@ or
 
 To Install only runtime (as root or admin user):
   make AOS=OS_TYPE install <enter>
-or
-  make AOS=OS_TYPE install-debug <enter>
 
 
 To Install runtime, adare_net.gpr and development files (as root or admin user):
   make AOS=OS_TYPE install-dev <enter>
-or
-  make AOS=OS_TYPE install-dev-debug <enter>
 
 
 To Uninstall (as root or admin user):
