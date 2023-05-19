@@ -39,17 +39,30 @@ To compile:
   make AOS=OS_TYPE <enter>
 or
   make AOS=OS_TYPE all-debug <enter>
+or
+  VScode => Terminal => Run Build Task =>  Ada: Build Main_Project
+    (and choose the options showed)
+or
+  VScode => Terminal => Run Build Task =>  Ada: Build Examples
+    (and choose the options showed)
 
 To Install only runtime (as root or admin user):
   make AOS=OS_TYPE install <enter>
-
+or
+  VScode => Terminal => Run Task => ada: Install Main Project
+    (and choose the options showed)
 
 To Install runtime, adare_net.gpr and development files (as root or admin user):
   make AOS=OS_TYPE install-dev <enter>
-
+or
+  VScode => Terminal => Run Task => ada: Install Main_Project
+    (and choose the options showed)
 
 To Uninstall (as root or admin user):
   make uninstall <enter>
+or
+  VScode => Terminal => Run Task => ada: Uninstall Main_Project
+    (and choose the options showed)
 
 
 Note from Makefile:
