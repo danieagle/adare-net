@@ -26,7 +26,7 @@ use socket_types;
 with Interfaces.C;
 use Interfaces.C;
 
-procedure client
+procedure udp_client
 is
 begin
 
@@ -40,7 +40,7 @@ begin
     Text_IO.New_Line;
     Text_IO.Put_Line (" Minimum of 2 messages ");
     Text_IO.New_Line (2);
-    Text_IO.Put_Line (" It will also show that 'buffer' can be readed and writed offline ");
+    Text_IO.Put_Line (" It will also show that 'buffer' can be read and writed offline ");
 
     Text_IO.New_Line;
 
@@ -311,4 +311,4 @@ begin
 
   stop_adare_net;
 
-end client;
+end udp_client;

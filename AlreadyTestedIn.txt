@@ -1,17 +1,5 @@
 v.latest =>
 
-1) Msys2 (09dec2022) Win10Home + gnat 13.2 + AMD64 + gcc 13.2 + gprbuild 2021
+1) Ubuntu 23.10 Linux AMD64 + gnat 13.2 + gcc 13.2 + gprbuild 2021
 
-2) Ubuntu 23.10 Linux AMD64 + gnat 13.2 + gcc 13.2 + gprbuild 2021
-
-3) MacOSX ? Someone can try and report feedback ? :-D Pleeeaase! Enjoy!!
-
-
-v.0.0.49 =>
-
-1) Ubuntu 22.04 Linux AMD64 + gnat 12 + gcc 12 + gprbuild 2021.0.0.0778b109-5
-
-2) Ubuntu 22.10 Linux AMD64 + gnat 12.1 + gcc 12.1 + gprbuild 2022.0.0-7
-
-3) Msys2 (12jul2022) Win10Pro 21H2 (fresh install) + AMD64 + gnat-12.1 +
-  gcc-12.1 + gprbuild 2021
+2) MacOSX ? Someone can try and report feedback ? :-D Pleeeaase! Enjoy!!
