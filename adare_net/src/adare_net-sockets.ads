@@ -98,16 +98,25 @@ is
     (Stream : in out socket_buffer;
      Item   : in Stream_Element_Array);
 
+
   type rewind_t is private;
+
 
   function get_read_rewind
     (from : not null socket_buffer_access) return rewind_t
      with pre => not is_empty (from);
 
+  function get_current_reading_position -- better name :-)
+    (from : not null socket_buffer_access) return rewind_t renames get_read_rewind;
+
   function read_rewind
     (who : not null socket_buffer_access;
      rewind_at  : rewind_t) return Boolean
      with pre => not is_empty (who);
+
+  function rewind_reading_at -- better name :-)
+    (who : not null socket_buffer_access;
+    rewind_at : rewind_t) return Boolean renames read_rewind;
 
   type socket is private
     with Preelaborable_initialization;

@@ -1,39 +1,38 @@
 
-#include <stdint.h>
-
-#ifdef _WIN32
-
-#ifndef _WIN64
-#error OS Need be of 64bit
-#endif
-
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <stdio.h>
-#else
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <errno.h>
-#endif
+#if !defined C_ADARENET_H
+#define C_ADARENET_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#include <stdint.h>
+#include <stddef.h>
+#include <string.h>
+
 #ifdef _WIN32
 
-  typedef uint64_t c_socket_type;
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
+   typedef SOCKET c_socket_type;
 #else
 
-  typedef int c_socket_type;
+#include <stdio.h>
+#include <netdb.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <poll.h>
+#include <errno.h>
+
+    typedef int c_socket_type;
 #endif
 
-struct sockaddr_storage_ada {
-  uint16_t ss_family;
-  uint8_t padding[132];
+   struct sockaddr_storage_ada
+   {
+      uint16_t ss_family;
+      uint8_t padding[132];
 };
 
 struct addresses  {
@@ -49,7 +48,7 @@ void c_init_address  (
   int ai_socktype,
   int ai_family,
   int *length,
-  struct addresses list[] // Todo: return list ?
+  struct addresses list[]
 );
 
 void c_show_error (
@@ -61,4 +60,6 @@ void c_reuse_address (c_socket_type fd);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

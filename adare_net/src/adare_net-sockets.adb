@@ -783,7 +783,7 @@ is
     if buffer.data = null then
       b1 :
       declare
-        mi_data : Stream_Element_Array :=  (1 .. 0 => 0);
+        mi_data : constant Stream_Element_Array :=  (1 .. 0 => 0);
       begin
         return mi_data;
       end b1;

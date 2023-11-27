@@ -2,7 +2,7 @@
 Adare_Net
 =====================
 
-Version: 0.1.0-dev
+Version: 0.1.1-dev
 
 Adare_Net is a small, powerfull, portable and easy to use Ada network lib.
 It supports ipv4 ipv6 udp and tcp, Synchronous I/O Multiplexing
@@ -48,9 +48,12 @@ USAGE
 
   Main repository => https://github.com/danieagle/adare-net.git
 
-  All help, tests and pull requests Are Welcome, but the main need now
-    is testing in MSWindows (from Win10_22H2_x64 and upward), Linux and MACOSX
-    for release the upcoming v.0.1.0
+  All help, tests and pull requests Are Welcome, but the More Important/Urgent
+   need now is Testing in MACOSX !
+
+   Testing in MSWindows can be from Win10_22H2_x64 and upward.
+
+   Linux Ubuntu AMD64 23.10 is the mostly tested OS.
 
   Volunteers Are Welcome :-) you want do above ? Very Very Very Thanks!!
 
