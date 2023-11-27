@@ -4,7 +4,7 @@ Adare_Net
 
 Version: 0.1.0-dev
 
-This is a small, powerfull, portable and easy to use Ada network lib.
+Adare_Net is a small, powerfull, portable and easy to use Ada network lib.
 It supports ipv4 ipv6 udp and tcp, Synchronous I/O Multiplexing
 and can 'listen' with ipv6, too.
 
@@ -16,8 +16,8 @@ By using _Synchronous I/O Multiplexing_ and _Ada Tasks_ makes the
 use of non-blocking sockets _unnecessary_.
 
 All supported OS's have exactly the same visible packages names and children
-packages names! No need for have a separate src file in a project for
-each OS just to 'with' different package names.
+packages names! Just 'with' Adare_Net packages _without_ worrying about
+different package names.
 
 Before Version 1.2.0 this is a work in progress,
 but the API is already in a reasonable stable state,

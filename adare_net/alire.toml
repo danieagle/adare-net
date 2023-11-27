@@ -1,6 +1,31 @@
 name = "adare_net"
-description = "Shiny new project"
+description = "It is a small, powerfull, portable and easy to use Ada network lib."
 version = "0.1.0-dev"
+
+long-description = """
+
+Adare_Net is a small, powerfull, portable and easy to use Ada network lib.
+
+      Adare_Net supports ipv4 ipv6 udp and tcp, Synchronous I/O Multiplexing
+      and can 'listen' with ipv6, too.
+
+      The powerfull buffer feature can support all Ada types, tagged types included,
+      and with a more refined treatment, you can use endian proof records and
+      unconstrained arrays.
+
+      By using _Synchronous I/O Multiplexing_ and _Ada Tasks_ makes the
+      use of non-blocking sockets _unnecessary_.
+
+      All supported OS's have exactly the same visible packages names and children
+      packages names!  Just 'with' Adare_Net packages without worrying about
+      different package names.
+
+      Before Version 1.2.0 this is a work in progress,
+      but the API is already in a reasonable stable state,
+      and most changes are or new subprograms and packages
+      or just changing internal parts without changing the visible API.
+
+"""
 
 authors = ["Daniel Norte de Moraes"]
 maintainers = ["Daniel Norte de Moraes <danieagle@tutanota.com>"]
