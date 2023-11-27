@@ -1,0 +1,11 @@
+name = "adare_net"
+description = "Shiny new project"
+version = "0.1.0-dev"
+
+authors = ["Daniel Norte de Moraes"]
+maintainers = ["Daniel Norte de Moraes <danieagle@tutanota.com>"]
+maintainers-logins = ["danieagle"]
+
+[build-switches]
+"*".Ada_Version = "Ada12"
+

@@ -1,6 +1,9 @@
-common/lib/*
-common/obj/*
-common/ali/*
+!adare_net/common/lib/.keep
+!adare_net/common/obj/.keep
+!adare_net/common/ali/.keep
+adare_net/common/lib/*
+adare_net/common/obj/*
+adare_net/common/ali/*
 **/*.o
 **/*.ali
 **/*.gch
@@ -10,3 +13,5 @@ common/ali/*
 **/*.bexch
 **/b__*
 **/*.log
+adare_net/alire/*
+adare_net_examples/alire/*

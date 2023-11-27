@@ -1,0 +1,31 @@
+
+with "config/adare_net_examples_config.gpr";
+
+project adare_net_examples is
+
+  for Languages use ("Ada");
+
+  for Source_Dirs use ("tcp", "udp");
+  for Object_dir  use "obj";
+  for Exec_Dir use "bin";
+  for main use ("tcp_server", "tcp_client", "udp_server", "udp_client");
+
+  package Builder is
+  end Builder;
+
+  package Compiler is
+
+   for switches ("Ada") use adare_net_examples_config.Ada_Compiler_Switches;
+
+  end compiler;
+
+  package Binder is
+  end Binder;
+
+  package Linker is
+  end Linker;
+
+  package Install is
+  end Install;
+
+end adare_net_examples;

@@ -39,7 +39,7 @@ use  adare_net_init;
 with Interfaces.C;
 use Interfaces, Interfaces.C;
 
-procedure server
+procedure tcp_server
 is
 begin
 
@@ -320,4 +320,4 @@ begin
 
   stop_adare_net;
 
-end server;
+end tcp_server;

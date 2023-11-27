@@ -1,30 +1,11 @@
 
+with "config/adare_net_config.gpr";
+
 library project adare_net is
 
   for Languages use ("Ada", "C");
 
-  version := "0.0.128";
-
-  type os_type is ("linux", "mswindows", "macosx", "bsd", "unix", "other");
-
-  -- mi_os : os_type := external ("mi_os", "linux");
-  mi_os : os_type := external ("mi_os", "mswindows");
-
-  source0 := ();
-
-  case mi_os is -- only 64bit OS
-    when  "linux" =>
-      source0 := ("src", "src/linux");
-
-    when  "mswindows" =>
-      source0 := ("src", "src/mswindows");
-
-    when  others =>
-      source0 := ("src", "src/linux");
-
-  end case;
-
-  for Source_Dirs use source0;
+  for Source_Dirs use ("src", "src/" & adare_net_config.Alire_Host_OS);
   for Object_dir  use "common/obj";
   for Library_ALI_Dir use "common/ali";
   for Library_Dir  use "common/lib";
@@ -51,34 +32,30 @@ library project adare_net is
     "adare_net-sockets-utils.adb"
     );
 
-  case mi_os is
-    when "linux" | "unix" | "bsd" =>
-      for Library_Version use "libadare_net.so." & version;
+  case adare_net_config.Alire_Host_OS is
+    when "linux" =>
+      for Library_Version use "libadare_net.so." & adare_net_config.Crate_Version;
 
-    when "mswindows" =>
-      for Library_Version use "libadare_net." & version & ".dll";
+    when "windows" =>
+      for Library_Version use "libadare_net." & adare_net_config.Crate_Version & ".dll";
       for Library_Options use ("-lws2_32");
 
-    when "macosx" =>
-      for Library_Version use "libadare_net." & version & ".dylib";
+    when "macos" =>
+      for Library_Version use "libadare_net." & adare_net_config.Crate_Version & ".dylib";
 
-    when "other" =>
-      for Library_Version use "libadare_net." & version;
+    when others =>
+      for Library_Version use "libadare_net." & adare_net_config.Crate_Version;
 
   end case;
 
   for Externally_Built use "false";
 
-  type Mode_type is ("debug", "release");
-
-  Modu : Mode_type := external ("mod", "release");
-
   package Builder is
   end Builder;
 
   package Linker is
-    case mi_os is
-      when "mswindows" =>
+    case adare_net_config.Alire_Host_OS is
+      when "windows" =>
         for Linker_Options use ("-lws2_32");
 
       when others =>
@@ -89,20 +66,19 @@ library project adare_net is
 
   package Compiler is
 
-    case Modu is
-      when "debug" =>
-        for switches ("Ada")
-          use ("-gnat2012", "-Og", "-g3", "-gnateE", "-gnatef", "-gnateV", "-gnatf", "-gnaty2abCefhiklnprstmM135", "-gnatwa");
-        for switches ("C")
-          use ("-Og", "-g3", "-Wall", "-Wextra", "-Wshadow", "-Wuninitialized", "-Wundef", "-march=native");
+      for switches ("Ada") use adare_net_config.Ada_Compiler_Switches;
 
-      when "release" =>
-        for switches ("Ada")
-          use ("-gnat2012", "-O3", "-gnateE", "-gnatef", "-gnateV", "-gnatf", "-gnaty2abCefhiklnprstmM135", "-gnatwa");
-        for switches ("C")
-          use ("-O3", "-Wall", "-Wextra", "-Wshadow", "-Wuninitialized", "-Wundef", "-march=native");
+      case adare_net_config.Build_Profile is
 
-    end case;
+         when "validation" | "development" =>
+            for switches ("C")
+               use ("-Og", "-g3", "-Wall", "-Wextra", "-Wshadow", "-Wuninitialized", "-Wundef", "-march=native");
+
+         when "release" =>
+            for switches ("C")
+               use ("-O3", "-Wall", "-Wextra", "-Wshadow", "-Wuninitialized", "-Wundef", "-march=native");
+
+      end case;
   end compiler;
 
   package Binder is
