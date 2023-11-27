@@ -15,3 +15,5 @@ adare_net/common/ali/*
 **/*.log
 adare_net/alire/*
 adare_net_examples/alire/*
+adare_net_examples/bin/*
+adare_net_examples/obj/*

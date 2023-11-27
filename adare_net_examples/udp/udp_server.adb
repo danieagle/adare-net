@@ -39,7 +39,7 @@ use  adare_net_init;
 with Interfaces.C;
 use Interfaces, Interfaces.C;
 
-procedure server
+procedure udp_server
 is
 begin
   start_adare_net;
@@ -321,4 +321,4 @@ begin
 
   stop_adare_net;
 
-end server;
+end udp_server;
