@@ -2,7 +2,7 @@
 Adare_Net
 =====================
 
-Version: 0.1.0-dev
+Version: 0.1.1-dev
 
 Adare_Net is a small, powerfull, portable and easy to use Ada network lib.
 It supports ipv4 ipv6 udp and tcp, Synchronous I/O Multiplexing
