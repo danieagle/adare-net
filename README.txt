@@ -15,12 +15,12 @@ unconstrained arrays.
 By using _Synchronous I/O Multiplexing_ and _Ada Tasks_ makes the
 use of non-blocking sockets _unnecessary_.
 
-All supported OS's have exactly the same visible packages and children
+All supported OS's have exactly the same visible packages names and children
 packages names! No need for have a separate src file in a project for
 each OS just to 'with' different package names.
 
 Before Version 1.2.0 this is a work in progress,
-but the API is already in a resonable stable state,
+but the API is already in a reasonable stable state,
 and most changes are or new subprograms and packages
 or just changing internal parts without changing the visible API.
 
@@ -58,8 +58,8 @@ For documentation, see Doc/adare_net.pdf
 
 For examples and how compile in your own projects, see:
   adare_net/src/*.ad{s,b}
-  example/tcp1/ex.gpr and example/tcp1/*.adb
-  example/udp1/ex.gpr and example/udp1/*.adb
+  adare_net_examples/tcp/*.adb
+  adare_net_examples/udp/*.adb
 
   Enjoy!!
 
