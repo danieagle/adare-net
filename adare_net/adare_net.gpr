@@ -1,11 +1,10 @@
-
-with "config/adare_net_config.gpr";
+with "./config/adare_net_config.gpr";
 
 library project adare_net is
 
   for Languages use ("Ada", "C");
 
-  for Source_Dirs use ("src", "src/" & adare_net_config.Alire_Host_OS);
+  for Source_Dirs use ("src", "src/" & adare_net_config.Alire_Host_OS & "/");
   for Object_dir  use "common/obj";
   for Library_ALI_Dir use "common/ali";
   for Library_Dir  use "common/lib";
@@ -13,23 +12,22 @@ library project adare_net is
   for Library_Kind use "dynamic";
   for Library_Auto_Init use "false";
   for Interfaces use (
+    "c_adare_net_init.c",
+    "c_adarenet.c",
     "adare_net.ads",
     "adare_net_exceptions.ads",
     "adare_net_init.ads",
     "adare_net-sockets.adb",
     "adare_net-sockets.ads",
     "adare_net_init.adb",
-    "c_adare_net_init.c",
-    "c_adare_net_init.h",
-    "c_initialize_socket.c",
-    "c_initialize_socket.h",
-    "c_vars.c",
     "socket_types.ads",
     "adare_net-sockets-polls.ads",
     "adare_net-sockets-polls.adb",
     "adare_net-sockets-inners.ads",
     "adare_net-sockets-utils.ads",
-    "adare_net-sockets-utils.adb"
+    "adare_net-sockets-utils.adb",
+    "c_adare_net_init.h",
+    "c_adarenet.h"
     );
 
   case adare_net_config.Alire_Host_OS is
@@ -59,24 +57,22 @@ library project adare_net is
         for Linker_Options use ("-lws2_32");
 
       when others =>
-        null;
+         null;
 
     end case;
   end Linker;
 
   package Compiler is
 
-      for switches ("Ada") use adare_net_config.Ada_Compiler_Switches;
+      for Default_Switches ("Ada") use adare_net_config.Ada_Compiler_Switches;
 
       case adare_net_config.Build_Profile is
 
          when "validation" | "development" =>
-            for switches ("C")
-               use ("-Og", "-g3", "-Wall", "-Wextra", "-Wshadow", "-Wuninitialized", "-Wundef", "-march=native");
+            for Default_Switches ("C") use ("-Og", "-g3", "-Wall", "-Wextra", "-Wshadow", "-Wuninitialized", "-Wundef", "-march=native");
 
          when "release" =>
-            for switches ("C")
-               use ("-O3", "-Wall", "-Wextra", "-Wshadow", "-Wuninitialized", "-Wundef", "-march=native");
+            for Default_Switches ("C") use ("-O3", "-Wall", "-Wextra", "-Wshadow", "-Wuninitialized", "-Wundef", "-march=native");
 
       end case;
   end compiler;

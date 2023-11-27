@@ -3,10 +3,6 @@
 
 #ifdef _WIN32
 
-#ifndef _WIN64
-#error OS Need be of 64bit
-#endif
-
 #include <stdint.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>

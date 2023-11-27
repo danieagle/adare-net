@@ -2,7 +2,7 @@
 #ifndef ADARE_NET_CONFIG_H
 #define ADARE_NET_CONFIG_H
 
-#define CRATE_VERSION "0.1.0-dev"
+#define CRATE_VERSION "0.1.1-dev"
 #define CRATE_NAME "adare_net"
 
 #define ALIRE_HOST_OS "linux"

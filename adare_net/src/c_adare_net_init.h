@@ -1,4 +1,8 @@
 
+#if !defined C_ADARE_NET_INIT
+#define C_ADARE_NET_INIT
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -9,4 +13,6 @@ extern "C" {
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

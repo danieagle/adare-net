@@ -1,10 +1,8 @@
 name = "adare_net"
 description = "It is a small, powerfull, portable and easy to use Ada network lib."
-version = "0.1.0-dev"
-
+version = "0.1.1-dev"
 long-description = """
-
-Adare_Net is a small, powerfull, portable and easy to use Ada network lib.
+   Adare_Net is a small, powerfull, portable and easy to use Ada network lib.
 
       Adare_Net supports ipv4 ipv6 udp and tcp, Synchronous I/O Multiplexing
       and can 'listen' with ipv6, too.
@@ -25,12 +23,12 @@ Adare_Net is a small, powerfull, portable and easy to use Ada network lib.
       and most changes are or new subprograms and packages
       or just changing internal parts without changing the visible API.
 
-"""
-
+                  """
 authors = ["Daniel Norte de Moraes"]
 maintainers = ["Daniel Norte de Moraes <danieagle@tutanota.com>"]
 maintainers-logins = ["danieagle"]
 
 [build-switches]
 "*".Ada_Version = "Ada12"
+"*".Style_checks = ["-gnaty2abCefhiklnprstmM135"]
 

@@ -5,7 +5,7 @@ pragma Style_Checks (Off);
 package Adare_Net_Config is
    pragma Pure;
 
-   Crate_Version : constant String := "0.1.0-dev";
+   Crate_Version : constant String := "0.1.1-dev";
    Crate_Name : constant String := "adare_net";
 
    Alire_Host_OS : constant String := "linux";
