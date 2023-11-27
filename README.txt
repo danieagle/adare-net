@@ -2,21 +2,24 @@
 Adare_Net
 =====================
 
-Version: 0.0.128
+Version: 0.1.0-dev
 
-This is a small, portable and easy to use Ada network lib.
-It supports ipv4 ipv6 udp and tcp, Socket Synchronous I/O Multiplexing
+This is a small, powerfull, portable and easy to use Ada network lib.
+It supports ipv4 ipv6 udp and tcp, Synchronous I/O Multiplexing
 and can 'listen' with ipv6, too.
 
 The powerfull buffer feature can support all Ada types, tagged types included,
 and with a more refined treatment, you can use endian proof records and
 unconstrained arrays.
 
+By using _Synchronous I/O Multiplexing_ and _Ada Tasks_ makes the
+use of non-blocking sockets _unnecessary_.
+
 All supported OS's have exactly the same visible packages and children
 packages names! No need for have a separate src file in a project for
 each OS just to 'with' different package names.
 
-Before Version 0.1.0 this is a work in progress,
+Before Version 1.2.0 this is a work in progress,
 but the API is already in a resonable stable state,
 and most changes are or new subprograms and packages
 or just changing internal parts without changing the visible API.
@@ -25,65 +28,28 @@ Maintenance Status: Very Active.
 
 Adare_net is written in Ada2012 and C.
 
-It need gprbuild to build.
+It need Alire to build.
 
-If you don't have a make command, use the commands from Makefile directly or
-use VScode.
+Adare_Net crate will be published in Public Alire after
+ Adare_Net Version 1.2.0. Enjoy!!
 
 How a Bonus Almost all packages in this lib is "Ada Preelaborate"! :-)
 
 USAGE
 -----
 
-To compile:
-  make AOS=OS_TYPE <enter>
-or
-  make AOS=OS_TYPE all-debug <enter>
-or
-  VScode => Terminal => Run Build Task =>  Ada: Build Main_Project
-    (and choose the options showed)
-or
-  VScode => Terminal => Run Build Task =>  Ada: Build Examples
-    (and choose the options showed)
+   Building before publishing in Public Alire Arquive:
 
-To Install only runtime (as root or admin user):
-  make AOS=OS_TYPE install <enter>
-or
-  VScode => Terminal => Run Task => ada: Install Main Project
-    (and choose the options showed)
+      git clone https://github.com/danieagle/adare-net.git
+      cd adare_net
+      alr build --release
 
-To Install runtime, adare_net.gpr and development files (as root or admin user):
-  make AOS=OS_TYPE install-dev <enter>
-or
-  VScode => Terminal => Run Task => ada: Install Main_Project
-    (and choose the options showed)
+   And Be Happy :-D
 
-To Uninstall (as root or admin user):
-  make uninstall <enter>
-or
-  VScode => Terminal => Run Task => ada: Uninstall Main_Project
-    (and choose the options showed)
-
-
-Note from Makefile:
-
-  OS_TYPE is one of linux, mswindows, macosx, bsd, unix, other
-
-  When using Gprbuild, the option OS_TYPE control:
-    1)  The name of this library
-    2.1)  Which libraries need to be linked when building Adare_Net.
-    2.2)  When compiling, the link of Adare_Net and libs need by Adare_Net.
-
-  If you need other OS's, new features or bug fix:
-    Just file an issue and we'll trie reasonable hard to make you
-      Happy.
-    Forking and contribute with Pull Requests is yet the more speedy manner to
-      get things included.
-
-  Main repository => https://github.com/danieagle/adare-net
+  Main repository => https://github.com/danieagle/adare-net.git
 
   All help, tests and pull requests Are Welcome, but the main need now
-    is testing in MSWindows (from Win10_22H2_x64), Linux and MACOSX
+    is testing in MSWindows (from Win10_22H2_x64 and upward), Linux and MACOSX
     for release the upcoming v.0.1.0
 
   Volunteers Are Welcome :-) you want do above ? Very Very Very Thanks!!
