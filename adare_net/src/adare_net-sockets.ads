@@ -16,6 +16,9 @@ is
   use Interfaces.C;
   use socket_types;
 
+  pragma Assert(Interfaces.C.char'Size = Ada.Streams.Stream_Element'Size,
+    "Actually C.char'Size need be equal to Stream_Element'Size but ask maintainers about this. :-)");
+
   type ports  is new  Unsigned_16;
 
   type Address_family is new Unsigned_16;
