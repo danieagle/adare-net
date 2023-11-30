@@ -41,7 +41,7 @@ USAGE
    Building before publishing in Public Alire Arquive:
 
       git clone https://github.com/danieagle/adare-net.git
-      cd adare_net
+      cd adare-net/adare_net
       alr build --release
 
    And Be Happy :-D
