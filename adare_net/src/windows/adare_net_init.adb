@@ -5,14 +5,14 @@ is
   procedure start_adare_net
   is
     procedure inner1
-      with Import => True, Convention => stdcall,
+      with Import => True, Convention => StdCall,
         External_Name => "c_start_adare_net";
 
     procedure inner2
       with Import => True, Convention => Ada,
       External_Name => "adare_netinit";
   begin
-    inner2;
+    inner2; -- inner1; inner2; ?
     inner1;
   end start_adare_net;
 

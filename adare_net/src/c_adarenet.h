@@ -6,6 +6,7 @@
 extern "C" {
 #endif
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
@@ -15,10 +16,14 @@ extern "C" {
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-   typedef SOCKET c_socket_type;
+#ifdef _WIN64
+  typedef uint64_t c_socket_type;
+#else
+  typedef uint32_t c_socket_type;
+#endif
+   
 #else
 
-#include <stdio.h>
 #include <netdb.h>
 #include <string.h>
 #include <sys/types.h>
