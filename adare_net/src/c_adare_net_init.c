@@ -1,32 +1,37 @@
 
 #include "c_adare_net_init.h"
 
-#ifdef _WIN32
-
-#include <stdint.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-  void c_start_adare_net (void){
 
-    #ifdef _WIN32
-      WSADATA wsaData;
-      WSAStartup(MAKEWORD(2,2), &wsaData);
-    #endif
+  int c_start_adare_net (void){
 
+#ifdef _WIN32
+  WORD mi_ver;
+  WSADATA mi_data;
+  int mi_err;
+
+  mi_ver = MAKEWORD(2, 2);
+  mi_err = WSAStartup(mi_ver, &mi_data);
+
+  return mi_err;
+#endif
+
+    return 0;
   }
 
-  void c_stop_adare_net (void){
+  int c_stop_adare_net (void){
 
-    #ifdef _WIN32
-      WSACleanup();
-    #endif
+#ifdef _WIN32
+
+  int mi_err;
+  mi_err = WSACleanup();
+  return mi_err;
+
+#endif
+    return 0;
   }
 
 #ifdef __cplusplus

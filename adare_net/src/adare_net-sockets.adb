@@ -656,6 +656,10 @@ is
     (sock : not null socket_access) return socket_type
   is (sock.sock);
 
+  function get_sock
+    (sock : not null socket_access) return signed_socket_type
+  is (signed_socket_type (sock.sock));
+
   function get_addresses
     (sock : not null socket_access) return addresses
   is (sock.storage);

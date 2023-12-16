@@ -52,10 +52,17 @@ is
 
   function inner_poll
     (from_poll_i  : Address;
-     count_i      : int;
-     time_out_i   : int
+     count_i      : Address;
+     time_out_i   : Address
      ) return int
      with Import => True, Convention => StdCall, External_Name => "WSAPoll";
+
+  -- function inner_poll
+  --  (from_poll_i  : Address;
+  --   count_i      : unsigned_long;
+  --   time_out_i   : int
+  --   ) return int
+  --   with Import => True, Convention => StdCall, External_Name => "WSAPoll";
 
   function inner_recvfrom
     (sock_i : socket_type;
@@ -115,5 +122,13 @@ is
     (message_i : in out char_array;
     length_i   : in out int)
     with Import => True, Convention => StdCall, External_Name => "c_show_error";
+
+  function inner_and
+    (left, right : Interfaces.C.short) return Interfaces.C.short
+    with Import => True, Convention => StdCall, External_Name => "mi_and";
+
+  function inner_or
+    (left, right : Interfaces.C.short) return Interfaces.C.short
+    with Import => True, Convention => StdCall, External_Name => "mi_or";
 
 end adare_net.sockets.inners;

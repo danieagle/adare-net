@@ -14,6 +14,10 @@ adare_net/common/ali/*
 **/b__*
 **/*.log
 adare_net/alire/*
+adare_net/lib/*
+adare_net/obj/*
+adare_net/config/*
 adare_net_examples/alire/*
 adare_net_examples/bin/*
 adare_net_examples/obj/*
+adare_net_examples/config/*

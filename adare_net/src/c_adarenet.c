@@ -15,11 +15,12 @@ extern "C" {
    const int c_sock_dgram = SOCK_DGRAM;
    const int c_sock_stream = SOCK_STREAM;
 
-   const unsigned short c_event_pollin = POLLIN;
-   const unsigned short c_event_pollout = POLLOUT;
-   const unsigned short c_event_pollerror = POLLERR;
-   const unsigned short c_event_pollhup = POLLHUP;
-   const unsigned short c_event_pollnval = POLLNVAL;
+   const signed short c_event_pollin = POLLIN;
+   const signed short c_event_pollout = POLLOUT;
+
+   const signed short c_event_pollerror = POLLERR;
+   const signed short c_event_pollhup = POLLHUP;
+   const signed short c_event_pollnval = POLLNVAL;
 
    void c_init_address(
        const char *ip_or_host,
@@ -107,6 +108,14 @@ void c_reuse_address (c_socket_type fd){
 #endif
 
   setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
+}
+
+
+short mi_and(const short left, const short rigth){
+  return left & rigth;
+}
+short mi_or(const short left, const short rigth){
+  return left | rigth;
 }
 
 

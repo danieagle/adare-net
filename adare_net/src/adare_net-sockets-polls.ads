@@ -4,32 +4,39 @@ package adare_net.sockets.polls
 is
   pragma  Assertion_Policy (Check);
 
-  type event_type is new unsigned_short;
+  function "And" (left, right : Interfaces.C.short)
+    return Interfaces.C.short;
 
-  receive_ev  : constant event_type
-    with Import => True, Convention => C, External_Name => "c_event_pollin";
+  function "Or" (left, right : Interfaces.C.short)
+    return Interfaces.C.short;
 
-  send_ev     : constant event_type
-    with Import => True, Convention => C, External_Name => "c_event_pollout";
+  type event_type is new Interfaces.C.short with
+   Size => Interfaces.C.short'Size, Convention => C;
 
-  accept_ev   : constant event_type
-    with Import => True, Convention => C, External_Name => "c_event_pollin";
+  receive_ev : constant event_type with
+    Import => True, Convention => C, External_Name => "c_event_pollin";
 
+  send_ev : constant event_type with
+    Import => True, Convention => C, External_Name => "c_event_pollout";
 
-  type error_type is new unsigned_short;
-
-  poll_err    : constant error_type
-    with Import => True, Convention => C, External_Name => "c_event_pollerror";
-
-  hang_up_err : constant error_type
-    with Import => True, Convention => C, External_Name => "c_event_pollhup";
-
-  socket_descritor_err  : constant error_type
-    with Import => True, Convention => C, External_Name => "c_event_pollnval";
+  accept_ev : constant event_type with
+    Import => True, Convention => C, External_Name => "c_event_pollin";
 
 
-  type poll_type (Len : Unsigned_8) is private
-    with Preelaborable_Initialization;
+  type error_type is new Interfaces.C.short with
+   Size => Interfaces.C.short'Size, Convention => C;
+
+  poll_err : constant error_type with
+    Import => True, Convention => C, External_Name => "c_event_pollerror";
+
+  hang_up_err : constant error_type with
+    Import => True, Convention => C, External_Name => "c_event_pollhup";
+
+  socket_descritor_err : constant error_type with
+    Import => True, Convention => C, External_Name => "c_event_pollnval";
+
+  type poll_type (Len : int) is private
+    with Static_Predicate => Len >= 1 and then Len < 256;
 
   function is_full
     (mi_poll : not null access poll_type) return Boolean;
@@ -54,7 +61,7 @@ is
 
   procedure remove
     (from_poll   : not null access poll_type;
-     what         : not null socket_access
+     what        : not null socket_access
     )
     with pre => not is_empty (from_poll) and then is_in (from_poll, what);
 
@@ -71,7 +78,8 @@ is
 
   function start_events_listen
     (from_poll : not null access poll_type;
-     time_out   : int -- time_out < 0 => forever wait
+     time_out   : int  := 15000
+                      -- time_out < 0 => forever wait
                       -- time_out = 0 => no wait
                       -- time_out > 0 => miliseconds time_out wait
     ) return number_of_hits
@@ -80,56 +88,63 @@ is
   function receive_event
     (from_poll    : not null access poll_type;
      for_sock     : not null socket_access) return Boolean
-     with  pre => initialized (for_sock);
+     with  pre => initialized (for_sock) and then is_in (from_poll, for_sock);
 
   function accept_event
     (from_poll    : not null access poll_type;
      for_sock     : not null socket_access) return Boolean
-     with  pre => initialized (for_sock);
+     with  pre => initialized (for_sock) and then is_in (from_poll, for_sock);
 
   function send_event
     (from_poll    : not null access poll_type;
      for_sock     : not null socket_access) return Boolean
-     with  pre => initialized (for_sock);
+     with  pre => initialized (for_sock) and then is_in (from_poll, for_sock);
 
   function poll_error
     (from_poll    : not null access poll_type;
      for_sock     : not null socket_access) return Boolean
-     with  pre => initialized (for_sock);
+     with  pre => initialized (for_sock) and then is_in (from_poll, for_sock);
 
   function hang_up_error
     (from_poll    : not null access poll_type;
      for_sock     : not null socket_access) return Boolean
-     with  pre => initialized (for_sock);
+     with  pre => initialized (for_sock) and then is_in (from_poll, for_sock);
 
   function socket_descritor_error
     (from_poll    : not null access poll_type;
      for_sock     : not null socket_access) return Boolean
-     with  pre => initialized (for_sock);
+     with  pre => initialized (for_sock) and then is_in (from_poll, for_sock);
 
 private
 
-  type pollfd is
+  type pollfd is record
+    fd      : aliased signed_socket_type := missing_file_descriptor;
+    events  : aliased event_type         := 0;
+    revents : aliased Interfaces.C.short := 0;
+  end record with
+    Convention => C, Preelaborable_Initialization;
+
+  -- type pollfd is
+  --   record
+  --     fd      : aliased signed_socket_type := missing_file_descriptor;
+  --     events  : aliased short := 0;
+  --     revents : aliased short := 0;
+  --   end record
+  --   with Convention => C;
+  null_pollfd : constant pollfd :=
+    pollfd'(fd => missing_file_descriptor, events => 0, revents => 0);
+
+  type pollfd_array is array (int range <>) of pollfd with
+    Convention => C, Preelaborable_Initialization;
+
+  type socket_type_array is array (int range <>) of socket_type
+    with Convention => C, preelaborable_initialization;
+
+  type poll_type (Len : int) is
     record
-      fd      : aliased socket_type;
-      events  : aliased unsigned_short;
-      revents : aliased unsigned_short;
-    end record
-    with Convention => C, Preelaborable_initialization;
-
-  null_pollfd  : constant pollfd := (fd => -1, events => 0, revents => 0);
-
-  type pollfd_array is array (Unsigned_8 range <>) of pollfd
-    with Convention => C, Preelaborable_initialization;
-
-  type socket_type_array is array (Unsigned_8 range <>) of socket_type
-    with default_component_value => invalid_socket;
-
-  type poll_type (Len : Unsigned_8) is
-    record
-      count : Unsigned_8 := 0;
-      pos   : socket_type_array (1 .. Len);
-      poll  : pollfd_array (1 .. Len);
+      count : aliased int := 0;
+      pos   : aliased socket_type_array (1 .. Len);
+      poll  : aliased pollfd_array (1 .. Len);
     end record;
 
 end adare_net.sockets.polls;

@@ -1,86 +1,69 @@
-with "./config/adare_net_config.gpr";
+with "config/adare_net_config.gpr";
 
-library project adare_net is
+project adare_net is
 
-  for Languages use ("Ada", "C");
-
-  for Source_Dirs use ("src", "src/" & adare_net_config.Alire_Host_OS & "/");
-  for Object_dir  use "common/obj";
-  for Library_ALI_Dir use "common/ali";
-  for Library_Dir  use "common/lib";
+  for Languages use ("C", "Ada");
   for Library_Name use "adare_net";
-  for Library_Kind use "dynamic";
-  for Library_Auto_Init use "false";
-  for Interfaces use (
-    "c_adare_net_init.c",
-    "c_adarenet.c",
-    "adare_net.ads",
-    "adare_net_exceptions.ads",
-    "adare_net_init.ads",
-    "adare_net-sockets.adb",
-    "adare_net-sockets.ads",
-    "adare_net_init.adb",
-    "socket_types.ads",
-    "adare_net-sockets-polls.ads",
-    "adare_net-sockets-polls.adb",
-    "adare_net-sockets-inners.ads",
-    "adare_net-sockets-utils.ads",
-    "adare_net-sockets-utils.adb",
-    "c_adare_net_init.h",
-    "c_adarenet.h"
-    );
 
   case adare_net_config.Alire_Host_OS is
-    when "linux" =>
-      for Library_Version use "libadare_net.so." & adare_net_config.Crate_Version;
-
     when "windows" =>
-      for Library_Version use "libadare_net." & adare_net_config.Crate_Version & ".dll";
       for Library_Options use ("-lws2_32");
-
-    when "macos" =>
-      for Library_Version use "libadare_net." & adare_net_config.Crate_Version & ".dylib";
-
     when others =>
-      for Library_Version use "libadare_net." & adare_net_config.Crate_Version;
-
+      null;
   end case;
-
-  for Externally_Built use "false";
-
-  package Builder is
-  end Builder;
-
   package Linker is
     case adare_net_config.Alire_Host_OS is
       when "windows" =>
-        for Linker_Options use ("-lws2_32");
-
+        for Linker_options use ("-lws2_32");
       when others =>
-         null;
-
+        null;
     end case;
   end Linker;
 
+  for Library_Version use Project'Library_Name & ".so." & adare_net_config.Crate_Version;
+  for Source_Dirs use ("src", "config", "src/" & adare_net_config.Alire_Host_OS);
+  for Object_Dir use "obj/" & adare_net_config.Build_Profile;
+  for Create_Missing_Dirs use "True";
+  for Library_Dir use "lib";
+
+  for Library_Auto_Init use "false";
+  for Interfaces use (
+    "adare_net.ads",
+    "adare_net_exceptions.ads",
+    "socket_types.ads",
+    "c_adare_net_init.h",
+    "c_adare_net_init.c",
+    "c_adarenet.h",
+    "c_adarenet.c",
+    "adare_net-sockets-inners.ads",
+    "adare_net_init.ads",
+    "adare_net_init.adb",
+    "adare_net-sockets.ads",
+    "adare_net-sockets.adb",
+    "adare_net-sockets-polls.ads",
+    "adare_net-sockets-polls.adb",
+    "adare_net-sockets-utils.ads",
+    "adare_net-sockets-utils.adb",
+    "adare_net_config.ads"
+  );
+
+  type Library_Type_Type is ("relocatable", "static", "static-pic");
+  Library_Type : Library_Type_Type :=
+    external ("TEST_LIBRARY_TYPE", external ("LIBRARY_TYPE", "static"));
+  for Library_Kind use Library_Type;
+
   package Compiler is
-
-      for Default_Switches ("Ada") use adare_net_config.Ada_Compiler_Switches;
-
-      case adare_net_config.Build_Profile is
-
-         when "validation" | "development" =>
-            for Default_Switches ("C") use ("-Og", "-g3", "-Wall", "-Wextra", "-Wshadow", "-Wuninitialized", "-Wundef", "-march=native");
-
-         when "release" =>
-            for Default_Switches ("C") use ("-O3", "-Wall", "-Wextra", "-Wshadow", "-Wuninitialized", "-Wundef", "-march=native");
-
-      end case;
+    for Default_Switches ("Ada") use adare_net_config.Ada_Compiler_Switches;
   end compiler;
 
+
   package Binder is
+    for Switches ("Ada") use ("-Es"); --  Symbolic traceback
   end Binder;
 
   package Install is
+    for Artifacts (".") use ("share");
   end Install;
+
 
 end adare_net;

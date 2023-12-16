@@ -16,7 +16,7 @@ is
   use Interfaces.C;
   use socket_types;
 
-  pragma Assert(Interfaces.C.char'Size = Ada.Streams.Stream_Element'Size,
+  pragma Assert (Interfaces.C.char'Size = Ada.Streams.Stream_Element'Size,
     "Actually C.char'Size need be equal to Stream_Element'Size but ask maintainers about this. :-)");
 
   type ports  is new  Unsigned_16;
@@ -215,6 +215,10 @@ is
 
   function get_sock
     (sock : not null socket_access) return socket_type
+     with pre => initialized (sock);
+
+  function get_sock
+    (sock : not null socket_access) return signed_socket_type
      with pre => initialized (sock);
 
   function get_addresses

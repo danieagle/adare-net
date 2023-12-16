@@ -1,5 +1,5 @@
 
-#if !defined C_ADARENET_H
+#ifndef C_ADARENET_H
 #define C_ADARENET_H
 
 #ifdef __cplusplus
@@ -21,7 +21,7 @@ extern "C" {
 #else
   typedef uint32_t c_socket_type;
 #endif
-   
+
 #else
 
 #include <netdb.h>
@@ -62,6 +62,9 @@ void c_show_error (
 );
 
 void c_reuse_address (c_socket_type fd);
+
+short mi_and(const short left, const short rigth);
+short mi_or(const short left, const short rigth);
 
 #ifdef __cplusplus
 }
