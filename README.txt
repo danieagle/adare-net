@@ -40,27 +40,22 @@ USAGE
 
    Building before publishing in Public Alire Arquive:
 
-      git clone https://github.com/danieagle/adare-net.git
-      cd adare-net/adare_net
-      alr build --release
+    1) enter in your alire project:
+    2) alr with adare_net --use https://github.com/danieagle/adare-net.git
+    
+    3) mybe use: alr build -- -XLIBRARY_TYPE=relocatable
 
    And Be Happy :-D
 
   Main repository => https://github.com/danieagle/adare-net.git
 
-  All help, tests and pull requests Are Welcome, but the More Important/Urgent
-   need now is Testing in MACOSX !
-
-   Testing in MSWindows can be from Win10_22H2_x64 and upward.
-
-   Linux Ubuntu AMD64 23.10 is the mostly tested OS.
-
-  Volunteers Are Welcome :-) you want do above ? Very Very Very Thanks!!
+  Adare_Net is in proccess of rework his poll types and some HouseKeeping. :-D
+  Enjoy!!
 
 For documentation, see Doc/adare_net.pdf
 
 For examples and how compile in your own projects, see:
-  adare_net/src/*.ad{s,b}
+  src/*.ad{s,b}
   adare_net_examples/tcp/*.adb
   adare_net_examples/udp/*.adb
 

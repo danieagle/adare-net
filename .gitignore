@@ -1,9 +1,3 @@
-!adare_net/common/lib/.keep
-!adare_net/common/obj/.keep
-!adare_net/common/ali/.keep
-adare_net/common/lib/*
-adare_net/common/obj/*
-adare_net/common/ali/*
 **/*.o
 **/*.ali
 **/*.gch
@@ -13,10 +7,10 @@ adare_net/common/ali/*
 **/*.bexch
 **/b__*
 **/*.log
-adare_net/alire/*
-adare_net/lib/*
-adare_net/obj/*
-adare_net/config/*
+alire/*
+lib/*
+obj/*
+config/*
 adare_net_examples/alire/*
 adare_net_examples/bin/*
 adare_net_examples/obj/*

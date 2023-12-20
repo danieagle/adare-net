@@ -1,4 +1,7 @@
-announce in Ada Lang newsgroup.
+1) create a new version of poll using epoll and wepoll.
+1.0) linux => windows => macosx.
+
+2) announce in Ada Lang newsgroup and ada forum
   ask for help in testing in:
     MSWindows (Win10_22H2_x64 and up)
     Linux
