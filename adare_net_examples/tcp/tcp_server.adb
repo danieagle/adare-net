@@ -26,6 +26,7 @@ with Ada.Strings.Unbounded;
 with adare_net.sockets.utils;
 with adare_net.sockets.polls;
 use adare_net.sockets;
+use adare_net.sockets.polls;
 
 with adare_net_exceptions;
 use adare_net_exceptions;
@@ -52,7 +53,7 @@ begin
     host_sock           : socket_access := null;
     ok                  : Boolean := False;
   begin
-    init_addresses (ip_or_host =>  "", -- host addresses
+    init_addresses (ip_or_host =>  "::1", -- host addresses
                       port        =>  "25000",
                       ai_socktype =>  tcp,
                       ai_family   =>  any, -- choose ipv4 and ipv6
@@ -106,7 +107,7 @@ begin
     declare
 
       incomming_socket  : socket_access;
-      mi_poll           : aliased polls.poll_type (1);
+      mi_poll           : aliased poll_type (1);
 
       task type recv_send_task (connected_sock  : socket_access);
 
@@ -129,7 +130,7 @@ begin
 
           this_task_id_str  : constant String := Image (Current_Task);
 
-          task_poll         : aliased polls.poll_type (1);
+          task_poll         : aliased poll_type (1);
 
           recv_send_buffer  : socket_buffer_access := new socket_buffer;
           recv_send_buffer2 : socket_buffer_access := new socket_buffer;
@@ -143,15 +144,16 @@ begin
         begin
           clean (recv_send_buffer);
           clean (recv_send_buffer2);
+          clear_all_event_responses(task_poll'Access);
 
           Text_IO.Put_Line (" " & this_task_id_str & " remote host " &
             get_address_and_port (remote_address));
 
-          polls.add_events (task_poll'Access, connected_sock, polls.receive_ev); -- all *_ev events can be or'ed.
+          add_events (task_poll'Access, connected_sock, receive_ev); -- all *_ev events can be or'ed.
 
           Text_IO.Put_Line (" " & this_task_id_str & " waiting to receive data.");
 
-          result_from_poll  := polls.start_events_listen (task_poll'Access, 3000); -- block, 3 seconds time_out
+          result_from_poll  := start_events_listen (task_poll'Access, 3000); -- block, 3 seconds time_out
 
           if result_from_poll > 0 then
 
@@ -201,7 +203,7 @@ begin
               Text_IO.Put_Line (" " & this_task_id_str & " but it is a normal time_out.");
 
             else
-              if polls.hang_up_error (task_poll'Access, connected_sock) then
+              if hang_up_error (task_poll'Access, connected_sock) then
 
                 Text_IO.Put_Line (" " & this_task_id_str & " remote host closed the connection. Quitting.");
 
@@ -210,13 +212,13 @@ begin
             end if;
           end if;
 
-          polls.clear_all_event_responses (task_poll'Access);
+          clear_all_event_responses (task_poll'Access);
 
-          polls.update (task_poll'Access, connected_sock, polls.send_ev);
+          update (task_poll'Access, connected_sock, send_ev);
 
           Text_IO.Put_Line (" " & this_task_id_str & " waiting to send data to remote host");
 
-          result_from_poll  := polls.start_events_listen (task_poll'Access, 3000); -- block, 3 seconds timeout.
+          result_from_poll  := start_events_listen (task_poll'Access, 3000); -- block, 3 seconds timeout.
 
           if result_from_poll > 0 then
 
@@ -234,7 +236,7 @@ begin
 
             else
 
-              if polls.hang_up_error (task_poll'Access, connected_sock) then
+              if hang_up_error (task_poll'Access, connected_sock) then
 
                 Text_IO.Put_Line (" " & this_task_id_str & " remote host closed the connection. Quitting");
 
@@ -263,14 +265,18 @@ begin
 
       Text_IO.New_Line;
 
-      polls.add_events (mi_poll'Access, host_sock, polls.accept_ev);
+      reset_all (mi_poll'Access); -- DNM
+
+      add_events (mi_poll'Access, host_sock, accept_ev);
 
       ok := True;
 
       loop2 :
       loop
 
-        if polls.start_events_listen (mi_poll'Access, 15000) < 1 then -- block, 15 seconds timeout
+        if start_events_listen (mi_poll'Access, 15000) < 1 then -- block, 15 seconds timeout
+
+          Text_IO.Put_Line (string_error);
 
           close (host_sock); -- to disable 'listen' too.
 
@@ -293,7 +299,7 @@ begin
           working_task  :=  new recv_send_task (incomming_socket);
         end if;
 
-        polls.clear_all_event_responses (mi_poll'Access);
+        clear_all_event_responses (mi_poll'Access);
 
       end loop loop2;
     end b1;

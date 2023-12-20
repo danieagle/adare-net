@@ -1,5 +1,5 @@
 
-with "./config/adare_net_examples_config.gpr";
+with "config/adare_net_examples_config.gpr";
 
 project adare_net_examples is
 

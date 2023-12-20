@@ -2,6 +2,25 @@
 #ifndef C_ADARENET_H
 #define C_ADARENET_H
 
+#ifdef _WIN32
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#undef WINVER
+#undef _WIN32_WINNT
+
+#define WINVER 0x0A00
+#define _WIN32_WINNT 0x0A00
+
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <stdint.h>
+
+#endif
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -12,9 +31,6 @@ extern "C" {
 #include <string.h>
 
 #ifdef _WIN32
-
-#include <winsock2.h>
-#include <ws2tcpip.h>
 
 #ifdef _WIN64
   typedef uint64_t c_socket_type;

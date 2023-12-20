@@ -4,15 +4,16 @@ package body adare_net_init
 is
   procedure start_adare_net
   is
-    function inner1 return Integer
-      with Import => True, Convention => StdCall,
-        External_Name => "c_start_adare_net";
-
     procedure inner2
       with Import => True, Convention => Ada,
       External_Name => "adare_netinit";
+
+    function inner1 return Integer
+      with Import => True, Convention => StdCall,
+        External_Name => "c_start_adare_net";
     ok : Boolean := False;
   begin
+
     ok := (inner1 = 0);
 
     if not ok then

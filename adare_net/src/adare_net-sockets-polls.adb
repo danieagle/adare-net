@@ -153,10 +153,10 @@ is
                       -- time_out > 0 => miliseconds time_out wait
     ) return number_of_hits
   is
-      mi_time : constant unsigned_long := unsigned_long (from_poll.count)
+      mi_len : constant unsigned_long := unsigned_long (from_poll.Len)
         with Convention => C, Size => unsigned_long'Size;
       mi_int  : constant int :=
-        inner_poll (from_poll.poll'Address, mi_time'Address, time_out'Address);
+        inner_poll (from_poll.poll'Address, mi_len'Address, time_out'Address);
   begin
 
     return  number_of_hits (mi_int);

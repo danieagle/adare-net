@@ -1,6 +1,6 @@
 name = "adare_net_examples"
-description = "Shiny new project"
-version = "0.1.0-dev"
+description = "Adare_Net examples"
+version = "0.1.2-dev"
 
 authors = ["Daniel Norte de Moraes"]
 maintainers = ["Daniel Norte de Moraes <danieagle@tutanota.com>"]
@@ -10,7 +10,8 @@ executables = ["tcp_server", "tcp_client", "udp_server", "udp_client"]
 
 [build-switches]
 "*".Ada_Version = "Ada12"
+"*".Style_checks = ["-gnaty2abCefhiklnprstmM135"]
 [[depends-on]]
-adare_net = "~0.1.0-dev"
+adare_net = "~0.8.3-dev"
 [[pins]]
 adare_net = { path='../adare_net' }
