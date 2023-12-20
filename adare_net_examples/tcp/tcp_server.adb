@@ -53,7 +53,7 @@ begin
     host_sock           : socket_access := null;
     ok                  : Boolean := False;
   begin
-    init_addresses (ip_or_host =>  "::1", -- host addresses
+    init_addresses (ip_or_host =>  "", -- host addresses
                       port        =>  "25000",
                       ai_socktype =>  tcp,
                       ai_family   =>  any, -- choose ipv4 and ipv6

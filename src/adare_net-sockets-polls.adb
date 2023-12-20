@@ -34,10 +34,10 @@ is
      with_events_bitmap : in event_type
     )
   is
-    pollfd_tmp  : constant pollfd
-      := (fd => get_sock (sock), events => with_events_bitmap, revents => 0);
-
     sock_tmp : constant socket_type := get_sock (sock);
+
+    pollfd_tmp  : constant pollfd
+      := (fd => sock_tmp, events => with_events_bitmap, revents => 0);
 
     index : int := 0;
   begin
@@ -153,10 +153,8 @@ is
                       -- time_out > 0 => miliseconds time_out wait
     ) return number_of_hits
   is
-      mi_len : constant unsigned_long := unsigned_long (from_poll.Len)
-        with Convention => C, Size => unsigned_long'Size;
       mi_int  : constant int :=
-        inner_poll (from_poll.poll'Address, mi_len'Address, time_out'Address);
+        inner_poll (from_poll.poll'Address, from_poll.count, time_out);
   begin
 
     return  number_of_hits (mi_int);

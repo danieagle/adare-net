@@ -53,7 +53,21 @@ project adare_net is
   for Library_Kind use Library_Type;
 
   package Compiler is
+
     for Default_Switches ("Ada") use adare_net_config.Ada_Compiler_Switches;
+
+    case adare_net_config.Build_Profile is
+      when "validation" | "development" =>
+        for Default_Switches ("C") use ("-Og", "-g3", "-Wall", "-Wextra", "-Werror");
+
+      when "release" =>
+        for Default_Switches ("C") use ("-O3", "-Wall", "-Wextra", "-Werror");
+
+      when others =>
+        for Default_Switches ("C") use ("-Og", "-g3", "-Wall", "-Wextra", "-Werror");
+
+    end case;
+
   end compiler;
 
 

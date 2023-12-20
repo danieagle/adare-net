@@ -2,21 +2,33 @@
 #ifndef C_ADARENET_H
 #define C_ADARENET_H
 
+#include <stdio.h>
+#include <stdint.h>
+#include <stddef.h>
+#include <string.h>
+
 #ifdef _WIN32
-
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
-#undef WINVER
-#undef _WIN32_WINNT
-
-#define WINVER 0x0A00
-#define _WIN32_WINNT 0x0A00
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <stdint.h>
+
+#ifdef _WIN64
+typedef uint64_t c_socket_type;
+#else
+typedef uint32_t c_socket_type;
+#endif
+
+#endif
+
+#ifndef _WIN32
+
+#include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <poll.h>
+#include <errno.h>
+
+typedef int c_socket_type;
 
 #endif
 
@@ -25,38 +37,15 @@
 extern "C" {
 #endif
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stddef.h>
-#include <string.h>
 
-#ifdef _WIN32
-
-#ifdef _WIN64
-  typedef uint64_t c_socket_type;
-#else
-  typedef uint32_t c_socket_type;
-#endif
-
-#else
-
-#include <netdb.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <poll.h>
-#include <errno.h>
-
-    typedef int c_socket_type;
-#endif
-
-   struct sockaddr_storage_ada
-   {
-      uint16_t ss_family;
-      uint8_t padding[132];
+struct sockaddr_storage_ada
+{
+  uint16_t ss_family;
+  uint8_t padding[132];
 };
 
-struct addresses  {
+struct addresses
+{
   struct sockaddr_storage_ada storage;
   int socktype;
   int protocol;

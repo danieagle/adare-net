@@ -118,9 +118,9 @@ is
 private
 
   type pollfd is record
-    fd      : aliased signed_socket_type := missing_file_descriptor;
-    events  : aliased event_type         := 0;
-    revents : aliased Interfaces.C.short := 0;
+    fd      : aliased socket_type         := missing_file_descriptor;
+    events  : aliased event_type          := 0;
+    revents : aliased Interfaces.C.short  := 0;
   end record with
     Convention => C, Preelaborable_Initialization;
 
@@ -131,6 +131,7 @@ private
   --     revents : aliased short := 0;
   --   end record
   --   with Convention => C;
+
   null_pollfd : constant pollfd :=
     pollfd'(fd => missing_file_descriptor, events => 0, revents => 0);
 

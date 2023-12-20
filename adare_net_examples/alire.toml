@@ -14,4 +14,4 @@ executables = ["tcp_server", "tcp_client", "udp_server", "udp_client"]
 [[depends-on]]
 adare_net = "~0.8.3-dev"
 [[pins]]
-adare_net = { path='../adare_net' }
+adare_net = { path='..' }

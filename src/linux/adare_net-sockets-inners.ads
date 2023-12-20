@@ -51,19 +51,19 @@ is
     backlog_i   : int) return int
     with Import => True, Convention => C, External_Name => "listen";
 
-  function inner_poll
-    (from_poll_i  : Address;
-     count_i      : Address;
-     time_out_i   : Address
-    ) return int
-    with Import => True, Convention => C, External_Name => "poll";
+  --  function inner_poll
+  --    (from_poll_i  : Address;
+  --     count_i      : Address;
+  --     time_out_i   : Address
+  --    ) return int
+  --    with Import => True, Convention => C, External_Name => "poll";
 
-  -- function inner_poll
-  --  (from_poll_i  : Address;
-  --   count_i      : int;
-  --   time_out_i   : int
-  --   ) return int
-  --   with Import => True, Convention => C, External_Name => "poll";
+  function inner_poll
+  (from_poll_i  : Address;
+   count_i      : int;
+   time_out_i   : int
+   ) return int
+   with Import => True, Convention => C, External_Name => "poll";
 
   function inner_recvfrom
     (sock_i : socket_type;
@@ -125,11 +125,11 @@ is
     with Import => True, Convention => C, External_Name => "c_show_error";
 
   function inner_and
-    (left, right: Interfaces.C.short) return Interfaces.C.short
+    (left, right : Interfaces.C.short) return Interfaces.C.short
     with Import => True, Convention => C, External_Name => "mi_and";
 
   function inner_or
-    (left, right: Interfaces.C.short) return Interfaces.C.short
+    (left, right : Interfaces.C.short) return Interfaces.C.short
     with Import => True, Convention => C, External_Name => "mi_or";
 
 

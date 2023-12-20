@@ -217,10 +217,6 @@ is
     (sock : not null socket_access) return socket_type
      with pre => initialized (sock);
 
-  function get_sock
-    (sock : not null socket_access) return signed_socket_type
-     with pre => initialized (sock);
-
   function get_addresses
     (sock : not null socket_access) return addresses
      with pre => initialized (sock);
