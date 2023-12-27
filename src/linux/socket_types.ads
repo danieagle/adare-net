@@ -18,4 +18,8 @@ is
 
   type socklen_t is new Integer_32;
 
+  subtype handle_type is socket_type;
+
+  failed_handle : constant handle_type  := -1;
+
 end socket_types;

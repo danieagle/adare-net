@@ -33,10 +33,12 @@ is
       with Import => True, Convention => Ada,
       External_Name => "adare_netfinal";
 
-      ok : Integer := 0;
+      ok : Integer := 0
+        with unreferenced;
   begin
     inner2;
     ok := inner1;
+
   end stop_adare_net;
 
 end adare_net_init;

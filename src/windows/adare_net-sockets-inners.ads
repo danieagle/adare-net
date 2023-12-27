@@ -131,4 +131,27 @@ is
     (left, right : Interfaces.C.short) return Interfaces.C.short
     with Import => True, Convention => StdCall, External_Name => "mi_or";
 
+
+  function inner_epoll_create1 (flags_i : int := 0) return handle_type
+    with Import => True, Convention => StdCall, External_Name => "epoll_create1";
+
+  function inner_epoll_close (ephnd_i : handle_type) return int
+    with Import => True, Convention => StdCall, External_Name => "epoll_close";
+
+  function inner_epoll_ctl
+    (ephnd_i  : handle_type;
+     op_i     : int;
+     sock_i   : socket_type;
+     event_i  : Address
+    ) return int
+    with Import => True, Convention => StdCall, External_Name => "epoll_ctl";
+
+  function inner_epoll_wait
+    (ephnd_i  : handle_type;
+     events_i : Address;
+     maxevents_i  : int;
+     timeout_i    : int
+    ) return int
+    with Import => True, Convention => StdCall, External_Name => "epoll_wait";
+
 end adare_net.sockets.inners;

@@ -20,7 +20,7 @@ is
       raise Program_Error;
     end if;
 
-    inner2; -- inner1; inner2; ?
+    inner2;
   end start_adare_net;
 
   procedure stop_adare_net
@@ -33,7 +33,8 @@ is
       with Import => True, Convention => Ada,
       External_Name => "adare_netfinal";
 
-      ok : Integer := 0;
+      ok : Integer := 0
+        with unreferenced;
   begin
     inner2;
     ok := inner1;

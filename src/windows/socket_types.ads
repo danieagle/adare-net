@@ -28,4 +28,9 @@ is
   type socklen_t is new Integer_32 with
     Size => Integer_32'Size, Convention => C;
 
+
+  subtype handle_type is Address;
+
+  failed_handle : constant handle_type  := Null_Address;
+
 end socket_types;
