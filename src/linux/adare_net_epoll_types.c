@@ -1,6 +1,6 @@
 
-#ifndef ADARE_NET_EPOLL_TYPES_H
-#define ADARE_NET_EPOLL_TYPES_H
+#ifndef ADARE_NET_EPOLL_TYPES
+#define ADARE_NET_EPOLL_TYPES
 
 #include <sys/epoll.h>
 
@@ -11,7 +11,5 @@ unsigned long adare_epoll_epollpri = EPOLLPRI;
 
 unsigned long adare_epoll_epollerr = EPOLLERR;
 unsigned long adare_epoll_epollhup = EPOLLHUP;
-
-
 
 #endif

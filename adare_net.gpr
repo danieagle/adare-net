@@ -17,7 +17,7 @@ library project adare_net is
     "socket_types.ads",
     "c_adare_net_init.h",
     "c_adare_net_init.c",
-    "adare_net_epoll_types.h",
+    "adare_net_epoll_types.c",
     "c_adarenet.h",
     "c_adarenet.c",
     "adare_net-sockets-inners.ads",
