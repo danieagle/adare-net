@@ -6,7 +6,7 @@ package adare_net.sockets.epolls
 is
   pragma  Assertion_Policy (Check);
 
-  type epoll is private
+  type epoll is limited private
     with preelaborable_initialization;
 
   type epoll_access is access all epoll;
@@ -192,7 +192,7 @@ private
 
     type socket_array_access is access all socket_array;
 
-    type epoll is
+    type epoll is limited
       record
         initialized : Boolean     := False;
         handle      : handle_type := failed_handle;
