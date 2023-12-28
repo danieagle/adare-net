@@ -10,7 +10,7 @@ is
   pragma Assertion_Policy (Check);
 
   function is_initialized (poll : epoll_access) return Boolean is
-   (poll.initialized);
+   (poll /= null and then poll.all.initialized = True);
 
 
   function is_in
@@ -21,6 +21,7 @@ is
     if how.socket_poll = null then
       return False;
     end if;
+
     b1 :
     declare
       sock : constant socket_type := get_sock (what_sock);
@@ -81,6 +82,11 @@ is
     with_event_bitmap : unsigned_long) return Boolean
   is
     index : int := 0;
+    sock  : constant socket_type  := get_sock (with_sock);
+    event : epoll_event;
+    ok    : Boolean               := False;
+
+    use Adare_Net_Config;
   begin
     if how.count >= how.socket_poll.all'Length then
       loop0 :
@@ -108,41 +114,37 @@ is
       end if;
     end if;
 
-    b2 :
-    declare
-      sock  : constant socket_type := get_sock (with_sock);
-      event : epoll_event;
-      ok    : Boolean              := False;
+    event.events := Unsigned_32 (with_event_bitmap);
 
-      use Adare_Net_Config;
-    begin
-      event.events := Unsigned_32 (with_event_bitmap);
+    if Alire_Host_OS = "windows" then
+      event.data.sock := sock;
+    else
+      event.data.fd := int (sock);
+    end if;
 
-      if Alire_Host_OS = "windows" then
-        event.data.sock := sock;
-      else
-        event.data.fd := int (sock);
-      end if;
+    ok := (0 = inner_epoll_ctl (how.handle, epoll_add, sock, event'Address));
 
-      ok := (0 = inner_epoll_ctl (how.handle, epoll_add, sock, event'Address));
+    if not ok then
+      return False;
+    end if;
 
-      if not ok then
-        return False;
-      end if;
+    index := 0;
 
-      index := 0;
+    loop1 :
+    for E of how.socket_poll.all loop
+      index := index + 1;
+      exit loop1 when E = invalid_socket;
+    end loop loop1;
 
-      loop1 :
-      for E of how.socket_poll.all loop
-        index := index + 1;
-        exit loop1 when E = invalid_socket;
-      end loop loop1;
+    if not (how.socket_poll.all (index) = invalid_socket) then
+      return False;
+    end if;
 
-      how.socket_poll (index) := sock;
-      how.count               := how.count + 1;
+    how.socket_poll (index) := sock;
+    how.count               := how.count + 1;
 
-      return True;
-    end b2;
+    return True;
+
   end add;
 
 
@@ -152,7 +154,11 @@ is
     ) return int
   is
   begin
-    poll.last_wait_returned := inner_epoll_wait (poll.handle, poll.event_poll.all'Address, poll.event_poll.all'length, timeout);
+    poll.last_wait_returned := inner_epoll_wait (poll.handle, poll.event_poll.all (1)'Address,
+      poll.count, timeout);
+
+    --  poll.last_wait_returned := inner_epoll_wait (poll.handle, poll.event_poll.all'Address,
+    --    poll.event_poll.all'length, timeout); -- ToDo: poll.event_poll.all'length or poll.count ?
     return poll.last_wait_returned;
   end poll_wait;
 
@@ -180,8 +186,9 @@ is
       mi_socket : constant socket_type := get_sock (how);
       index : int := 0;
     begin
+
       loop0 :
-      for E of where_poll.event_poll.all loop
+      for E of where_poll.event_poll.all (1 .. where_poll.last_wait_returned) loop
         index := index + 1;
         exit loop0 when (if Alire_Host_OS /= "windows" then E.data.fd = int (mi_socket) else E.data.sock = mi_socket);
       end loop loop0;
@@ -218,7 +225,7 @@ is
       index : int := 0;
     begin
       loop0 :
-      for E of where_poll.event_poll.all loop
+      for E of where_poll.event_poll.all (1 .. where_poll.last_wait_returned) loop
         index := index + 1;
         exit loop0 when (if Alire_Host_OS /= "windows" then E.data.fd = int (mi_socket) else E.data.sock = mi_socket);
       end loop loop0;
@@ -255,7 +262,7 @@ is
       index : int := 0;
     begin
       loop0 :
-      for E of where_poll.event_poll.all loop
+      for E of where_poll.event_poll.all (1 .. where_poll.last_wait_returned) loop
         index := index + 1;
         exit loop0 when (if Alire_Host_OS /= "windows" then E.data.fd = int (mi_socket) else E.data.sock = mi_socket);
       end loop loop0;
@@ -292,7 +299,7 @@ is
       index : int := 0;
     begin
       loop0 :
-      for E of where_poll.event_poll.all loop
+      for E of where_poll.event_poll.all (1 .. where_poll.last_wait_returned) loop
         index := index + 1;
         exit loop0 when (if Alire_Host_OS /= "windows" then E.data.fd = int (mi_socket) else E.data.sock = mi_socket);
       end loop loop0;
@@ -329,7 +336,7 @@ is
       index : int := 0;
     begin
       loop0 :
-      for E of where_poll.event_poll.all loop
+      for E of where_poll.event_poll.all (1 .. where_poll.count) loop
         index := index + 1;
         exit loop0 when (if Alire_Host_OS /= "windows" then E.data.fd = int (mi_socket) else E.data.sock = mi_socket);
       end loop loop0;
@@ -366,7 +373,7 @@ is
       index : int := 0;
     begin
       loop0 :
-      for E of where_poll.event_poll.all loop
+      for E of where_poll.event_poll.all (1 .. where_poll.count) loop
         index := index + 1;
         exit loop0 when (if Alire_Host_OS /= "windows" then E.data.fd = int (mi_socket) else E.data.sock = mi_socket);
       end loop loop0;
@@ -403,7 +410,7 @@ is
       index : int := 0;
     begin
       loop0 :
-      for E of where_poll.event_poll.all loop
+      for E of where_poll.event_poll.all (1 .. where_poll.count) loop
         index := index + 1;
         exit loop0 when (if Alire_Host_OS /= "windows" then E.data.fd = int (mi_socket) else E.data.sock = mi_socket);
       end loop loop0;

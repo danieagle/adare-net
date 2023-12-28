@@ -11,6 +11,15 @@ is
 
   type epoll_access is access all epoll;
 
+  function is_initialized
+    (poll : epoll_access
+    ) return Boolean;
+
+  function is_in
+    (how  : not null epoll_access;
+     what_sock  : not null socket_access
+    ) return Boolean;
+
 
   receive_event : constant unsigned_long
     with Convention => C, import,
@@ -63,7 +72,7 @@ is
      with_event_bitmap  : unsigned_long) return Boolean
     with Pre => is_initialized (how)
                 and then initialized  (with_sock)
-                and then not is_in (how, with_sock);
+                and then (not is_in (how, with_sock));
 
 
   function poll_wait
@@ -119,17 +128,6 @@ is
     with Pre => is_initialized (where_poll)
                 and then initialized (how);
 
-
-  function is_initialized
-    (poll : epoll_access
-    ) return Boolean;
-
-  function is_in
-    (how  : not null epoll_access;
-     what_sock  : not null socket_access
-    ) return Boolean;
-
-
   function init
     (poll     : out epoll_access;
      min_qtie : int := 15
@@ -179,7 +177,7 @@ private
     type epoll_event is
       record
         events  : Unsigned_32 := 0;
-        data    : epoll_data_t;
+        data    : epoll_data_t := (others => <>);
       end record
         with Convention => C, preelaborable_initialization;
 
@@ -202,9 +200,17 @@ private
         last_wait_returned  : int := 0;
       end record;
 
-    epoll_add : constant int := 1;
-    epoll_mod : constant int := 2;
-    epoll_del : constant int := 3;
+    epoll_add : constant int
+      with  Convention => C, Import,
+            External_Name => "adare_epoll_cmd_add";
+
+    epoll_mod : constant int
+      with  Convention => C, Import,
+            External_Name => "adare_epoll_cmd_mod";
+
+    epoll_del : constant int
+      with  Convention => C, Import,
+            External_Name => "adare_epoll_cmd_del";
 
 
 end adare_net.sockets.epolls;

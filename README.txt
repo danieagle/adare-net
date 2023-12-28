@@ -2,7 +2,7 @@
 Adare_Net
 =====================
 
-Version: 0.8.3-dev
+Version: 0.9.10-dev
 
 Adare_Net is a small, powerfull, portable and easy to use Ada network lib.
 It supports ipv4 ipv6 udp and tcp, Synchronous I/O Multiplexing
@@ -42,7 +42,7 @@ USAGE
 
     1) enter in your alire project:
     2) alr with adare_net --use https://github.com/danieagle/adare-net.git
-    
+
     3) mybe use: alr build -- -XLIBRARY_TYPE=relocatable
 
    And Be Happy :-D
@@ -72,7 +72,7 @@ THANKS
 
 To Brian "Beejs Jorgensen" Hall, because his book "the Beej's Guide to Network Programming"
 and to All people, past present and future, that made Life better to Live and
-that include the Fellows from Ada Newsgroup. Thanks All!!
+that include the Fellows from Ada Newsgroup and from forum.ada-lang.io. Thanks All!!
 
 
 LICENSE

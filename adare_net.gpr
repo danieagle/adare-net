@@ -40,6 +40,7 @@ library project adare_net is
         "wepoll.h",
         "wepoll.c"
       );
+      for Library_Options use ("-lws2_32");
     when others =>
       null;
   end case;
@@ -50,14 +51,6 @@ library project adare_net is
   Library_Type : Library_Type_Type :=
     external ("TEST_LIBRARY_TYPE", external ("LIBRARY_TYPE", "static"));
   for Library_Kind use Library_Type;
-
-
-  case adare_net_config.Alire_Host_OS is
-    when "windows" =>
-      for Library_Options use ("-lws2_32");
-    when others =>
-      null;
-  end case;
 
   package Linker is
     case adare_net_config.Alire_Host_OS is
