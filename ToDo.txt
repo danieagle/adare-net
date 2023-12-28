@@ -1,5 +1,5 @@
 1) create a new version of poll using epoll and wepoll.
-1.0) linux => windows => macosx.
+1.0) linux (ok!) => windows => macosx.
 
 2) announce in Ada Lang newsgroup and ada forum
   ask for help in testing in:

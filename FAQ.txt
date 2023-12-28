@@ -3,6 +3,9 @@
   => Substitute 'read() and 'write() attributes with 'input() and
   'output() attributes.
 
+2) now adare_net can be used in mswindows before Win10_22H2_x64, and in 32bit OS's.
+2.1) Pleeeaase report success or failure :-) in main git repository.
+
 Thanks!
 GrateFull, Dani.
 Enjoy!!!

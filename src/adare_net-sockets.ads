@@ -67,6 +67,7 @@ is
     )
     with pre => (ai_socktype = tcp or else ai_socktype = udp) and then (ai_family = any or else ai_family = v4 or else ai_family = v6);
 
+
   function get_addresses
     (show  : not null addresses_access) return String
      with Pre =>  initialized (show);
@@ -152,7 +153,7 @@ is
   function accept_socket
     (sock     : not null socket_access;
      new_sock : out socket_access) return Boolean
-     with  pre => listened (sock);
+    with Pre  =>  initialized (sock) and then listened (sock);
 
   function connect
     (sock  : not null socket_access) return Boolean

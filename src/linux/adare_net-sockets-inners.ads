@@ -124,15 +124,6 @@ is
     length_i   : in out int)
     with Import => True, Convention => C, External_Name => "c_show_error";
 
-  function inner_and
-    (left, right : Interfaces.C.short) return Interfaces.C.short
-    with Import => True, Convention => C, External_Name => "mi_and";
-
-  function inner_or
-    (left, right : Interfaces.C.short) return Interfaces.C.short
-    with Import => True, Convention => C, External_Name => "mi_or";
-
-
   function inner_epoll_create1 (flags_i : int := 0) return handle_type
     with Import => True, Convention => C, External_Name => "epoll_create1";
 

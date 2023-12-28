@@ -110,15 +110,6 @@ void c_reuse_address (c_socket_type fd){
   setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 }
 
-
-short mi_and(const short left, const short rigth){
-  return left & rigth;
-}
-short mi_or(const short left, const short rigth){
-  return left | rigth;
-}
-
-
 #ifdef __cplusplus
 }
 #endif

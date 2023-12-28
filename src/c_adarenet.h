@@ -68,9 +68,6 @@ void c_show_error (
 
 void c_reuse_address (c_socket_type fd);
 
-short mi_and(const short left, const short rigth);
-short mi_or(const short left, const short rigth);
-
 #ifdef __cplusplus
 }
 #endif

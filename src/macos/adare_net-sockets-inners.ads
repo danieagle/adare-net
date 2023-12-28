@@ -51,20 +51,6 @@ is
     backlog_i   : int) return int
     with Import => True, Convention => C, External_Name => "listen";
 
-  function inner_poll
-    (from_poll_i  : Address;
-     count_i      : Address;
-     time_out_i   : Address
-    ) return int
-    with Import => True, Convention => C, External_Name => "poll";
-
-  -- function inner_poll
-  --  (from_poll_i  : Address;
-  --   count_i      : int;
-  --   time_out_i   : int
-  --   ) return int
-  --   with Import => True, Convention => C, External_Name => "poll";
-
   function inner_recvfrom
     (sock_i : socket_type;
      buf_i  : Address;
@@ -124,12 +110,27 @@ is
     length_i   : in out int)
     with Import => True, Convention => C, External_Name => "c_show_error";
 
-  function inner_and
-    (left, right: Interfaces.C.short) return Interfaces.C.short
-    with Import => True, Convention => C, External_Name => "mi_and";
 
-  function inner_or
-    (left, right: Interfaces.C.short) return Interfaces.C.short
-    with Import => True, Convention => C, External_Name => "mi_or";
+  function inner_epoll_create1 (flags_i : int := 0) return handle_type
+    with Import => True, Convention => C, External_Name => "epoll_create1";
+
+  function inner_epoll_close (ephnd_i : handle_type) return int
+    with Import => True, Convention => C, External_Name => "close";
+
+  function inner_epoll_ctl
+    (ephnd_i  : handle_type;
+     op_i     : int;
+     sock_i   : socket_type;
+     event_i  : Address
+    ) return int
+    with Import => True, Convention => C, External_Name => "epoll_ctl";
+
+  function inner_epoll_wait
+    (ephnd_i  : handle_type;
+     events_i : Address;
+     maxevents_i  : int;
+     timeout_i    : int
+    ) return int
+    with Import => True, Convention => C, External_Name => "epoll_wait";
 
 end adare_net.sockets.inners;

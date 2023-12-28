@@ -1,5 +1,5 @@
 v.latest =>
 
-1) Ubuntu 23.10 Linux AMD64 + gnat 13.2 + gcc 13.2 + gprbuild 2021
+1) Ubuntu 24.04-dev Linux AMD64 + gnat 13.2 + gcc 13.2 + gprbuild 2021
 
 2) MacOSX ? Someone can try and report feedback ? :-D Pleeeaase! Enjoy!!

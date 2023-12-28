@@ -26,7 +26,7 @@ is
   procedure stop_adare_net
   is
     function inner1 return Integer
-      with Import => True, Convention => stdcall,
+      with Import => True, Convention => C,
         External_Name => "c_stop_adare_net";
 
     procedure inner2
