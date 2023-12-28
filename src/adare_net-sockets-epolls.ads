@@ -6,8 +6,7 @@ package adare_net.sockets.epolls
 is
   pragma  Assertion_Policy (Check);
 
-  type epoll is limited private
-    with preelaborable_initialization;
+  type epoll is limited private;
 
   type epoll_access is access all epoll;
 
@@ -198,7 +197,8 @@ private
         socket_poll : socket_array_access       := null;
         count       : int := 0;
         last_wait_returned  : int := 0;
-      end record;
+      end record
+      with preelaborable_initialization;
 
     epoll_add : constant int
       with  Convention => C, Import,

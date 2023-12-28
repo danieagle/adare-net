@@ -2,4 +2,6 @@ v.latest =>
 
 1) Ubuntu 24.04-dev Linux AMD64 + gnat 13.2 + gcc 13.2 + gprbuild 2021
 
-2) MacOSX ? Someone can try and report feedback ? :-D Pleeeaase! Enjoy!!
+2) Windows Win10_22H2_x64 AMD64 + gnat 13.2 + gcc 13.2 + gprbuild 22.0.0
+
+3) MacOSX ? Someone can try and report feedback ? :-D Pleeeaase! Enjoy!!

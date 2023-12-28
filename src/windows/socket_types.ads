@@ -2,6 +2,9 @@
 with Interfaces.C;
 use Interfaces, Interfaces.C;
 
+with System;
+use System;
+
 package socket_types with
  Pure
 is
@@ -31,6 +34,8 @@ is
 
   subtype handle_type is Address;
 
-  failed_handle : constant handle_type  := Null_Address;
+  function failed_handle return handle_type
+  is (handle_type (Null_Address))
+  with Inline;
 
 end socket_types;
