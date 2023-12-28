@@ -24,6 +24,8 @@ but the API is already in a reasonable stable state,
 and most changes are or new subprograms and packages
 or just changing internal parts without changing the visible API.
 
+The Adare_Net main lib types is relocatable (vulgo shared), static and staic-pic.
+
 Maintenance Status: Very Active.
 
 Adare_net is written in Ada2012 and C.
@@ -43,21 +45,28 @@ USAGE
     1) enter in your alire project:
     2) alr with adare_net --use https://github.com/danieagle/adare-net.git
 
-    3) mybe use: alr build -- -XLIBRARY_TYPE=relocatable
+    3.1) mybe use: alr build -- -XLIBRARY_TYPE=relocatable
+      or
+    3.2) mybe use: alr build -- -XLIBRARY_TYPE=static
+      or
+    3.3) mybe use: alr build -- -XLIBRARY_TYPE=static-pic
 
    And Be Happy :-D
 
   Main repository => https://github.com/danieagle/adare-net.git
 
   Adare_Net is in proccess of rework his poll types and some HouseKeeping. :-D
+
+  See file AlreadyTestedIn.txt
+
   Enjoy!!
 
 For documentation, see Doc/adare_net.pdf
 
 For examples and how compile in your own projects, see:
   src/*.ad{s,b}
-  adare_net_examples/tcp/*.adb
-  adare_net_examples/udp/*.adb
+  adare_net_examples/tcp_new/*.adb
+  adare_net_examples/udp_new/*.adb
 
   Enjoy!!
 

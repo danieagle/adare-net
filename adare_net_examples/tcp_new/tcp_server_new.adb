@@ -375,7 +375,7 @@ begin
 
         Text_IO.New_Line (2);
 
-        Text_IO.Put_Line ("restarting 15 seconds timeout.");
+        Text_IO.Put_Line (" restarting 15 seconds timeout.");
 
       end loop loop2;
     end b1;
