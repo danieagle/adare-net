@@ -1,7 +1,7 @@
 v.latest =>
 
 1) Ubuntu 24.04-dev Linux AMD64 + gnat 13.2 (external) +
-    gcc 13.2 (external) + gprbuild 2021 (external)
+    gcc 13.2 (external) + gprbuild 2023 (external)
 1.1) type relocatable   =>  Ok!
 1.2) type static        =>  Ok!
 1.3) type static-pic    =>  Ok!
@@ -14,8 +14,8 @@ v.latest =>
 
 
 3) Windows Win10_22H2_x64 AMD64 + gnat 13.2 (external) + gcc 13.2 (external) +
-    gprbuild  (external)
-3.1) type relocatable   =>  TBD
+    gprbuild 2023  (external)
+3.1) type relocatable   =>  Ok!
 3.2) type static        =>  TBD
 3.3) type static-pic    =>  TBD
 
