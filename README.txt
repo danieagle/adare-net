@@ -24,7 +24,7 @@ but the API is already in a reasonable stable state,
 and most changes are or new subprograms and packages
 or just changing internal parts without changing the visible API.
 
-The Adare_Net main lib types is relocatable (vulgo shared), static and staic-pic.
+The Adare_Net is a relocatable (vulgo shared) library.
 
 Maintenance Status: Very Active.
 
