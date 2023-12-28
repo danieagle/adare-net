@@ -11,10 +11,9 @@ is
     function inner1 return Integer
       with Import => True, Convention => StdCall,
         External_Name => "c_start_adare_net";
-    ok : Boolean := False;
-  begin
 
-    ok := (inner1 = 0);
+      ok : constant Boolean := (inner1 = 0);
+  begin
 
     if not ok then
       raise Program_Error;

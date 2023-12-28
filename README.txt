@@ -45,11 +45,11 @@ USAGE
     1) enter in your alire project:
     2) alr with adare_net --use https://github.com/danieagle/adare-net.git
 
-    3.1) mybe use: alr build -- -XLIBRARY_TYPE=relocatable
+    3.1) mybe use: alr build --release
       or
-    3.2) mybe use: alr build -- -XLIBRARY_TYPE=static
+    3.2) mybe use: alr build --development
       or
-    3.3) mybe use: alr build -- -XLIBRARY_TYPE=static-pic
+    3.3) mybe use: alr build --validation
 
    And Be Happy :-D
 
