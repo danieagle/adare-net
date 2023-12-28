@@ -5,7 +5,7 @@ project adare_net_examples is
 
   for Languages use ("Ada");
 
-  for Source_Dirs use ("tcp_new", "udp_new");
+  for Source_Dirs use ("config", "tcp_new", "udp_new");
   for Object_dir  use "obj";
   for Exec_Dir use "bin";
   for main use ("tcp_server_new", "tcp_client_new", "udp_server_new", "udp_client_new");
@@ -15,8 +15,7 @@ project adare_net_examples is
 
   package Compiler is
 
-   for switches ("Ada") use adare_net_examples_config.Ada_Compiler_Switches;
-
+    for Default_Switches ("Ada") use adare_net_examples_config.Ada_Compiler_Switches;
   end compiler;
 
   package Binder is
