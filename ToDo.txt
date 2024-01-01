@@ -1,8 +1,4 @@
-1) create a new version of poll using epoll and wepoll.
-1.0) linux (ok!) => windows => macosx.
+  1)  Create Adare_Net Revisited.
+      => See Roadmap in Readme file.
 
-2) announce in Ada Lang newsgroup and ada forum
-  ask for help in testing in:
-    MSWindows (Win10_22H2_x64 and up)
-    Linux
-    MACOSX
+  TBD) A new pdf "Revisited" manual.

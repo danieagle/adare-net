@@ -2,29 +2,56 @@
 Adare_Net
 =====================
 
-Version: 0.9.10-dev
+Version: "Revisited" (1.0.1-Dev)
 
 Adare_Net is a small, powerfull, portable and easy to use Ada network lib.
-It supports ipv4 ipv6 udp and tcp, Synchronous I/O Multiplexing
+It supports ipv4 ipv6 udp tcp raw level 2 and raw level 3,
+Fully Asynchronous Use but with Internal Avanced Synchronous I/O Multiplexing
 and can 'listen' with ipv6, too.
 
 The powerfull buffer feature can support all Ada types, tagged types included,
 and with a more refined treatment, you can use endian proof records and
 unconstrained arrays.
 
-By using _Synchronous I/O Multiplexing_ and _Ada Tasks_ makes the
-use of non-blocking sockets _unnecessary_.
+The Fully Asynchronous Use with Internal Avanced Synchronous
+I/O Multiplexing feature together with Ada tasks and protected types, makes
+the use of non-blocking sockets unnecessary.
 
 All supported OS's have exactly the same visible packages names and children
 packages names! Just 'with' Adare_Net packages _without_ worrying about
 different package names.
 
-Before Version 1.2.0 this is a work in progress,
-but the API is already in a reasonable stable state,
-and most changes are or new subprograms and packages
-or just changing internal parts without changing the visible API.
+Before Version 8.0.0 this is a work in progress.
 
-The Adare_Net is a relocatable (vulgo shared) library.
+Adare_Net now is in a Fully-Rework.
+
+The Planned Roadmap is:
+
+  1º to work in all OS's supported by alire, starting  with linux =>
+    mswindows => mcosx => "and et.all".
+  2º lower the quantitie of subprograms need to "start working", and yet less
+    boilerplate inherited from C BSD sockets, with more powerfull simplicity.
+  3º raw socket support, L2 and L3, when OS support it.
+  4º Thinked from bottomup to use Ada Tasks and Ada Protected types.
+  5º Fully Asynchronous Use but still with the benefits of advanced synchronous
+    operation.
+  6º A Local and Distributed Fully Mesh Network Support:
+      6.2º) Fully Cryptographic Support against Quantum _and_ Classic Algorithms with:
+          6.2.2º) Public Key infrastructure,
+          6.2.3º) Key Encapsulate Message,
+          6.2.4º) Signature,
+          6.2.5º) Symmetric Encryption, with at least 512 bits of security
+                against quantum computer algorithms.
+      6.3º) Risk Management and virtually invulnerable.
+          6.3.2º) Even if an attacker manages to crack a key with an even more
+            monstrous quantum super computer, for example, with infinite memory
+            and half the infinite number of qubits, this cracker would
+            take hundreds of months (tens of years) to crack a single key
+            and he needs crack _4_ keys to achieve some impersonation, but even
+            then, for only two network nodes; but
+            these keys are changed and _invalidated_ between every 5
+            to 15 minutes and the entire network does this.
+  7º and beyond) TBD.
 
 Maintenance Status: Very Active.
 
@@ -32,8 +59,7 @@ Adare_net is written in Ada2012 and C.
 
 It need Alire to build.
 
-Adare_Net crate will be published in Public Alire after
- Adare_Net Version 1.2.0. Enjoy!!
+Adare_Net crate will be published in Public Alire after 8.0.0 version. Enjoy!!
 
 How a Bonus Almost all packages in this lib is "Ada Preelaborate"! :-)
 
@@ -55,7 +81,7 @@ USAGE
 
   Main repository => https://github.com/danieagle/adare-net.git
 
-  Adare_Net is in proccess of rework his poll types and some HouseKeeping. :-D
+  Adare_Net is in proccess of fully rework and some HouseKeeping. :-D
 
   See file AlreadyTestedIn.txt
 
