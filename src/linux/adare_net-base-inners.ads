@@ -1,7 +1,7 @@
 
 with System;
 
-package adare_net.sockets.inners
+package adare_net.base.inners
   with Preelaborate
 is
   use System;
@@ -29,16 +29,16 @@ is
     leng_i    : size_t) return int
     with Import => True, Convention => C, External_Name => "connect";
 
-  subtype a_list is addresses_list (1 .. 10);
+  --  subtype a_list is addresses_list (1 .. 10);
 
-  procedure inner_init_address (
-    ip_or_host_i  : Address;
-    port_i        : Address;
-    ai_socktype_i : int;
-    ai_family_i   : int;
-    length_i      : in out int;
-    list_i        : in out a_list
-  ) with Import => True, Convention => C, External_Name => "c_init_address";
+  --  procedure inner_init_address (
+  --    ip_or_host_i  : Address;
+  --    port_i        : Address;
+  --    ai_socktype_i : int;
+  --    ai_family_i   : int;
+  --    length_i      : in out int;
+  --    list_i        : in out a_list
+  --  ) with Import => True, Convention => C, External_Name => "c_init_address";
 
   function inner_socket
     (domain_i   : in int;
@@ -146,4 +146,4 @@ is
     ) return int
     with Import => True, Convention => C, External_Name => "epoll_wait";
 
-end adare_net.sockets.inners;
+end adare_net.base.inners;

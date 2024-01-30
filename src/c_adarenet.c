@@ -28,7 +28,7 @@ extern "C" {
        int ai_socktype,
        int ai_family,
        int *length,
-       struct addresses list[])
+       struct socket_address list[])
    {
       struct addrinfo hints, *servinfo, *p;
 
@@ -57,7 +57,7 @@ extern "C" {
 
          list[i - 1].socktype = p->ai_socktype;
          list[i - 1].protocol = p->ai_protocol;
-         list[i - 1].address_length = p->ai_addrlen;
+        //  list[i - 1].address_length = p->ai_addrlen;
       }
 
       freeaddrinfo(servinfo);

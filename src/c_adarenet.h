@@ -44,12 +44,12 @@ struct sockaddr_storage_ada
   uint8_t padding[132];
 };
 
-struct addresses
+struct socket_address
 {
   struct sockaddr_storage_ada storage;
   int socktype;
   int protocol;
-  int address_length;
+  // int address_length;
 };
 
 void c_init_address  (
@@ -58,7 +58,7 @@ void c_init_address  (
   int ai_socktype,
   int ai_family,
   int *length,
-  struct addresses list[]
+  struct socket_address list[]
 );
 
 void c_show_error (
