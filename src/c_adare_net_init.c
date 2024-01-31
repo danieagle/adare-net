@@ -6,33 +6,24 @@ extern "C" {
 #endif
 
 
-  int c_start_adare_net (void){
+  void c_start_adare_net (void){
 
 #ifdef _WIN32
-  WORD mi_ver;
   WSADATA mi_data;
-  int mi_err;
+  WSAStartup(MAKEWORD(2, 2), &mi_data);
 
-  mi_ver = MAKEWORD(2, 2);
-  mi_err = WSAStartup(mi_ver, &mi_data);
-
-  return mi_err;
 #endif
 
-    return 0;
-  }
+}
 
-  int c_stop_adare_net (void){
+  void c_stop_adare_net (void){
 
 #ifdef _WIN32
 
-  int mi_err;
-  mi_err = WSACleanup();
-  return mi_err;
+  WSACleanup();
 
 #endif
-    return 0;
-  }
+}
 
 #ifdef __cplusplus
 }

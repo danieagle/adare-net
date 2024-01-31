@@ -28,16 +28,17 @@ is
     leng_i    : size_t) return int
     with Import => True, Convention => StdCall,  External_Name => "connect";
 
-  subtype a_list is addresses_list (1 .. 10);
+  function inner_getaddrinfo
+    (host_or_ip_i : Address;
+     port_i   : Address;
+     hints_i  : Address;
+     response_i : Address) return int
+    with Import => True, Convention => StdCall, External_Name => "getaddrinfo";
 
-  procedure inner_init_address (
-    ip_or_host_i  : Address;
-    port_i        : Address;
-    ai_socktype_i : int;
-    ai_family_i   : int;
-    length_i      : in out int;
-    list_i        : in out a_list
-  ) with Import => True, Convention => StdCall, External_Name => "c_init_address";
+
+  procedure inner_free_addrinfo
+    (res_i  : Address)
+    with Import => True, Convention => C, External_Name => "freeaddrinfo";
 
   function inner_socket
     (domain_i   : in int;

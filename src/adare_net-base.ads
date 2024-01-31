@@ -48,6 +48,8 @@ is
 
   type socket is private;
 
+  null_socket : constant socket;
+
   type socket_buffer  is new Root_Stream_Type with private;
 
   type socket_buffer_access is access all socket_buffer;
@@ -65,6 +67,29 @@ is
 
   function actual_data_size
     (buffer : aliased socket_buffer) return Integer_64;
+
+
+  function create_address
+    (host_or_ip : String;
+     network_port_or_service  : String;
+     Addr_family  : Address_family;
+     Addr_type : Address_type) return socket_address;
+
+  function create_address
+    (host_or_ip : String;
+     network_port_or_service  : String;
+     Addr_family  : Address_family;
+     Addr_type : Address_type) return socket_addresses;
+
+  function create_socket
+    (sock_address : socket_address;
+     bind_socket  : Boolean := False) return socket;
+
+  function create_socket
+    (sock_address : socket_addresses;
+     bind_socket  : Boolean := False) return socket;
+
+
 
 
 private
@@ -119,11 +144,14 @@ private
   type sockaddr_storage_access is access all sockaddr_storage;
 
 
-  type storage_union_tmp is (mi_storage, mi_ipv4, mi_ipv6);
+  type storage_union_tmp is (mi_plain_storage, mi_storage, mi_ipv4, mi_ipv6);
 
   type storage_union (mi_discr : storage_union_tmp := mi_storage) is
     record
       case mi_discr is
+        when mi_plain_storage =>
+          sp  : aliased char_array (1 .. 134);
+
         when mi_storage =>
           ss  : aliased sockaddr_storage;
 
@@ -151,7 +179,7 @@ private
 
   type socket_addresses  is
     record
-      mi_list : List (300);
+      mi_list : List (300) := Empty_List;
     end record
       with Convention => C, Preelaborable_initialization;
 
@@ -165,6 +193,8 @@ private
       listened  : Boolean :=  False;
   end record
     with Convention => C, Preelaborable_initialization;
+
+  null_socket : constant socket := (others => <>);
 
 
   type socket_buffer is new Root_Stream_Type with

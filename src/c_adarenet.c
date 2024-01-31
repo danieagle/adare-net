@@ -22,48 +22,50 @@ extern "C" {
    const signed short c_event_pollhup = POLLHUP;
    const signed short c_event_pollnval = POLLNVAL;
 
-   void c_init_address(
-       const char *ip_or_host,
-       const char *port,
-       int ai_socktype,
-       int ai_family,
-       int *length,
-       struct socket_address list[])
-   {
-      struct addrinfo hints, *servinfo, *p;
+   const int c_ai_passive = AI_PASSIVE;
 
-      memset(&hints, 0, sizeof hints);
-      hints.ai_family = ai_family;
+//    void c_init_address(
+//        const char *ip_or_host,
+//        const char *port,
+//        int ai_socktype,
+//        int ai_family,
+//        int *length,
+//        struct socket_address list[])
+//    {
+//       struct addrinfo hints, *servinfo, *p;
 
-      hints.ai_socktype = ai_socktype;
+//       memset(&hints, 0, sizeof hints);
+//       hints.ai_family = ai_family;
 
-      hints.ai_flags = (ip_or_host[0] == 0 ? AI_PASSIVE : 0);
+//       hints.ai_socktype = ai_socktype;
 
-      if (getaddrinfo((ip_or_host[0] != 0 ? ip_or_host : NULL), port, &hints, &servinfo) != 0)
-      {
-         *length = 0;
-         return;
-      }
+//       hints.ai_flags = (ip_or_host[0] == 0 ? AI_PASSIVE : 0);
 
-      int i = 1;
-      int e = *length;
+//       if (getaddrinfo((ip_or_host[0] != 0 ? ip_or_host : NULL), port, &hints, &servinfo) != 0)
+//       {
+//          *length = 0;
+//          return;
+//       }
 
-      for (p = servinfo; p != NULL && i < e; p = p->ai_next, ++i)
-      {
+//       int i = 1;
+//       int e = *length;
 
-         memset(&list[i - 1].storage, 0, sizeof(struct sockaddr_storage_ada));
+      // for (p = servinfo; p != NULL && i < e; p = p->ai_next, ++i)
+      // {
 
-         memcpy(&list[i - 1].storage, (struct sockaddr_storage_ada *)p->ai_addr, p->ai_addrlen);
+      //    memset(&list[i - 1].storage, 0, sizeof(struct sockaddr_storage_ada));
 
-         list[i - 1].socktype = p->ai_socktype;
-         list[i - 1].protocol = p->ai_protocol;
-        //  list[i - 1].address_length = p->ai_addrlen;
-      }
+      //    memcpy(&list[i - 1].storage, (struct sockaddr_storage_ada *)p->ai_addr, p->ai_addrlen);
 
-      freeaddrinfo(servinfo);
-      i--;
-      *length = i;
-}
+      //    list[i - 1].socktype = p->ai_socktype;
+      //    list[i - 1].protocol = p->ai_protocol;
+      //   //  list[i - 1].address_length = p->ai_addrlen;
+      // }
+
+//       freeaddrinfo(servinfo);
+//       i--;
+//       *length = i;
+// }
 
 void c_show_error (
   char message [],
