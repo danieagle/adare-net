@@ -25,7 +25,6 @@ typedef uint32_t c_socket_type;
 #include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <poll.h>
 #include <errno.h>
 
 typedef int c_socket_type;

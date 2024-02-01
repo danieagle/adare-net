@@ -22,6 +22,7 @@ project adare_net is
     "c_adare_net_init.c",
     "c_adarenet.h",
     "c_adarenet.c",
+    "c_adarenet_poll.c",
     "adare_net-base-inners.ads",
     "adare_net_init.ads",
     "adare_net_init.adb",

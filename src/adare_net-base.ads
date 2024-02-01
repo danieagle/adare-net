@@ -23,18 +23,33 @@ is
 
   type ports  is new  Unsigned_16;
 
-  any   : constant Unsigned_16 with Import => True, Convention => C, external_name => "c_af_unspec";
-  ipv4  : constant Unsigned_16 with Import => True, Convention => C, external_name => "c_af_inet";
-  ipv6  : constant Unsigned_16 with Import => True, Convention => C, external_name => "c_af_inet6";
 
-  subtype Address_family is Unsigned_16
-    with Dynamic_Predicate => Address_family in any | ipv4 | ipv6;
+  type Address_family is new Unsigned_16;
 
-  tcp : constant int with Import => True, Convention => C, external_name => "c_sock_stream";
-  udp : constant int with Import => True, Convention => C, external_name => "c_sock_dgram";
+  type Address_family_label is (any, ipv4, ipv6);
 
-  subtype Address_type is int
-    with Dynamic_Predicate => Address_type in tcp | udp;
+  tmp_any   : constant Address_family with Import => True, Convention => C, external_name => "c_af_unspec";
+  tmp_ipv4  : constant Address_family with Import => True, Convention => C, external_name => "c_af_inet";
+  tmp_ipv6  : constant Address_family with Import => True, Convention => C, external_name => "c_af_inet6";
+
+  function family (family_label : Address_family_label := any) return Address_family
+    with Inline;
+
+
+  type Address_type is new int;
+
+  type Address_type_label is (tcp, udp);
+
+  tmp_tcp : constant Address_type with Import => True, Convention => C, external_name => "c_sock_stream";
+  tmp_udp : constant Address_type with Import => True, Convention => C, external_name => "c_sock_dgram";
+
+  function a_type (type_label : Address_type_label := tcp) return Address_type
+    with Inline;
+
+  function a_type_label (a_type : Address_type  := tmp_tcp) return Address_type_label
+    with Inline;
+
+
 
   ipv4_length : constant socklen_t;
   ipv6_length : constant socklen_t;
@@ -89,8 +104,53 @@ is
     (sock_address : socket_addresses;
      bind_socket  : Boolean := False) return socket;
 
+  function wait_connection
+    (sock     : aliased in out socket;
+     data_received  : aliased out stream_element_array_access;
+     backlog  : Unsigned_16 := 10 -- ignored after first use in sock. close socket to configure backlog again.
+    ) return socket
+      with Pre => is_initialized (sock) and then backlog > 0;
+
+  function wait_connection_with_timeout
+    (sock : aliased in out socket;
+     miliseconds_timeout : Unsigned_32;
+     data_received  : aliased out stream_element_array_access;
+     backlog  : Unsigned_16 :=  10
+    ) return socket
+      with Pre => is_initialized (sock) and then
+        miliseconds_timeout > 0 and then backlog > 0;
+
+  function send_buffer
+    (sock : aliased socket;
+     data_to_send : aliased in out socket_buffer
+    ) return Interfaces.C.int
+    with Pre => is_initialized (sock);
+
+  function send_stream
+    (sock : aliased socket;
+     data_to_send : aliased Stream_Element_Array
+    ) return Interfaces.C.int
+    with Pre => is_initialized (sock);
+
+  --  function send_buffer_with_timeout
+  --    (sock : aliased socket;
+  --     data_to_send : aliased in out socket_buffer;
+  --     miliseconds_timeout : Unsigned_32;
+  --    ) return Interfaces.C.int
+  --    with Pre => is_initialized (sock);
+
+  --  function send_stream_with_timeout
+  --    (sock : aliased socket;
+  --     data_to_send : aliased in out stream_element_array;
+  --     miliseconds_timeout : Unsigned_32;
+  --    ) return Interfaces.C.int
+  --    with Pre => is_initialized (sock);
 
 
+  procedure close (sock : in out socket);
+
+  function is_initialized
+    (sock : socket) return Boolean;
 
 private
 
@@ -100,8 +160,16 @@ private
   function data_tail_length
     (buffer : aliased socket_buffer) return Stream_Element_Offset;
 
+  function family (family_label : Address_family_label := any) return Address_family
+    is (case family_label is when any => tmp_any, when ipv4 => tmp_ipv4, when ipv6 => tmp_ipv6);
+
+  function a_type (type_label : Address_type_label := tcp) return Address_type
+    is (case type_label is when tcp => tmp_tcp, when udp => tmp_udp);
+
   ipv4_length : constant socklen_t with Import => True, Convention => C, External_Name => "c_v4_addrstrlen";
   ipv6_length : constant socklen_t with Import => True, Convention => C, External_Name => "c_v6_str_length";
+
+  msg_peek_flag : constant int with Import => True, Convention => C, external_name => "c_msg_peek";
 
   type in_addr is
     record
@@ -167,8 +235,8 @@ private
   type socket_address  is
     record
       storage   : aliased storage_union;
-      socktype  : aliased Address_type    := Address_type (any);
-      protocol  : aliased Address_family  := Address_family (tcp);
+      socktype  : aliased Address_type    := a_type (tcp);
+      protocol  : aliased Address_family  := family (any);
       addr_length : aliased socklen_t     := 0;
     end record
       with Convention => C, Preelaborable_initialization;

@@ -6,6 +6,48 @@ package adare_net.base.inners
 is
   use System;
 
+  type who_enun is (ptr, fd, u32, u64, sock, hnd);
+
+  type epoll_data_t (i_want_you : who_enun := ptr) is
+    record
+      case i_want_you is
+        when ptr =>
+          ptr  : Address  := Null_Address;
+
+        when fd =>
+          fd   : int  :=  -1;
+
+        when u32 =>
+          u32  : Unsigned_32  :=  0;
+
+        when u64 =>
+          u64  : Unsigned_64  :=  0;
+
+        when sock =>
+          sock : socket_type  :=  invalid_socket;
+
+        when hnd =>
+          hnd  : Address  :=  Null_Address;
+      end case;
+    end record
+      with Convention => C, preelaborable_initialization, Unchecked_Union;
+
+  type epoll_event is
+    record
+      events  : Unsigned_32 := 0;
+      data    : epoll_data_t := (others => <>);
+    end record
+      with Convention => C, preelaborable_initialization;
+
+    cmd_add : constant unsigned_long
+      with Convention => C, import,
+      External_Name   =>  "adare_epoll_cmd_add";
+
+    cmd_del : constant unsigned_long
+      with Convention => C, import,
+      External_Name   =>  "adare_epoll_cmd_del";
+
+
   function inner_accept
     (sockfd_i     : socket_type;
     addr_i        : Address;
@@ -53,20 +95,6 @@ is
     (sockfd_i   : socket_type;
     backlog_i   : int) return int
     with Import => True, Convention => C, External_Name => "listen";
-
-  --  function inner_poll
-  --    (from_poll_i  : Address;
-  --     count_i      : Address;
-  --     time_out_i   : Address
-  --    ) return int
-  --    with Import => True, Convention => C, External_Name => "poll";
-
-  function inner_poll
-  (from_poll_i  : Address;
-   count_i      : int;
-   time_out_i   : int
-   ) return int
-   with Import => True, Convention => C, External_Name => "poll";
 
   function inner_recvfrom
     (sock_i : socket_type;

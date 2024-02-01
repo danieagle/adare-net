@@ -15,14 +15,9 @@ extern "C" {
    const int c_sock_dgram = SOCK_DGRAM;
    const int c_sock_stream = SOCK_STREAM;
 
-   const signed short c_event_pollin = POLLIN;
-   const signed short c_event_pollout = POLLOUT;
-
-   const signed short c_event_pollerror = POLLERR;
-   const signed short c_event_pollhup = POLLHUP;
-   const signed short c_event_pollnval = POLLNVAL;
-
    const int c_ai_passive = AI_PASSIVE;
+   const int c_msg_peek = MSG_PEEK;
+
 
 //    void c_init_address(
 //        const char *ip_or_host,

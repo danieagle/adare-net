@@ -27,6 +27,25 @@ is
     (buffer : aliased socket_buffer) return Stream_Element_Offset
   is (if buffer.data /= null then buffer.data'Last - buffer.tail_end else 0);
 
+  function is_initialized
+    (sock : socket) return Boolean
+  is (sock.sock /= 0);
+
+  function a_type_label (a_type : Address_type := tmp_tcp) return Address_type_label
+  is
+  begin
+
+    if a_type = tmp_tcp then
+      return tcp;
+    end if;
+
+    if a_type = tmp_udp then
+      return udp;
+    end if;
+
+    raise Constraint_Error with " unknown Address_Type ";
+  end a_type_label;
+
 
   function create_address
     (host_or_ip : String;
@@ -58,7 +77,7 @@ is
        hints_i      =>  hint'Address,
        response_i   =>  mi_response'Address);
 
-    mi_result     : socket_address := socket_address'(others => <>);
+    mi_result     : socket_address := null_socket_address;
 
   begin
 
@@ -71,7 +90,7 @@ is
     mi_result.storage.ss.padding (1 .. Interfaces.C.size_t (mi_response.ai_addrlen) - 2)
       := mi_response.ai_addr.padding (1 .. Interfaces.C.size_t (mi_response.ai_addrlen) - 2);
 
-    mi_result.socktype     :=  mi_response.ai_socktype;
+    mi_result.socktype     :=  Address_type (mi_response.ai_socktype);
 
     mi_result.protocol     :=  Address_family (mi_response.ai_protocol);
 
@@ -114,7 +133,7 @@ is
        response_i   =>  mi_response'Address);
 
     mi_result   : socket_addresses;
-    mi_address  : socket_address := socket_address'(others => <>);
+    mi_address  : socket_address := null_socket_address;
 
     capacity_max  : constant int := int (mi_result.mi_list.Capacity);
     mi_counter    : int := 1;
@@ -138,7 +157,7 @@ is
       mi_address.storage.ss.padding (1 .. Interfaces.C.size_t (mi_tmp_response.ai_addrlen) - 2)
         := mi_tmp_response.ai_addr.padding (1 .. Interfaces.C.size_t (mi_tmp_response.ai_addrlen) - 2);
 
-      mi_address.socktype     :=  mi_tmp_response.ai_socktype;
+      mi_address.socktype     :=  Address_type (mi_tmp_response.ai_socktype);
 
       mi_address.protocol     :=  Address_family (mi_tmp_response.ai_protocol);
 
@@ -249,6 +268,217 @@ is
     return null_socket;
   end create_socket;
 
+  function wait_connection
+    (sock     : aliased in out socket;
+     data_received  : aliased out stream_element_array_access;
+     backlog  : Unsigned_16 := 10 -- ignored after first use in sock. close socket to configure backlog again.
+    ) return socket
+  is
+    mi_response     : socket    := sock;
+    mi_storage_size : socklen_t := mi_response.storage.storage.ss'Size / 8;
+  begin
+
+    data_received := null;
+
+    if sock.storage.socktype = a_type (tcp) then
+
+      if not sock.listened then
+        if inner_listen (sock.sock, Interfaces.C.int (backlog)) /= 0  then
+          return null_socket;
+        end if;
+
+        sock.listened := True;
+      end if;
+
+      mi_response.sock := inner_accept (mi_response.sock,
+        mi_response.storage.storage.ss'Address, mi_storage_size);
+
+      if mi_response.sock = invalid_socket  then
+        return null_socket;
+      end if;
+
+      mi_response.storage.addr_length :=  mi_storage_size;
+
+      mi_response.connected :=  True;
+      mi_response.binded    :=  False;
+      mi_response.listened  :=  False;
+
+      return mi_response;
+    end if;
+
+    if sock.storage.socktype = a_type (udp) then
+      b1 :
+      declare
+        data_tmp  : Stream_Element_Array := (1 .. 2**16 + 5 => 0);
+        len       : ssize_t;
+        len_tmp   : aliased socklen_t := socklen_t (mi_response.storage.storage.ss'Size / 8);
+        acc       : Interfaces.C.int := 0
+          with Unreferenced;
+
+        mi_socket_fd  : socket_type := 0;
+      begin
+
+        len :=  ssize_t (inner_recvfrom (sock.sock, data_tmp'Address, data_tmp'Length, 0,
+          mi_response.storage.storage.ss'Address, len_tmp));
+
+        if len = socket_error then
+          return null_socket;
+        end if;
+
+        mi_response.storage.addr_length := len_tmp;
+
+        mi_socket_fd :=
+          inner_socket (int (mi_response.storage.storage.ss.ss_family),
+            Interfaces.C.int (mi_response.storage.socktype),
+            Interfaces.C.int (mi_response.storage.protocol));
+
+        if mi_socket_fd = invalid_socket then
+          return null_socket;
+        end if;
+
+        mi_response.sock := mi_socket_fd;
+
+        data_received := new Stream_Element_Array'(data_tmp (1 .. Ada.Streams.Stream_Element_Offset (len)));
+
+        return mi_response;
+
+      end b1;
+    end if;
+
+    return null_socket;
+  end wait_connection;
+
+  function wait_connection_with_timeout
+    (sock : aliased in out socket;
+     miliseconds_timeout : Unsigned_32;
+     data_received  : aliased out stream_element_array_access;
+     backlog  : Unsigned_16 :=  10) return socket is separate;
+
+  function send_buffer
+    (sock : aliased socket;
+     data_to_send : aliased in out socket_buffer
+    ) return Interfaces.C.int
+  is
+    pos           : Stream_Element_Offset :=  data_to_send.head_first;
+    remaining     : ssize_t :=  ssize_t (actual_data_size (data_to_send));
+    sended_length : ssize_t :=  0;
+    total_sended  : ssize_t :=  0;
+    proto         : constant Address_type_label :=  a_type_label (sock.storage.socktype);
+  begin
+    if remaining = 0 then
+      return 0;
+    end if;
+
+    loop1 :
+    loop
+      case proto is
+
+        when tcp =>
+
+          sended_length := ssize_t (inner_send (sock.sock, data_to_send.data (pos)'Address,
+            size_t (remaining), 0));
+
+        when udp =>
+
+          sended_length := ssize_t (inner_sendto (sock.sock, data_to_send.data (pos)'Address,
+            size_t (remaining), 0,
+            sock.storage.storage.ss'Address,
+            sock.storage.addr_length));
+
+      end case;
+
+      exit loop1 when sended_length < 1 or else sended_length = socket_error;
+
+      pos := pos + Stream_Element_Offset (sended_length);
+
+      total_sended  := total_sended + sended_length;
+
+      exit loop1 when remaining = sended_length;
+
+      remaining :=  remaining - sended_length;
+
+      exit loop1 when remaining < 1;
+    end loop loop1;
+
+    data_to_send.head_first := data_to_send.head_first + Stream_Element_Count (total_sended);
+
+    return Interfaces.C.int (total_sended);
+
+  end send_buffer;
+
+  function send_stream
+    (sock : aliased socket;
+     data_to_send : aliased Stream_Element_Array
+    ) return Interfaces.C.int
+  is
+    pos           : Stream_Element_Offset :=  data_to_send'First;
+    remaining     : ssize_t :=  data_to_send'Length;
+    sended_length : ssize_t :=  0;
+    total_sended  : ssize_t :=  0;
+    proto         : constant Address_type_label :=  a_type_label (sock.storage.socktype);
+  begin
+    if remaining = 0 then
+      return 0;
+    end if;
+
+    loop1 :
+    loop
+      case proto is
+
+        when tcp =>
+
+          sended_length := ssize_t (inner_send (sock.sock, data_to_send (pos)'Address,
+            size_t (remaining), 0));
+
+        when udp =>
+
+          sended_length := ssize_t (inner_sendto (sock.sock, data_to_send (pos)'Address,
+            size_t (remaining), 0,
+            sock.storage.storage.ss'Address,
+            sock.storage.addr_length));
+
+      end case;
+
+      exit loop1 when sended_length < 1 or else sended_length = socket_error;
+
+      pos := pos + Stream_Element_Offset (sended_length);
+
+      total_sended  := total_sended + sended_length;
+
+      exit loop1 when remaining = sended_length;
+
+      remaining :=  remaining - sended_length;
+
+      exit loop1 when remaining < 1;
+
+    end loop loop1;
+
+    return Interfaces.C.int (total_sended);
+  end send_stream;
+
+  --  procedure send_buffer_with_timeout
+  --    (sock : aliased socket;
+  --     data_to_send : aliased in out socket_buffer;
+  --     miliseconds_timeout : Unsigned_32;
+  --    )
+  --    with Pre => is_initialized (sock);
+
+  --  procedure send_stream_with_timeout
+  --    (sock : aliased socket;
+  --     data_to_send : aliased in out stream_element_array;
+  --     miliseconds_timeout : Unsigned_32;
+  --    )
+  --    with Pre => is_initialized (sock);
+
+
+
+
+  procedure close (sock : in out socket) is
+    socket_fd : constant int := inner_close (sock.sock)
+      with unreferenced;
+  begin
+    sock := null_socket;
+  end close;
 
 
   overriding
