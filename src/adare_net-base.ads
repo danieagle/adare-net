@@ -35,6 +35,9 @@ is
   function family (family_label : Address_family_label := any) return Address_family
     with Inline;
 
+  function family_label (a_family : Address_family := tmp_any) return Address_family_label
+    with Inline;
+
 
   type Address_type is new int;
 
@@ -50,20 +53,24 @@ is
     with Inline;
 
 
-
   ipv4_length : constant socklen_t;
   ipv6_length : constant socklen_t;
 
-  type socket_address  is  private;
-  null_socket_address  : constant socket_address;
 
-  type socket_addresses  is  private;
+  type socket_address is  private;
+
+  null_socket_address : constant socket_address;
+
+  type socket_addresses is  private;
+
 
   type stream_element_array_access is access all Stream_Element_Array;
+
 
   type socket is private;
 
   null_socket : constant socket;
+
 
   type socket_buffer  is new Root_Stream_Type with private;
 
@@ -87,14 +94,14 @@ is
   function create_address
     (host_or_ip : String;
      network_port_or_service  : String;
-     Addr_family  : Address_family;
-     Addr_type : Address_type) return socket_address;
+     Addr_family  : Address_family_label;
+     Addr_type    : Address_type_label) return socket_address;
 
   function create_address
     (host_or_ip : String;
      network_port_or_service  : String;
-     Addr_family  : Address_family;
-     Addr_type : Address_type) return socket_addresses;
+     Addr_family  : Address_family_label;
+     Addr_type : Address_type_label) return socket_addresses;
 
   function create_socket
     (sock_address : socket_address;
@@ -132,19 +139,19 @@ is
     ) return Interfaces.C.int
     with Pre => is_initialized (sock);
 
-  --  function send_buffer_with_timeout
-  --    (sock : aliased socket;
-  --     data_to_send : aliased in out socket_buffer;
-  --     miliseconds_timeout : Unsigned_32;
-  --    ) return Interfaces.C.int
-  --    with Pre => is_initialized (sock);
+  function send_buffer_with_timeout
+    (sock : aliased socket;
+     data_to_send : aliased in out socket_buffer;
+     miliseconds_timeout : Unsigned_32
+    ) return Interfaces.C.int
+    with Pre => is_initialized (sock) and then miliseconds_timeout > 0;
 
-  --  function send_stream_with_timeout
-  --    (sock : aliased socket;
-  --     data_to_send : aliased in out stream_element_array;
-  --     miliseconds_timeout : Unsigned_32;
-  --    ) return Interfaces.C.int
-  --    with Pre => is_initialized (sock);
+  function send_stream_with_timeout
+    (sock : aliased socket;
+     data_to_send : aliased in out Stream_Element_Array;
+     miliseconds_timeout : Unsigned_32
+    ) return Interfaces.C.int
+    with Pre => is_initialized (sock) and then miliseconds_timeout > 0;
 
 
   procedure close (sock : in out socket);
@@ -173,32 +180,32 @@ private
 
   type in_addr is
     record
-      s_addr  : Unsigned_32;
+      s_addr  : Unsigned_32 := 0;
     end record
       with Convention => C, Preelaborable_initialization;
 
   type in6_addr is
     record
-      s6_addr : char_array (1 .. 16);
+      s6_addr : char_array (1 .. 16) := (others => char'Val (0));
     end record
       with Convention => C, Preelaborable_initialization;
 
   type sockaddr_in is
     record
-      sin_family  : Unsigned_16;
-      sin_port    : Unsigned_16;
+      sin_family  : Unsigned_16 := 0;
+      sin_port    : Unsigned_16 := 0;
       sin_addr    : in_addr;
-      sin_zero    : char_array (1 .. 8);
+      sin_zero    : char_array (1 .. 8) := (others => char'Val (0));
     end record
       with Convention => C, Preelaborable_initialization;
 
   type sockaddr_in6 is
     record
-      sin6_family : Unsigned_16;
-      sin6_port   : Unsigned_16;
-      sin6_flowinfo : Unsigned_32;
+      sin6_family : Unsigned_16 := 0;
+      sin6_port   : Unsigned_16 := 0;
+      sin6_flowinfo : Unsigned_32 := 0;
       sin6_addr     : in6_addr;
-      sin6_scope_id : Unsigned_32;
+      sin6_scope_id : Unsigned_32 := 0;
     end record
       with Convention => C, Preelaborable_initialization;
 
@@ -218,7 +225,7 @@ private
     record
       case mi_discr is
         when mi_plain_storage =>
-          sp  : aliased char_array (1 .. 134);
+          sp  : aliased char_array (1 .. 134) := (others => char'Val (0));
 
         when mi_storage =>
           ss  : aliased sockaddr_storage;
@@ -235,8 +242,8 @@ private
   type socket_address  is
     record
       storage   : aliased storage_union;
-      socktype  : aliased Address_type    := a_type (tcp);
-      protocol  : aliased Address_family  := family (any);
+      socktype  : aliased Address_type    := 0; -- a_type (tcp);
+      protocol  : aliased Address_family  := 0; -- family (any);
       addr_length : aliased socklen_t     := 0;
     end record
       with Convention => C, Preelaborable_initialization;
@@ -278,7 +285,7 @@ private
   type char_array_access is access all char_array;
 
   type addr_info;
-  type addr_info_access is access all addr_info;
+  type addr_info_access is access all addr_info; -- ToDo: Convention => C ?
 
   type addr_info is
     record

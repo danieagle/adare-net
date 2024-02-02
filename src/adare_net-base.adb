@@ -46,20 +46,39 @@ is
     raise Constraint_Error with " unknown Address_Type ";
   end a_type_label;
 
+  function family_label (a_family : Address_family := tmp_any) return Address_family_label
+  is
+  begin
+
+    if a_family = tmp_any then
+      return any;
+    end if;
+
+    if a_family = tmp_ipv4 then
+      return ipv4;
+    end if;
+
+    if a_family = tmp_ipv6 then
+      return ipv6;
+    end if;
+
+    raise Constraint_Error with " unknown Address_family ";
+  end family_label;
+
 
   function create_address
     (host_or_ip : String;
      network_port_or_service  : String;
-     Addr_family  : Address_family;
-     Addr_type : Address_type) return socket_address
+     Addr_family  : Address_family_label;
+     Addr_type : Address_type_label) return socket_address
   is
     ai_passive  : constant Interfaces.C.int
       with Import => True, Convention => C, External_Name => "c_ai_passive";
 
     hint  : aliased constant addr_info
       :=  (ai_flags => (if host_or_ip'Length /= 0 then 0 else ai_passive),
-           ai_family => Interfaces.C.int (Addr_family),
-           ai_socktype => Interfaces.C.int (Addr_type),
+           ai_family => Interfaces.C.int (family (Addr_family)),
+           ai_socktype => Interfaces.C.int (a_type (Addr_type)),
            ai_protocol => 0,
            ai_addrlen => 0,
            ai_addr => null,
@@ -104,16 +123,16 @@ is
   function create_address
     (host_or_ip : String;
      network_port_or_service  : String;
-     Addr_family  : Address_family;
-     Addr_type : Address_type) return socket_addresses
+     Addr_family  : Address_family_label;
+     Addr_type : Address_type_label) return socket_addresses
   is
     ai_passive  : constant Interfaces.C.int
       with Import => True, Convention => C, External_Name => "c_ai_passive";
 
     hint  : aliased constant addr_info
       :=  (ai_flags => (if host_or_ip'Length /= 0 then 0 else ai_passive),
-           ai_family => Interfaces.C.int (Addr_family),
-           ai_socktype => Interfaces.C.int (Addr_type),
+           ai_family => Interfaces.C.int (family (Addr_family)),
+           ai_socktype => Interfaces.C.int (a_type (Addr_type)),
            ai_protocol => 0,
            ai_addrlen => 0,
            ai_addr => null,
@@ -271,7 +290,9 @@ is
   function wait_connection
     (sock     : aliased in out socket;
      data_received  : aliased out stream_element_array_access;
-     backlog  : Unsigned_16 := 10 -- ignored after first use in sock. close socket to configure backlog again.
+     backlog  : Unsigned_16 := 10
+     -- backlog is ignored after first use in sock. close and recreate socket
+     --   to configure backlog again.
     ) return socket
   is
     mi_response     : socket    := sock;
@@ -456,20 +477,17 @@ is
     return Interfaces.C.int (total_sended);
   end send_stream;
 
-  --  procedure send_buffer_with_timeout
-  --    (sock : aliased socket;
-  --     data_to_send : aliased in out socket_buffer;
-  --     miliseconds_timeout : Unsigned_32;
-  --    )
-  --    with Pre => is_initialized (sock);
+  function send_buffer_with_timeout
+    (sock : aliased socket;
+     data_to_send : aliased in out socket_buffer;
+     miliseconds_timeout : Unsigned_32
+    ) return Interfaces.C.int is separate;
 
-  --  procedure send_stream_with_timeout
-  --    (sock : aliased socket;
-  --     data_to_send : aliased in out stream_element_array;
-  --     miliseconds_timeout : Unsigned_32;
-  --    )
-  --    with Pre => is_initialized (sock);
-
+  function send_stream_with_timeout
+    (sock : aliased socket;
+     data_to_send : aliased in out Stream_Element_Array;
+     miliseconds_timeout : Unsigned_32
+    ) return Interfaces.C.int is separate;
 
 
 
