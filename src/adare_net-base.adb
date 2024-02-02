@@ -65,6 +65,13 @@ is
     raise Constraint_Error with " unknown Address_family ";
   end family_label;
 
+  function storage_size return socklen_t
+  is
+    tmp_size  : constant storage_union := (others => <>);
+  begin
+    return tmp_size.ss'Size / 8;
+  end storage_size;
+
 
   function create_address
     (host_or_ip : String;
@@ -296,7 +303,7 @@ is
     ) return socket
   is
     mi_response     : socket    := sock;
-    mi_storage_size : socklen_t := mi_response.storage.storage.ss'Size / 8;
+    mi_storage_size : socklen_t := storage_size;
   begin
 
     data_received := null;
@@ -332,7 +339,7 @@ is
       declare
         data_tmp  : Stream_Element_Array := (1 .. 2**16 + 5 => 0);
         len       : ssize_t;
-        len_tmp   : aliased socklen_t := socklen_t (mi_response.storage.storage.ss'Size / 8);
+        len_tmp   : aliased socklen_t := storage_size;
         acc       : Interfaces.C.int := 0
           with Unreferenced;
 
@@ -485,9 +492,221 @@ is
 
   function send_stream_with_timeout
     (sock : aliased socket;
-     data_to_send : aliased in out Stream_Element_Array;
+     data_to_send : aliased Stream_Element_Array;
      miliseconds_timeout : Unsigned_32
     ) return Interfaces.C.int is separate;
+
+
+  function receive_buffer
+    (sock : aliased socket;
+     data_to_receive  : aliased in out socket_buffer;
+     received_address : aliased out socket_address
+    ) return Interfaces.C.int
+  is
+    received_length : ssize_t :=  0;
+    total_received  : ssize_t :=  0;
+
+    proto           : constant Address_type_label :=  a_type_label (sock.storage.socktype);
+
+    receive_data          : Stream_Element_Array  :=  (1 .. 2**16 + 5 => 0);
+    receive_data_address  : constant Address :=  receive_data (1)'Address;
+    receive_data_length   : constant size_t  :=  receive_data'Length;
+
+    socket_address_length : socklen_t :=  storage_size;
+
+    tmp_received_address  : aliased socket_address :=
+      (if proto = tcp then null_socket_address else sock.storage);
+
+    tmp_received_address_test  : aliased socket_address :=  tmp_received_address;
+
+    tmp_address_test  : Boolean :=  False;
+
+  begin
+
+    received_address := null_socket_address;
+
+    loop1 :
+    loop
+
+      case proto is
+        when tcp =>
+
+          received_length := ssize_t (inner_recv (sock.sock, receive_data_address,
+            receive_data_length, 0));
+
+        when udp =>
+
+          received_length :=  ssize_t (inner_recvfrom (sock.sock, receive_data_address, receive_data_length, 0,
+            tmp_received_address.storage.ss'Address, socket_address_length));
+
+          tmp_received_address.addr_length := socket_address_length;
+
+          socket_address_length :=  storage_size;
+
+      end case;
+
+
+      exit loop1 when received_length < 1 or else received_length = socket_error;
+
+      total_received  :=  total_received  + received_length;
+
+      Stream_Element_Array'Write (data_to_receive'Access, receive_data (1 .. Stream_Element_Offset (received_length)));
+
+
+      case proto is
+        when tcp =>
+
+          received_length := ssize_t (inner_recv (sock.sock, receive_data_address,
+            receive_data_length, msg_peek_flag));
+
+        when udp =>
+
+          received_length :=  ssize_t (inner_recvfrom (sock.sock, receive_data_address, receive_data_length, msg_peek_flag,
+            tmp_received_address_test.storage.ss'Address, socket_address_length));
+
+          tmp_received_address_test.addr_length := socket_address_length;
+
+          socket_address_length :=  storage_size;
+
+          tmp_address_test  :=
+            (tmp_received_address.storage.ss.ss_family /= tmp_received_address_test.storage.ss.ss_family) or else
+            (if family_label (Address_family (tmp_received_address.storage.ss.ss_family)) = ipv4 then
+            (tmp_received_address.storage.i4.sin_addr /= tmp_received_address_test.storage.i4.sin_addr) else
+            (tmp_received_address.storage.i6.sin6_addr /= tmp_received_address_test.storage.i6.sin6_addr));
+
+          exit loop1 when tmp_address_test;
+
+      end case;
+
+      exit loop1 when received_length < 1 or else received_length = socket_error;
+
+    end loop loop1;
+
+    if proto = udp then
+      received_address := tmp_received_address;
+    end if;
+
+    return Interfaces.C.int (total_received);
+  end receive_buffer;
+
+  function receive_stream
+    (sock : aliased socket;
+     data_to_receive : aliased out stream_element_array_access;
+     received_address : aliased out socket_address
+    ) return Interfaces.C.int
+  is
+    proto : constant Address_type_label :=  a_type_label (sock.storage.socktype);
+
+    tmp_received_address  : aliased socket_address :=
+      (if proto = tcp then null_socket_address else sock.storage);
+
+    tmp_received_address_test  : aliased socket_address :=  tmp_received_address;
+
+    received_length : ssize_t :=  0;
+    total_received  : ssize_t :=  0;
+
+    receive_data  : stream_element_array_access :=  new Stream_Element_Array'(1 .. (2**16 + 5) * 3 => 0);
+    pos : Stream_Element_Offset := receive_data.all'First;
+    tmp_address_test  : Boolean :=  False;
+
+    socket_address_length : socklen_t :=  storage_size;
+  begin
+
+    received_address := null_socket_address;
+
+    loop1 :
+    loop
+
+      case proto is
+        when tcp =>
+
+          received_length := ssize_t (inner_recv (sock.sock, receive_data.all (pos)'Address,
+            receive_data.all'Length - size_t (pos), 0));
+
+        when udp =>
+
+          received_length :=  ssize_t (inner_recvfrom (sock.sock, receive_data.all (pos)'Address,
+            receive_data.all'Length - size_t (pos), 0,
+            tmp_received_address.storage.ss'Address, socket_address_length));
+
+          tmp_received_address.addr_length := socket_address_length;
+
+          socket_address_length :=  storage_size;
+
+      end case;
+
+
+      exit loop1 when received_length < 1 or else received_length = socket_error;
+
+      total_received  :=  total_received  + received_length;
+
+      pos :=  pos + Stream_Element_Offset (received_length);
+
+      if pos + (2**15) + 5 > receive_data.all'Length then
+        b1:
+        declare
+          receive_data_old  : constant Stream_Element_Array := receive_data.all;
+        begin
+
+          receive_data :=  new Stream_Element_Array'(1 .. receive_data_old'Length + (2**16 + 5) * 2 => 0);
+          receive_data (receive_data_old'Range) := receive_data_old;
+        end b1;
+      end if;
+
+      case proto is
+        when tcp =>
+
+          received_length := ssize_t (inner_recv (sock.sock,  receive_data.all (pos)'Address,
+            receive_data.all'Length - size_t (pos), msg_peek_flag));
+
+        when udp =>
+
+          received_length :=  ssize_t (inner_recvfrom (sock.sock, receive_data.all (pos)'Address,
+            receive_data.all'Length - size_t (pos), msg_peek_flag,
+            tmp_received_address_test.storage.ss'Address, socket_address_length));
+
+          tmp_received_address_test.addr_length := socket_address_length;
+
+          socket_address_length :=  storage_size;
+
+          -- ToDo ? Is necessary compare 'network port' too?
+          tmp_address_test  :=
+            (tmp_received_address.storage.ss.ss_family /= tmp_received_address_test.storage.ss.ss_family) or else
+            (if family_label (Address_family (tmp_received_address.storage.ss.ss_family)) = ipv4 then
+            (tmp_received_address.storage.i4.sin_addr /= tmp_received_address_test.storage.i4.sin_addr) else
+            (tmp_received_address.storage.i6.sin6_addr /= tmp_received_address_test.storage.i6.sin6_addr));
+
+          exit loop1 when tmp_address_test;
+
+      end case;
+
+      exit loop1 when received_length < 1 or else received_length = socket_error;
+
+    end loop loop1;
+
+    if proto = udp then
+      received_address := tmp_received_address;
+    end if;
+
+    data_to_receive := new Stream_Element_Array'(receive_data.all (1 .. Stream_Element_Offset (total_received) - 1));
+
+    return Interfaces.C.int (total_received);
+  end receive_stream;
+
+  --  function receive_buffer_with_timeout
+  --    (sock : aliased socket;
+  --     data_to_receive : aliased in out socket_buffer;
+  --     received_address : aliased out socket_address_access;
+  --     miliseconds_timeout : Unsigned_32
+  --    ) return Interfaces.C.int is separate;
+
+  --  function receive_stream_with_timeout
+  --    (sock : aliased socket;
+  --     data_to_receive : aliased out Stream_Element_Array;
+  --     received_address : aliased out socket_address_access;
+  --     miliseconds_timeout : Unsigned_32
+  --    ) return Interfaces.C.int is separate;
+
 
 
 

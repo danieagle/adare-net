@@ -8,7 +8,7 @@
      backlog  : Unsigned_16 :=  10) return socket
   is
     mi_response     : socket    := sock;
-    mi_storage_size : socklen_t := mi_response.storage.storage.ss'Size / 8;
+    mi_storage_size : socklen_t := storage_size;
 
     mi_epoll_handle : constant handle_type := inner_epoll_create1;
 
@@ -64,6 +64,10 @@
         return null_socket;
       end if;
 
+      -- done :)
+      acc := inner_epoll_ctl (mi_epoll_handle, Interfaces.C.int (cmd_del), sock.sock, Null_Address);
+      acc := inner_epoll_close (mi_epoll_handle);
+
 
       if proto = tcp then
 
@@ -72,14 +76,8 @@
           mi_storage_size);
 
         if mi_response.sock = invalid_socket then
-          acc := inner_epoll_ctl (mi_epoll_handle, Interfaces.C.int (cmd_del), sock.sock, Null_Address);
-          acc := inner_epoll_close (mi_epoll_handle);
-
           return null_socket;
         end if;
-
-        acc := inner_epoll_ctl (mi_epoll_handle, Interfaces.C.int (cmd_del), sock.sock, Null_Address);
-        acc := inner_epoll_close (mi_epoll_handle);
 
         mi_response.storage.addr_length := mi_storage_size;
 
@@ -95,16 +93,13 @@
         declare
           mi_socket_fd  : socket_type := 0;
           data_tmp  : Stream_Element_Array := (1 .. 2**16 + 5 => 0);
-          len_tmp   : aliased socklen_t := socklen_t (mi_response.storage.storage.ss'Size / 8);
+          len_tmp   : aliased socklen_t := storage_size;
           len       : ssize_t;
         begin
           len := ssize_t (inner_recvfrom (sock.sock, data_tmp'Address, data_tmp'Length, 0,
             mi_response.storage.storage.ss'Address, len_tmp));
 
           if socket_error = len then
-            acc := inner_epoll_ctl (mi_epoll_handle, Interfaces.C.int (cmd_del), sock.sock, Null_Address);
-            acc := inner_epoll_close (mi_epoll_handle);
-
             return null_socket;
           end if;
 
@@ -114,9 +109,6 @@
             inner_socket (int (mi_response.storage.storage.ss.ss_family),
               Interfaces.C.int (mi_response.storage.socktype),
               Interfaces.C.int (mi_response.storage.protocol));
-
-          acc := inner_epoll_ctl (mi_epoll_handle, Interfaces.C.int (cmd_del), sock.sock, Null_Address);
-          acc := inner_epoll_close (mi_epoll_handle);
 
           if mi_socket_fd = invalid_socket then
             return null_socket;

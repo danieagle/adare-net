@@ -59,6 +59,8 @@ is
 
   type socket_address is  private;
 
+  type socket_address_access is access all socket_address;
+
   null_socket_address : constant socket_address;
 
   type socket_addresses is  private;
@@ -148,10 +150,41 @@ is
 
   function send_stream_with_timeout
     (sock : aliased socket;
-     data_to_send : aliased in out Stream_Element_Array;
+     data_to_send : aliased Stream_Element_Array;
      miliseconds_timeout : Unsigned_32
     ) return Interfaces.C.int
     with Pre => is_initialized (sock) and then miliseconds_timeout > 0;
+
+
+  function receive_buffer
+    (sock : aliased socket;
+     data_to_receive  : aliased in out socket_buffer;
+     received_address : aliased out socket_address
+    ) return Interfaces.C.int
+    with Pre => is_initialized (sock);
+
+  function receive_stream
+    (sock : aliased socket;
+     data_to_receive : aliased out stream_element_array_access;
+     received_address : aliased out socket_address
+    ) return Interfaces.C.int
+    with Pre => is_initialized (sock);
+
+  --  function receive_buffer_with_timeout
+  --    (sock : aliased socket;
+  --     data_to_receive : aliased in out socket_buffer;
+  --     received_address : aliased out socket_address;
+  --     miliseconds_timeout : Unsigned_32
+  --    ) return Interfaces.C.int
+  --    with Pre => is_initialized (sock) and then miliseconds_timeout > 0;
+
+  --  function receive_stream_with_timeout
+  --    (sock : aliased socket;
+  --     data_to_receive : aliased out Stream_Element_Array;
+  --     received_address : aliased out socket_address;
+  --     miliseconds_timeout : Unsigned_32
+  --    ) return Interfaces.C.int
+  --    with Pre => is_initialized (sock) and then miliseconds_timeout > 0;
 
 
   procedure close (sock : in out socket);
@@ -299,5 +332,8 @@ private
       ai_next : addr_info_access  :=  null;
     end record
       with Convention => C, Preelaborable_initialization;
+
+  function storage_size return socklen_t
+    with Inline;
 
 end adare_net.base;

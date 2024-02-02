@@ -3,7 +3,7 @@
   separate (adare_net.base)
   function send_stream_with_timeout
     (sock : aliased socket;
-     data_to_send : aliased in out Stream_Element_Array;
+     data_to_send : aliased Stream_Element_Array;
      miliseconds_timeout : Unsigned_32
     ) return Interfaces.C.int
   is
@@ -59,6 +59,10 @@
 
           return 0;
         end if;
+
+        acc := inner_epoll_ctl (mi_epoll_handle, Interfaces.C.int (cmd_del), sock.sock, Null_Address);
+        acc := inner_epoll_close (mi_epoll_handle);
+
       end b01;
     end b0;
 
