@@ -92,7 +92,7 @@
         b1 :
         declare
           mi_socket_fd  : socket_type := 0;
-          data_tmp  : Stream_Element_Array := (1 .. 2**16 + 5 => 0);
+          data_tmp  : Stream_Element_Array := (1 .. (2**16 + 5) * 3 => 0);
           len_tmp   : aliased socklen_t := storage_size;
           len       : ssize_t;
         begin

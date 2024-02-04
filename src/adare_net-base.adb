@@ -304,11 +304,12 @@ is
   is
     mi_response     : socket    := sock;
     mi_storage_size : socklen_t := storage_size;
+    proto : constant Address_type_label := a_type_label (sock.storage.socktype);
   begin
 
     data_received := null;
 
-    if sock.storage.socktype = a_type (tcp) then
+    if proto = tcp then
 
       if not sock.listened then
         if inner_listen (sock.sock, Interfaces.C.int (backlog)) /= 0  then
@@ -334,10 +335,10 @@ is
       return mi_response;
     end if;
 
-    if sock.storage.socktype = a_type (udp) then
+    if proto = udp then
       b1 :
       declare
-        data_tmp  : Stream_Element_Array := (1 .. 2**16 + 5 => 0);
+        data_tmp  : Stream_Element_Array := (1 .. (2**16 + 5) * 3 => 0);
         len       : ssize_t;
         len_tmp   : aliased socklen_t := storage_size;
         acc       : Interfaces.C.int := 0
@@ -380,7 +381,10 @@ is
     (sock : aliased in out socket;
      miliseconds_timeout : Unsigned_32;
      data_received  : aliased out stream_element_array_access;
-     backlog  : Unsigned_16 :=  10) return socket is separate;
+     backlog  : Unsigned_16 :=  10
+     -- backlog is ignored after first use in sock. close and recreate socket
+     --   to configure backlog again.
+     ) return socket is separate;
 
   function send_buffer
     (sock : aliased socket;
@@ -508,7 +512,7 @@ is
 
     proto           : constant Address_type_label :=  a_type_label (sock.storage.socktype);
 
-    receive_data          : Stream_Element_Array  :=  (1 .. 2**16 + 5 => 0);
+    receive_data          : Stream_Element_Array  :=  (1 .. (2**16 + 5) * 3 => 0);
     receive_data_address  : constant Address :=  receive_data (1)'Address;
     receive_data_length   : constant size_t  :=  receive_data'Length;
 
@@ -642,14 +646,14 @@ is
 
       pos :=  pos + Stream_Element_Offset (received_length);
 
-      if pos + (2**15) + 5 > receive_data.all'Length then
-        b1:
+      if pos + ((2**16 + 5) * 2) > receive_data.all'Length then
+        b1 :
         declare
-          receive_data_old  : constant Stream_Element_Array := receive_data.all;
+          receive_data_old  : constant Stream_Element_Array := receive_data.all (1 .. pos - 1);
         begin
 
-          receive_data :=  new Stream_Element_Array'(1 .. receive_data_old'Length + (2**16 + 5) * 2 => 0);
-          receive_data (receive_data_old'Range) := receive_data_old;
+          receive_data :=  new Stream_Element_Array'(1 .. receive_data_old'Length + (2**16 + 5) * 3 => 0);
+          receive_data.all (receive_data_old'Range) := receive_data_old;
         end b1;
       end if;
 
@@ -688,24 +692,24 @@ is
       received_address := tmp_received_address;
     end if;
 
-    data_to_receive := new Stream_Element_Array'(receive_data.all (1 .. Stream_Element_Offset (total_received) - 1));
+    data_to_receive := new Stream_Element_Array'(receive_data.all (1 .. Stream_Element_Offset (total_received)));
 
     return Interfaces.C.int (total_received);
   end receive_stream;
 
-  --  function receive_buffer_with_timeout
-  --    (sock : aliased socket;
-  --     data_to_receive : aliased in out socket_buffer;
-  --     received_address : aliased out socket_address_access;
-  --     miliseconds_timeout : Unsigned_32
-  --    ) return Interfaces.C.int is separate;
+  function receive_buffer_with_timeout
+    (sock : aliased socket;
+     data_to_receive : aliased in out socket_buffer;
+     received_address : aliased out socket_address;
+     miliseconds_timeout : Unsigned_32
+    ) return Interfaces.C.int is separate;
 
-  --  function receive_stream_with_timeout
-  --    (sock : aliased socket;
-  --     data_to_receive : aliased out Stream_Element_Array;
-  --     received_address : aliased out socket_address_access;
-  --     miliseconds_timeout : Unsigned_32
-  --    ) return Interfaces.C.int is separate;
+  function receive_stream_with_timeout
+    (sock : aliased socket;
+     data_to_receive : aliased out stream_element_array_access;
+     received_address : aliased out socket_address;
+     miliseconds_timeout : Unsigned_32
+    ) return Interfaces.C.int is separate;
 
 
 

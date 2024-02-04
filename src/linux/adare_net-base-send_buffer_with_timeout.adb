@@ -60,6 +60,7 @@
           return 0;
         end if;
 
+        -- Done. :)
         acc := inner_epoll_ctl (mi_epoll_handle, Interfaces.C.int (cmd_del), sock.sock, Null_Address);
         acc := inner_epoll_close (mi_epoll_handle);
 

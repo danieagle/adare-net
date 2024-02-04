@@ -116,7 +116,9 @@ is
   function wait_connection
     (sock     : aliased in out socket;
      data_received  : aliased out stream_element_array_access;
-     backlog  : Unsigned_16 := 10 -- ignored after first use in sock. close socket to configure backlog again.
+     backlog  : Unsigned_16 := 10
+     -- backlog is ignored after first use in sock. close and recreate socket
+     --   to configure backlog again.
     ) return socket
       with Pre => is_initialized (sock) and then backlog > 0;
 
@@ -125,6 +127,8 @@ is
      miliseconds_timeout : Unsigned_32;
      data_received  : aliased out stream_element_array_access;
      backlog  : Unsigned_16 :=  10
+     -- backlog is ignored after first use in sock. close and recreate socket
+     --   to configure backlog again.
     ) return socket
       with Pre => is_initialized (sock) and then
         miliseconds_timeout > 0 and then backlog > 0;
@@ -170,21 +174,21 @@ is
     ) return Interfaces.C.int
     with Pre => is_initialized (sock);
 
-  --  function receive_buffer_with_timeout
-  --    (sock : aliased socket;
-  --     data_to_receive : aliased in out socket_buffer;
-  --     received_address : aliased out socket_address;
-  --     miliseconds_timeout : Unsigned_32
-  --    ) return Interfaces.C.int
-  --    with Pre => is_initialized (sock) and then miliseconds_timeout > 0;
+  function receive_buffer_with_timeout
+    (sock : aliased socket;
+     data_to_receive : aliased in out socket_buffer;
+     received_address : aliased out socket_address;
+     miliseconds_timeout : Unsigned_32
+    ) return Interfaces.C.int
+    with Pre => is_initialized (sock) and then miliseconds_timeout > 0;
 
-  --  function receive_stream_with_timeout
-  --    (sock : aliased socket;
-  --     data_to_receive : aliased out Stream_Element_Array;
-  --     received_address : aliased out socket_address;
-  --     miliseconds_timeout : Unsigned_32
-  --    ) return Interfaces.C.int
-  --    with Pre => is_initialized (sock) and then miliseconds_timeout > 0;
+  function receive_stream_with_timeout
+    (sock : aliased socket;
+     data_to_receive : aliased out stream_element_array_access;
+     received_address : aliased out socket_address;
+     miliseconds_timeout : Unsigned_32
+    ) return Interfaces.C.int
+    with Pre => is_initialized (sock) and then miliseconds_timeout > 0;
 
 
   procedure close (sock : in out socket);
