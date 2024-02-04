@@ -711,7 +711,115 @@ is
      miliseconds_timeout : Unsigned_32
     ) return Interfaces.C.int is separate;
 
+  procedure clear
+    (sock_address : aliased in out socket_address)
+  is
+  begin
+    sock_address  :=  null_socket_address;
+  end clear;
 
+  procedure clear  -- remove all stored socket_address's
+    (sock_address : aliased in out socket_addresses)
+  is
+  begin
+    if not Is_Empty (sock_address.mi_list) then
+      Clear (sock_address.mi_list);
+    end if;
+    sock_address.mi_next_cursor := No_Element;
+    sock_address.mi_initialized := False;
+  end clear;
+
+  function get_address
+    (sock : aliased in socket) return socket_address
+  is (sock.storage);
+
+  function get_address
+    (sock_address : aliased in out socket_addresses;
+     result : aliased out socket_address) return Boolean
+  is
+  begin
+    result := null_socket_address;
+
+    if Is_Empty (sock_address.mi_list) then
+      return False;
+    end if;
+
+    if not sock_address.mi_initialized then
+      sock_address.mi_next_cursor := First (sock_address.mi_list);
+      sock_address.mi_initialized := True;
+    end if;
+
+    if Has_Element (sock_address.mi_next_cursor) then
+      result := Element (sock_address.mi_next_cursor);
+
+      Next (sock_address.mi_next_cursor);
+
+      return True;
+    end if;
+
+    sock_address.mi_initialized := False;
+
+    return False;
+  end get_address;
+
+  procedure rewind  -- rewind to the first socket_address in socket_addresses
+    (sock_address : aliased in out socket_addresses)
+  is
+  begin
+    sock_address.mi_initialized := False;
+  end rewind;
+
+
+  function get_address_port
+    (sock_address : aliased in socket_address) return ports
+  is
+    stype : constant Address_family_label := family_label (Address_family (sock_address.storage.ss.ss_family));
+  begin
+    return ports (inner_ntohs ((if stype = ipv6 then sock_address.storage.i6.sin6_port
+      elsif stype = ipv4 then sock_address.storage.i4.sin_port else 0)));
+  end get_address_port;
+
+
+  function get_address_port
+    (sock_address : aliased in socket_address) return String
+  is
+    string_port : constant String :=  ports'(get_address_port (sock_address))'Image;
+  begin
+    return string_port (string_port'First + 1 .. string_port'Last);
+  end get_address_port;
+
+
+  function get_address
+    (sock_address : aliased in socket_address) return String
+  is
+    stype : constant Address_family_label := family_label (Address_family (sock_address.storage.ss.ss_family));
+    dest : char_array :=
+      (1 .. size_t (if stype = ipv4  then ipv4_length elsif stype = ipv6  then ipv6_length else 0) => char'Val (0));
+
+    dest_length : size_t := dest'Length;
+  begin
+    if dest_length = 0 then
+      return "unknown";
+    end if;
+
+    if stype = ipv6 then
+      inner_inet_ntop (int (sock_address.storage.i6.sin6_family), sock_address.storage.i6.sin6_addr'Address, dest'Address, socklen_t (dest'Length));
+    end if;
+
+    if stype = ipv4 then
+      inner_inet_ntop (int (sock_address.storage.i4.sin_family), sock_address.storage.i4.sin_addr'Address, dest'Address, socklen_t (dest'Length));
+    end if;
+
+    loop1 :
+    for E of reverse dest loop
+
+      exit loop1 when E /= char'Val (0);
+
+      dest_length := dest_length - 1;
+    end loop loop1;
+
+    return To_Ada (dest (1 .. dest_length), False);
+  end get_address;
 
 
   procedure close (sock : in out socket) is

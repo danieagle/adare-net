@@ -53,8 +53,8 @@ is
     with Inline;
 
 
-  ipv4_length : constant socklen_t;
-  ipv6_length : constant socklen_t;
+  ipv4_length : constant socklen_t with Import => True, Convention => C, External_Name => "c_v4_addrstrlen";
+  ipv6_length : constant socklen_t with Import => True, Convention => C, External_Name => "c_v6_str_length";
 
 
   type socket_address is  private;
@@ -190,6 +190,32 @@ is
     ) return Interfaces.C.int
     with Pre => is_initialized (sock) and then miliseconds_timeout > 0;
 
+  procedure clear
+    (sock_address : aliased in out socket_address);
+
+  procedure clear -- remove all stored socket_address's
+    (sock_address : aliased in out socket_addresses);
+
+  function get_address
+    (sock : aliased in socket) return socket_address;
+
+  function get_address
+    (sock_address : aliased in out socket_addresses;
+     result : aliased out socket_address) return Boolean;
+
+  procedure rewind -- rewind to the first socket_address in socket_addresses
+    (sock_address : aliased in out socket_addresses);
+
+  function get_address_port
+    (sock_address : aliased in socket_address) return ports;
+
+  function get_address_port
+    (sock_address : aliased in socket_address) return String;
+
+  function get_address
+    (sock_address : aliased in socket_address) return String;
+
+
 
   procedure close (sock : in out socket);
 
@@ -209,9 +235,6 @@ private
 
   function a_type (type_label : Address_type_label := tcp) return Address_type
     is (case type_label is when tcp => tmp_tcp, when udp => tmp_udp);
-
-  ipv4_length : constant socklen_t with Import => True, Convention => C, External_Name => "c_v4_addrstrlen";
-  ipv6_length : constant socklen_t with Import => True, Convention => C, External_Name => "c_v6_str_length";
 
   msg_peek_flag : constant int with Import => True, Convention => C, external_name => "c_msg_peek";
 
@@ -291,7 +314,9 @@ private
 
   type socket_addresses  is
     record
-      mi_list : List (300) := Empty_List;
+      mi_list         : aliased List (300)  := Empty_List;
+      mi_next_cursor  : aliased Cursor      := No_Element;
+      mi_initialized  : Boolean := False;
     end record
       with Convention => C, Preelaborable_initialization;
 

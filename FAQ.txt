@@ -1,13 +1,13 @@
-2) compilation msgs "warning: redundant conversion, expression is of type "ssize_t""
-  => this not allways the case. :-) e.g: MSWindows.
+1) compilation msgs "warning: redundant conversion, expression is of type "ssize_t""
+  => not allways true. :-) e.g: MSWindows.
   => just ignore these compilation msgs. :-)
 
-1)  How To send and receive zero Length arrays, included 'String' ?
+2)  How To send and receive zero Length arrays, included 'String' ?
   => Substitute 'read() and 'write() attributes with 'input() and
   'output() attributes.
 
-2) now adare_net can be used in mswindows before Win10_22H2_x64, and in 32bit OS's.
-2.1) Pleeeaase report success or failure :-) in main git repository.
+3) now adare_net can be used in mswindows before Win10_22H2_x64, and in 32bit OS's.
+3.1) Pleeeaase report success or failure :-) in main git repository.
 
 
 
