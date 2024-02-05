@@ -30,5 +30,5 @@ maintainers-logins = ["danieagle"]
 
 [build-switches]
 "*".Ada_Version = "Ada12"
-"*".Style_checks = ["-gnaty2abCefhiklnprstmM135"]
+"*".Style_checks = ["-gnaty2abCefhiklnprstmM137"]
 

@@ -67,9 +67,9 @@ is
 
   function storage_size return socklen_t
   is
-    tmp_size  : constant storage_union := (others => <>);
+    tmp_size  : constant socket_address := (others => <>);
   begin
-    return tmp_size.ss'Size / 8;
+    return tmp_size.storage'Size / 8;
   end storage_size;
 
 
@@ -88,11 +88,13 @@ is
            ai_socktype => Interfaces.C.int (a_type (Addr_type)),
            ai_protocol => 0,
            ai_addrlen => 0,
-           ai_addr => null,
-           ai_canonname => null,
-           ai_next => null);
+           ai_addr => Null_Address,
+           ai_canonname => Null_Address,
+           ai_next => Null_Address);
 
-    mi_response     : aliased addr_info_access;
+    tmp_getted_response  : Address  := Null_Address;
+
+    tmp_addr  : aliased socket_address := null_socket_address;
 
     h_or_i    : aliased constant char_array  := To_C (host_or_ip);
     n_p_or_s  : aliased constant char_array  := To_C (network_port_or_service);
@@ -101,31 +103,41 @@ is
       (host_or_ip_i =>  (if host_or_ip'Length /= 0 then h_or_i'Address else Null_Address),
        port_i       =>  (if network_port_or_service'Length /= 0 then n_p_or_s'Address else Null_Address),
        hints_i      =>  hint'Address,
-       response_i   =>  mi_response'Address);
+       response_i   =>  tmp_getted_response'Address); --  just tmp_getted_response without 'Address ?
 
-    mi_result     : socket_address := null_socket_address;
+    tmp_addrinfo : aliased addr_info;
+
+    tmp_sockaddr_storage  : ainfo2.Object_Pointer;
 
   begin
 
-    if ret_value /= 0 or else mi_response = null then
+    if ret_value /= 0 or else tmp_getted_response = Null_Address then
       return null_socket_address;
     end if;
 
-    mi_result.storage.ss.ss_family := mi_response.ai_addr.ss_family;
+    tmp_addrinfo := To_Pointer (tmp_getted_response).all;
+    tmp_sockaddr_storage := To_Pointer (tmp_addrinfo.ai_addr);
 
-    mi_result.storage.ss.padding (1 .. Interfaces.C.size_t (mi_response.ai_addrlen) - 2)
-      := mi_response.ai_addr.padding (1 .. Interfaces.C.size_t (mi_response.ai_addrlen) - 2);
+    tmp_addr.storage.ss_family := Interfaces.Unsigned_16 (tmp_addrinfo.ai_family);
 
-    mi_result.socktype     :=  Address_type (mi_response.ai_socktype);
+    if tmp_addrinfo.ai_addrlen > 2 then
+      tmp_addr.storage.padding (1 .. size_t (tmp_addrinfo.ai_addrlen - 2))
+        := tmp_sockaddr_storage.padding (1 .. size_t (tmp_addrinfo.ai_addrlen - 2));
+    else
+      tmp_addr.storage.padding := (others => char'Val (0));
+    end if;
 
-    mi_result.protocol     :=  Address_family (mi_response.ai_protocol);
+    tmp_addr.socktype := Address_type (tmp_addrinfo.ai_socktype);
 
-    mi_result.addr_length  :=  mi_response.ai_addrlen;
+    tmp_addr.protocol     :=  Address_family (tmp_addrinfo.ai_protocol);
 
-    inner_free_addrinfo (mi_response'Address);
+    tmp_addr.addr_length  :=  tmp_addrinfo.ai_addrlen;
 
-    return mi_result;
+    inner_free_addrinfo (tmp_getted_response);
+
+    return tmp_addr;
   end create_address;
+
 
   function create_address
     (host_or_ip : String;
@@ -142,12 +154,15 @@ is
            ai_socktype => Interfaces.C.int (a_type (Addr_type)),
            ai_protocol => 0,
            ai_addrlen => 0,
-           ai_addr => null,
-           ai_canonname => null,
-           ai_next => null);
+           ai_addr => Null_Address,
+           ai_canonname => Null_Address,
+           ai_next => Null_Address);
 
-    mi_response     : aliased addr_info_access;
-    mi_tmp_response : aliased addr_info_access;
+    tmp_getted_response : Address  := Null_Address;
+    mi_system_address   : Address  := Null_Address;
+    mi_socket_addresses : socket_addresses;
+
+    tmp_addr  : aliased socket_address;
 
     h_or_i    : aliased constant char_array  := To_C (host_or_ip);
     n_p_or_s  : aliased constant char_array  := To_C (network_port_or_service);
@@ -156,54 +171,54 @@ is
       (host_or_ip_i =>  (if host_or_ip'Length /= 0 then h_or_i'Address else Null_Address),
        port_i       =>  (if network_port_or_service'Length /= 0 then n_p_or_s'Address else Null_Address),
        hints_i      =>  hint'Address,
-       response_i   =>  mi_response'Address);
-
-    mi_result   : socket_addresses;
-    mi_address  : socket_address := null_socket_address;
-
-    capacity_max  : constant int := int (mi_result.mi_list.Capacity);
-    mi_counter    : int := 1;
+       response_i   =>  tmp_getted_response'Address);
 
   begin
-    if not Is_Empty (mi_result.mi_list) then
-      Clear (mi_result.mi_list);
+
+    if ret_value /= 0 or else tmp_getted_response = Null_Address then
+      return mi_socket_addresses;
     end if;
 
-    if ret_value /= 0 or else mi_response = null then
-      return mi_result;
-    end if;
-
-    mi_tmp_response := mi_response;
+    mi_system_address := tmp_getted_response;
 
     loop1 :
     loop
+      tmp_addr  :=  null_socket_address;
 
-      mi_address.storage.ss.ss_family := mi_tmp_response.ai_addr.ss_family;
+      b0 :
+      declare
+        mi_addrinfo : aliased addr_info := To_Pointer (mi_system_address).all;
+        tmp_sockaddr_storage_ptr  : ainfo2.Object_Pointer := To_Pointer (mi_addrinfo.ai_addr);
+      begin
 
-      mi_address.storage.ss.padding (1 .. Interfaces.C.size_t (mi_tmp_response.ai_addrlen) - 2)
-        := mi_tmp_response.ai_addr.padding (1 .. Interfaces.C.size_t (mi_tmp_response.ai_addrlen) - 2);
+        tmp_addr.storage.ss_family := Interfaces.Unsigned_16 (mi_addrinfo.ai_family);
 
-      mi_address.socktype     :=  Address_type (mi_tmp_response.ai_socktype);
+        if mi_addrinfo.ai_addrlen > 2 then
+          tmp_addr.storage.padding (1 .. size_t (mi_addrinfo.ai_addrlen - 2))
+            := tmp_sockaddr_storage_ptr.padding (1 .. size_t (mi_addrinfo.ai_addrlen - 2));
+        else
+          tmp_addr.storage.padding := (others => char'Val (0));
+        end if;
 
-      mi_address.protocol     :=  Address_family (mi_tmp_response.ai_protocol);
+        tmp_addr.socktype := Address_type (mi_addrinfo.ai_socktype);
 
-      mi_address.addr_length  :=  mi_tmp_response.ai_addrlen;
+        tmp_addr.protocol     :=  Address_family (mi_addrinfo.ai_protocol);
 
-      Prepend (Container =>  mi_result.mi_list, New_Item => mi_address, Count => 1);
+        tmp_addr.addr_length  :=  mi_addrinfo.ai_addrlen;
 
-      mi_counter  :=  mi_counter + 1;
+        Prepend (mi_socket_addresses.mi_list, tmp_addr, 1);
 
-      mi_tmp_response := mi_tmp_response.ai_next;
+        exit loop1 when mi_addrinfo.ai_next = Null_Address;
 
-      exit loop1 when mi_tmp_response = null or else mi_counter > capacity_max;
+        mi_system_address := mi_addrinfo.ai_next;
 
-      mi_address.storage.sp := (others => char'Val (0));
+      end b0;
 
     end loop loop1;
 
-    inner_free_addrinfo (mi_response'Address);
+    inner_free_addrinfo (tmp_getted_response);
 
-    return mi_result;
+    return mi_socket_addresses;
   end create_address;
 
   function create_socket
@@ -219,7 +234,7 @@ is
     mi_response.storage  := sock_address;
 
     mi_socket_fd :=
-      inner_socket (int (mi_response.storage.storage.ss.ss_family),
+      inner_socket (int (mi_response.storage.storage.ss_family),
         Interfaces.C.int (mi_response.storage.socktype),
         Interfaces.C.int (mi_response.storage.protocol));
 
@@ -227,7 +242,7 @@ is
       mi_response.sock := mi_socket_fd;
 
       if bind_socket then
-        if inner_bind (mi_response.sock, mi_response.storage.storage.ss'Address,
+        if inner_bind (mi_response.sock, mi_response.storage.storage'Address,
           Interfaces.C.int (mi_response.storage.addr_length)) /= 0
         then
           mi_response.binded := True;
@@ -262,7 +277,7 @@ is
       mi_response.storage  := addr;
 
       mi_socket_fd :=
-        inner_socket (int (mi_response.storage.storage.ss.ss_family),
+        inner_socket (int (mi_response.storage.storage.ss_family),
           Interfaces.C.int (mi_response.storage.socktype),
           Interfaces.C.int (mi_response.storage.protocol));
 
@@ -270,7 +285,7 @@ is
         mi_response.sock := mi_socket_fd;
 
         if bind_socket then
-          if inner_bind (mi_response.sock, mi_response.storage.storage.ss'Address,
+          if inner_bind (mi_response.sock, mi_response.storage.storage'Address,
             Interfaces.C.int (mi_response.storage.addr_length)) /= 0
           then
             mi_response.binded := True;
@@ -320,7 +335,7 @@ is
       end if;
 
       mi_response.sock := inner_accept (mi_response.sock,
-        mi_response.storage.storage.ss'Address, mi_storage_size);
+        mi_response.storage.storage'Address, mi_storage_size);
 
       if mi_response.sock = invalid_socket  then
         return null_socket;
@@ -348,7 +363,7 @@ is
       begin
 
         len :=  ssize_t (inner_recvfrom (sock.sock, data_tmp'Address, data_tmp'Length, 0,
-          mi_response.storage.storage.ss'Address, len_tmp));
+          mi_response.storage.storage'Address, len_tmp));
 
         if len = socket_error then
           return null_socket;
@@ -357,7 +372,7 @@ is
         mi_response.storage.addr_length := len_tmp;
 
         mi_socket_fd :=
-          inner_socket (int (mi_response.storage.storage.ss.ss_family),
+          inner_socket (int (mi_response.storage.storage.ss_family),
             Interfaces.C.int (mi_response.storage.socktype),
             Interfaces.C.int (mi_response.storage.protocol));
 
@@ -414,7 +429,7 @@ is
 
           sended_length := ssize_t (inner_sendto (sock.sock, data_to_send.data (pos)'Address,
             size_t (remaining), 0,
-            sock.storage.storage.ss'Address,
+            sock.storage.storage'Address,
             sock.storage.addr_length));
 
       end case;
@@ -466,7 +481,7 @@ is
 
           sended_length := ssize_t (inner_sendto (sock.sock, data_to_send (pos)'Address,
             size_t (remaining), 0,
-            sock.storage.storage.ss'Address,
+            sock.storage.storage'Address,
             sock.storage.addr_length));
 
       end case;
@@ -525,6 +540,8 @@ is
 
     tmp_address_test  : Boolean :=  False;
 
+    tmp_storage_union0 : storage_union := (others => <>);
+    tmp_storage_union1 : storage_union := (others => <>);
   begin
 
     received_address := null_socket_address;
@@ -541,7 +558,7 @@ is
         when udp =>
 
           received_length :=  ssize_t (inner_recvfrom (sock.sock, receive_data_address, receive_data_length, 0,
-            tmp_received_address.storage.ss'Address, socket_address_length));
+            tmp_received_address.storage'Address, socket_address_length));
 
           tmp_received_address.addr_length := socket_address_length;
 
@@ -566,17 +583,20 @@ is
         when udp =>
 
           received_length :=  ssize_t (inner_recvfrom (sock.sock, receive_data_address, receive_data_length, msg_peek_flag,
-            tmp_received_address_test.storage.ss'Address, socket_address_length));
+            tmp_received_address_test.storage'Address, socket_address_length));
 
           tmp_received_address_test.addr_length := socket_address_length;
 
           socket_address_length :=  storage_size;
 
+          tmp_storage_union0.ss := tmp_received_address.storage;
+          tmp_storage_union1.ss := tmp_received_address_test.storage;
+
           tmp_address_test  :=
-            (tmp_received_address.storage.ss.ss_family /= tmp_received_address_test.storage.ss.ss_family) or else
-            (if family_label (Address_family (tmp_received_address.storage.ss.ss_family)) = ipv4 then
-            (tmp_received_address.storage.i4.sin_addr /= tmp_received_address_test.storage.i4.sin_addr) else
-            (tmp_received_address.storage.i6.sin6_addr /= tmp_received_address_test.storage.i6.sin6_addr));
+            (tmp_storage_union0.ss.ss_family /= tmp_storage_union1.ss.ss_family) or else
+            (if family_label (Address_family (tmp_storage_union0.ss.ss_family)) = ipv4 then
+            (tmp_storage_union0.i4.sin_addr /= tmp_storage_union1.i4.sin_addr) else
+            (tmp_storage_union0.i6.sin6_addr /= tmp_storage_union1.i6.sin6_addr));
 
           exit loop1 when tmp_address_test;
 
@@ -614,6 +634,10 @@ is
     tmp_address_test  : Boolean :=  False;
 
     socket_address_length : socklen_t :=  storage_size;
+
+    tmp_storage_union0 : storage_union := (others => <>);
+    tmp_storage_union1 : storage_union := (others => <>);
+
   begin
 
     received_address := null_socket_address;
@@ -631,7 +655,7 @@ is
 
           received_length :=  ssize_t (inner_recvfrom (sock.sock, receive_data.all (pos)'Address,
             receive_data.all'Length - size_t (pos), 0,
-            tmp_received_address.storage.ss'Address, socket_address_length));
+            tmp_received_address.storage'Address, socket_address_length));
 
           tmp_received_address.addr_length := socket_address_length;
 
@@ -667,18 +691,21 @@ is
 
           received_length :=  ssize_t (inner_recvfrom (sock.sock, receive_data.all (pos)'Address,
             receive_data.all'Length - size_t (pos), msg_peek_flag,
-            tmp_received_address_test.storage.ss'Address, socket_address_length));
+            tmp_received_address_test.storage'Address, socket_address_length));
 
           tmp_received_address_test.addr_length := socket_address_length;
 
           socket_address_length :=  storage_size;
 
           -- ToDo ? Is necessary compare 'network port' too?
+          tmp_storage_union0.ss := tmp_received_address.storage;
+          tmp_storage_union1.ss := tmp_received_address_test.storage;
+
           tmp_address_test  :=
-            (tmp_received_address.storage.ss.ss_family /= tmp_received_address_test.storage.ss.ss_family) or else
-            (if family_label (Address_family (tmp_received_address.storage.ss.ss_family)) = ipv4 then
-            (tmp_received_address.storage.i4.sin_addr /= tmp_received_address_test.storage.i4.sin_addr) else
-            (tmp_received_address.storage.i6.sin6_addr /= tmp_received_address_test.storage.i6.sin6_addr));
+            (tmp_storage_union0.ss.ss_family /= tmp_storage_union1.ss.ss_family) or else
+            (if family_label (Address_family (tmp_storage_union0.ss.ss_family)) = ipv4 then
+            (tmp_storage_union0.i4.sin_addr /= tmp_storage_union1.i4.sin_addr) else
+            (tmp_storage_union0.i6.sin6_addr /= tmp_storage_union1.i6.sin6_addr));
 
           exit loop1 when tmp_address_test;
 
@@ -725,7 +752,7 @@ is
     if not Is_Empty (sock_address.mi_list) then
       Clear (sock_address.mi_list);
     end if;
-    sock_address.mi_next_cursor := No_Element;
+    sock_address.mi_next_cursor := Socket_Addresses_Lists.No_Element;
     sock_address.mi_initialized := False;
   end clear;
 
@@ -773,10 +800,15 @@ is
   function get_address_port
     (sock_address : aliased in socket_address) return ports
   is
-    stype : constant Address_family_label := family_label (Address_family (sock_address.storage.ss.ss_family));
+    tmp_addr_union : storage_union := (others => <>);
+    stype :  Address_family_label;
   begin
-    return ports (inner_ntohs ((if stype = ipv6 then sock_address.storage.i6.sin6_port
-      elsif stype = ipv4 then sock_address.storage.i4.sin_port else 0)));
+    tmp_addr_union.ss := sock_address.storage;
+
+    stype := family_label (Address_family (tmp_addr_union.ss.ss_family));
+
+    return ports (inner_ntohs ((if stype = ipv6 then tmp_addr_union.i6.sin6_port
+      elsif stype = ipv4 then tmp_addr_union.i4.sin_port else 0)));
   end get_address_port;
 
 
@@ -792,33 +824,42 @@ is
   function get_address
     (sock_address : aliased in socket_address) return String
   is
-    stype : constant Address_family_label := family_label (Address_family (sock_address.storage.ss.ss_family));
-    dest : char_array :=
+      tmp_addr_union : storage_union := (others => <>);
+      stype          : Address_family_label;
+
+  begin
+    tmp_addr_union.ss := sock_address.storage;
+    stype := family_label (Address_family (tmp_addr_union.ss.ss_family));
+
+    b0 :
+    declare
+      dest : char_array :=
       (1 .. size_t (if stype = ipv4  then ipv4_length elsif stype = ipv6  then ipv6_length else 0) => char'Val (0));
 
-    dest_length : size_t := dest'Length;
-  begin
-    if dest_length = 0 then
-      return "unknown";
-    end if;
+      dest_length : size_t := dest'Length;
+    begin
+      if dest_length = 0 then
+        return "unknown";
+      end if;
 
-    if stype = ipv6 then
-      inner_inet_ntop (int (sock_address.storage.i6.sin6_family), sock_address.storage.i6.sin6_addr'Address, dest'Address, socklen_t (dest'Length));
-    end if;
+      if stype = ipv6 then
+        inner_inet_ntop (int (tmp_addr_union.i6.sin6_family), tmp_addr_union.i6.sin6_addr'Address, dest'Address, socklen_t (dest'Length));
+      end if;
 
-    if stype = ipv4 then
-      inner_inet_ntop (int (sock_address.storage.i4.sin_family), sock_address.storage.i4.sin_addr'Address, dest'Address, socklen_t (dest'Length));
-    end if;
+      if stype = ipv4 then
+        inner_inet_ntop (int (tmp_addr_union.i4.sin_family), tmp_addr_union.i4.sin_addr'Address, dest'Address, socklen_t (dest'Length));
+      end if;
 
-    loop1 :
-    for E of reverse dest loop
+      loop1 :
+      for E of reverse dest loop
 
-      exit loop1 when E /= char'Val (0);
+        exit loop1 when E /= char'Val (0);
 
-      dest_length := dest_length - 1;
-    end loop loop1;
+        dest_length := dest_length - 1;
+      end loop loop1;
 
-    return To_Ada (dest (1 .. dest_length), False);
+      return To_Ada (dest (1 .. dest_length), False);
+    end b0;
   end get_address;
 
 

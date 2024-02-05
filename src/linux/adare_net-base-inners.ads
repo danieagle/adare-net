@@ -71,7 +71,6 @@ is
     leng_i    : size_t) return int
     with Import => True, Convention => C, External_Name => "connect";
 
-
   function inner_getaddrinfo
     (host_or_ip_i : Address;
      port_i   : Address;

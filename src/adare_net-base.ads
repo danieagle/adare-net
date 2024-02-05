@@ -4,7 +4,10 @@ with Ada.Streams;
 
 with socket_types;
 
-private with Ada.Containers.Bounded_Doubly_Linked_Lists;
+with System; use System;
+with System.Address_To_Access_Conversions;
+
+with Ada.Containers.Vectors;
 
 package adare_net.base
   with Preelaborate
@@ -57,11 +60,14 @@ is
   ipv6_length : constant socklen_t with Import => True, Convention => C, External_Name => "c_v6_str_length";
 
 
+  type addr_info is private;
+
   type socket_address is  private;
 
   type socket_address_access is access all socket_address;
 
   null_socket_address : constant socket_address;
+
 
   type socket_addresses is  private;
 
@@ -77,6 +83,7 @@ is
   type socket_buffer  is new Root_Stream_Type with private;
 
   type socket_buffer_access is access all socket_buffer;
+
 
   overriding
   procedure Read
@@ -215,8 +222,6 @@ is
   function get_address
     (sock_address : aliased in socket_address) return String;
 
-
-
   procedure close (sock : in out socket);
 
   function is_initialized
@@ -242,32 +247,32 @@ private
     record
       s_addr  : Unsigned_32 := 0;
     end record
-      with Convention => C, Preelaborable_initialization;
+      with Convention => C;
 
   type in6_addr is
     record
       s6_addr : char_array (1 .. 16) := (others => char'Val (0));
     end record
-      with Convention => C, Preelaborable_initialization;
+      with Convention => C;
 
   type sockaddr_in is
     record
       sin_family  : Unsigned_16 := 0;
       sin_port    : Unsigned_16 := 0;
-      sin_addr    : in_addr;
+      sin_addr    : in_addr := (others => <>);
       sin_zero    : char_array (1 .. 8) := (others => char'Val (0));
     end record
-      with Convention => C, Preelaborable_initialization;
+      with Convention => C;
 
   type sockaddr_in6 is
     record
-      sin6_family : Unsigned_16 := 0;
-      sin6_port   : Unsigned_16 := 0;
+      sin6_family   : Unsigned_16 := 0;
+      sin6_port     : Unsigned_16 := 0;
       sin6_flowinfo : Unsigned_32 := 0;
-      sin6_addr     : in6_addr;
+      sin6_addr     : in6_addr    := (others => <>);
       sin6_scope_id : Unsigned_32 := 0;
     end record
-      with Convention => C, Preelaborable_initialization;
+      with Convention => C;
 
   type sockaddr_storage is
     record
@@ -279,47 +284,46 @@ private
   type sockaddr_storage_access is access all sockaddr_storage;
 
 
-  type storage_union_tmp is (mi_plain_storage, mi_storage, mi_ipv4, mi_ipv6);
+  type storage_union_tmp is (mi_storage, mi_ipv4, mi_ipv6);
 
   type storage_union (mi_discr : storage_union_tmp := mi_storage) is
     record
       case mi_discr is
-        when mi_plain_storage =>
-          sp  : aliased char_array (1 .. 134) := (others => char'Val (0));
-
         when mi_storage =>
-          ss  : aliased sockaddr_storage;
+          ss  : sockaddr_storage := (others => <>);
 
         when mi_ipv6 =>
-          i6  : aliased sockaddr_in6;
+          i6  : sockaddr_in6 := (others => <>);
 
         when mi_ipv4 =>
-          i4  : aliased sockaddr_in;
+          i4  : sockaddr_in := (others => <>);
+
       end case;
     end record
-      with Convention => C, Unchecked_Union, Preelaborable_initialization;
+      with Unchecked_Union, Convention => C;
 
   type socket_address  is
     record
-      storage   : aliased storage_union;
-      socktype  : aliased Address_type    := 0; -- a_type (tcp);
-      protocol  : aliased Address_family  := 0; -- family (any);
+      storage   : aliased sockaddr_storage  := (others => <>);
+      socktype  : aliased Address_type    := 0; -- e.g: tcp
+      protocol  : aliased Address_family  := 0; -- e.g: any
       addr_length : aliased socklen_t     := 0;
     end record
-      with Convention => C, Preelaborable_initialization;
+      with Convention => C;
+
+  null_socket_address   : constant socket_address := (others => <>);
 
 
-  package scbdll is new ada.Containers.Bounded_Doubly_Linked_Lists (socket_address);
-  use scbdll;
+  package Socket_Addresses_Lists is new Ada.Containers.Vectors (Index_Type => Positive, Element_Type => socket_address);
+  use Socket_Addresses_Lists;
 
-  type socket_addresses  is
-    record
-      mi_list         : aliased List (300)  := Empty_List;
-      mi_next_cursor  : aliased Cursor      := No_Element;
-      mi_initialized  : Boolean := False;
-    end record
-      with Convention => C, Preelaborable_initialization;
+  subtype Socket_Addresses_List is Socket_Addresses_Lists.Vector;
 
+   type socket_addresses is record
+     mi_next_cursor : Socket_Addresses_Lists.Cursor  := Socket_Addresses_Lists.No_Element;
+     mi_initialized : Boolean := False;
+     mi_list        : Socket_Addresses_List;
+   end record;
 
   type socket is
     record
@@ -329,7 +333,7 @@ private
       binded    : Boolean :=  False;
       listened  : Boolean :=  False;
   end record
-    with Convention => C, Preelaborable_initialization;
+    with Convention => C;
 
   null_socket : constant socket := (others => <>);
 
@@ -341,26 +345,25 @@ private
     end record
       with Preelaborable_initialization;
 
-  null_socket_address   : constant socket_address := (others => <>);
-
-
-  type char_array_access is access all char_array;
-
-  type addr_info;
-  type addr_info_access is access all addr_info; -- ToDo: Convention => C ?
 
   type addr_info is
     record
-      ai_flags  : Interfaces.C.int := 0;
-      ai_family : Interfaces.C.int := 0;
+      ai_flags    : Interfaces.C.int := 0;
+      ai_family   : Interfaces.C.int := 0;
       ai_socktype : Interfaces.C.int := 0;
       ai_protocol : Interfaces.C.int := 0;
       ai_addrlen  : socklen_t := 0;
-      ai_addr     : sockaddr_storage_access := null;
-      ai_canonname  : char_array_access := null;
-      ai_next : addr_info_access  :=  null;
+      ai_addr     : Address := Null_Address;
+      ai_canonname  : Address :=  Null_Address;
+      ai_next       : Address :=  Null_Address;
     end record
-      with Convention => C, Preelaborable_initialization;
+      with Convention => C;
+
+    package ainfo is new System.Address_To_Access_Conversions (addr_info);
+    use ainfo;
+
+    package ainfo2 is new System.Address_To_Access_Conversions (sockaddr_storage);
+    use ainfo2;
 
   function storage_size return socklen_t
     with Inline;

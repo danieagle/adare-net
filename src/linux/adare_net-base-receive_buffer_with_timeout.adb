@@ -27,6 +27,8 @@
 
     tmp_address_test  : Boolean :=  False;
 
+    tmp_storage_union0 : storage_union := (others => <>);
+    tmp_storage_union1 : storage_union := (others => <>);
   begin
 
     received_address := null_socket_address;
@@ -93,7 +95,7 @@
         when udp =>
 
           received_length :=  ssize_t (inner_recvfrom (sock.sock, receive_data_address, receive_data_length, 0,
-            tmp_received_address.storage.ss'Address, socket_address_length));
+            tmp_received_address.storage'Address, socket_address_length));
 
           tmp_received_address.addr_length := socket_address_length;
 
@@ -118,17 +120,20 @@
         when udp =>
 
           received_length :=  ssize_t (inner_recvfrom (sock.sock, receive_data_address, receive_data_length, msg_peek_flag,
-            tmp_received_address_test.storage.ss'Address, socket_address_length));
+            tmp_received_address_test.storage'Address, socket_address_length));
 
           tmp_received_address_test.addr_length := socket_address_length;
 
           socket_address_length :=  storage_size;
 
+          tmp_storage_union0.ss := tmp_received_address.storage;
+          tmp_storage_union1.ss := tmp_received_address_test.storage;
+
           tmp_address_test  :=
-            (tmp_received_address.storage.ss.ss_family /= tmp_received_address_test.storage.ss.ss_family) or else
-            (if family_label (Address_family (tmp_received_address.storage.ss.ss_family)) = ipv4 then
-            (tmp_received_address.storage.i4.sin_addr /= tmp_received_address_test.storage.i4.sin_addr) else
-            (tmp_received_address.storage.i6.sin6_addr /= tmp_received_address_test.storage.i6.sin6_addr));
+            (tmp_storage_union0.ss.ss_family /= tmp_storage_union1.ss.ss_family) or else
+            (if family_label (Address_family (tmp_storage_union0.ss.ss_family)) = ipv4 then
+            (tmp_storage_union0.i4.sin_addr /= tmp_storage_union1.i4.sin_addr) else
+            (tmp_storage_union0.i6.sin6_addr /= tmp_storage_union1.i6.sin6_addr));
 
           exit loop1 when tmp_address_test;
 

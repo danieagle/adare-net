@@ -79,7 +79,7 @@
 
           sended_length := ssize_t (inner_sendto (sock.sock, data_to_send (pos)'Address,
             size_t (remaining), 0,
-            sock.storage.storage.ss'Address,
+            sock.storage.storage'Address,
             sock.storage.addr_length));
 
       end case;

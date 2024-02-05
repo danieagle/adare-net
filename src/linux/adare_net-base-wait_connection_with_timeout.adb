@@ -72,7 +72,7 @@
       if proto = tcp then
 
         mi_response.sock := inner_accept (sock.sock,
-          mi_response.storage.storage.ss'Address,
+          mi_response.storage.storage'Address,
           mi_storage_size);
 
         if mi_response.sock = invalid_socket then
@@ -97,7 +97,7 @@
           len       : ssize_t;
         begin
           len := ssize_t (inner_recvfrom (sock.sock, data_tmp'Address, data_tmp'Length, 0,
-            mi_response.storage.storage.ss'Address, len_tmp));
+            mi_response.storage.storage'Address, len_tmp));
 
           if socket_error = len then
             return null_socket;
@@ -106,7 +106,7 @@
           mi_response.storage.addr_length := len_tmp;
 
           mi_socket_fd :=
-            inner_socket (int (mi_response.storage.storage.ss.ss_family),
+            inner_socket (int (mi_response.storage.storage.ss_family),
               Interfaces.C.int (mi_response.storage.socktype),
               Interfaces.C.int (mi_response.storage.protocol));
 
