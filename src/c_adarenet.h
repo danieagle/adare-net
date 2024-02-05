@@ -36,30 +36,6 @@ typedef int c_socket_type;
 extern "C" {
 #endif
 
-
-// struct sockaddr_storage_ada
-// {
-//   uint16_t ss_family;
-//   uint8_t padding[132];
-// };
-
-// struct socket_address
-// {
-//   struct sockaddr_storage_ada storage;
-//   int socktype;
-//   int protocol;
-//   // int address_length;
-// };
-
-// void c_init_address  (
-//   const char * ip_or_host,
-//   const char * port,
-//   int ai_socktype,
-//   int ai_family,
-//   int *length,
-//   struct socket_address list[]
-// );
-
 void c_show_error (
   char message[],
   int * len

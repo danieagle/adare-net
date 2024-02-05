@@ -77,6 +77,8 @@ is
 
   type socket is private;
 
+  type socket_access is access all socket;
+
   null_socket : constant socket;
 
 
@@ -113,17 +115,21 @@ is
      Addr_type : Address_type_label) return socket_addresses;
 
   function create_socket
-    (sock_address : socket_address;
+    (sock_address : aliased socket_address;
      bind_socket  : Boolean := False) return socket;
 
   function create_socket
-    (sock_address : socket_addresses;
+    (sock_address : aliased in out socket_addresses;
      bind_socket  : Boolean := False) return socket;
 
+  function connect
+    (sock : aliased in out socket) return Boolean
+     with Pre => is_initialized (sock);
+
   function wait_connection
-    (sock     : aliased in out socket;
+    (sock           : aliased in out socket;
      data_received  : aliased out stream_element_array_access;
-     backlog  : Unsigned_16 := 10
+     backlog        : Unsigned_16 := 10
      -- backlog is ignored after first use in sock. close and recreate socket
      --   to configure backlog again.
     ) return socket
@@ -203,15 +209,18 @@ is
   procedure clear -- remove all stored socket_address's
     (sock_address : aliased in out socket_addresses);
 
+  procedure clear
+    (buffer : aliased in out socket_buffer);
+
+  procedure rewind -- rewind to the first socket_address in socket_addresses
+    (sock_address : aliased in out socket_addresses);
+
   function get_address
     (sock : aliased in socket) return socket_address;
 
   function get_address
     (sock_address : aliased in out socket_addresses;
      result : aliased out socket_address) return Boolean;
-
-  procedure rewind -- rewind to the first socket_address in socket_addresses
-    (sock_address : aliased in out socket_addresses);
 
   function get_address_port
     (sock_address : aliased in socket_address) return ports;
@@ -225,9 +234,17 @@ is
   procedure close (sock : in out socket);
 
   function is_initialized
-    (sock : socket) return Boolean;
+    (sock : aliased in socket) return Boolean;
+
+  function is_connected
+    (sock : aliased in socket) return Boolean;
+
+  function string_error return String;
 
 private
+
+  procedure reuse_address
+    (sock  : aliased in out socket);
 
   function max_data_length
     (buffer : aliased socket_buffer) return Stream_Element_Offset;

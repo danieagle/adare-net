@@ -21,14 +21,14 @@
     data_received := null;
 
     if mi_epoll_handle = failed_handle then
-      return null_socket;
+      goto end_label1;
     end if;
 
     if proto = tcp and then not sock.listened then
       if inner_listen (sock.sock, Interfaces.C.int (backlog)) /= 0  then
         acc := inner_epoll_close (mi_epoll_handle);
 
-        return null_socket;
+        goto end_label1;
       end if;
 
       sock.listened := True;
@@ -52,16 +52,16 @@
       if 0 /= inner_epoll_ctl (mi_epoll_handle, Interfaces.C.int (cmd_add), sock.sock, event'Address) then
         acc := inner_epoll_close (mi_epoll_handle);
 
-        return null_socket;
+        goto end_label1;
       end if;
 
-      if inner_epoll_wait (mi_epoll_handle, event_response'Address, 1,
+      if inner_epoll_wait (mi_epoll_handle, event_response(1)'Address, 1,
           Interfaces.C.int (miliseconds_timeout)) < 1
       then
-        acc := inner_epoll_ctl (mi_epoll_handle, Interfaces.C.int (cmd_del), sock.sock, Null_Address);
+        acc := inner_epoll_ctl (mi_epoll_handle, Interfaces.C.int (cmd_del), sock.sock, event'Address);
         acc := inner_epoll_close (mi_epoll_handle);
 
-        return null_socket;
+        goto end_label1;
       end if;
 
       -- done :)
@@ -76,7 +76,7 @@
           mi_storage_size);
 
         if mi_response.sock = invalid_socket then
-          return null_socket;
+          goto end_label1;
         end if;
 
         mi_response.storage.addr_length := mi_storage_size;
@@ -100,7 +100,7 @@
             mi_response.storage.storage'Address, len_tmp));
 
           if socket_error = len then
-            return null_socket;
+            goto end_label1;
           end if;
 
           mi_response.storage.addr_length := len_tmp;
@@ -111,7 +111,7 @@
               Interfaces.C.int (mi_response.storage.protocol));
 
           if mi_socket_fd = invalid_socket then
-            return null_socket;
+            goto end_label1;
           end if;
 
           mi_response.sock := mi_socket_fd;
@@ -123,5 +123,10 @@
       end if;
     end b0;
 
-    return null_socket;
+    <<end_label1>>
+
+    mi_response := null_socket;
+
+    return mi_response;
+
   end wait_connection_with_timeout;

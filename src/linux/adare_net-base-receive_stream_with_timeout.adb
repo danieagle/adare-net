@@ -17,7 +17,7 @@
     received_length : ssize_t :=  0;
     total_received  : ssize_t :=  0;
 
-    receive_data  : stream_element_array_access :=  new Stream_Element_Array'(1 .. (2**16 + 5) * 3 => 0);
+    receive_data  : stream_element_array_access :=  new Stream_Element_Array'(1 .. ((2**16 + 5)) * 3 => 0);
     pos : Stream_Element_Offset := receive_data.all'First;
     tmp_address_test  : Boolean :=  False;
 
@@ -113,7 +113,7 @@
           receive_data_old  : constant Stream_Element_Array := receive_data.all (1 .. pos - 1);
         begin
 
-          receive_data :=  new Stream_Element_Array'(1 .. receive_data_old'Length + (2**16 + 5) * 3 => 0);
+          receive_data :=  new Stream_Element_Array'(1 .. receive_data_old'Length + ((2**16 + 5) * 3) => 0);
           receive_data.all (receive_data_old'Range) := receive_data_old;
         end b1;
       end if;

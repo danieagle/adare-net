@@ -1,10 +1,7 @@
 
-with System;
-
 package adare_net.base.inners
   with Preelaborate
 is
-  use System;
 
   type who_enun is (ptr, fd, u32, u64, sock, hnd);
 
@@ -15,7 +12,7 @@ is
           ptr  : Address  := Null_Address;
 
         when fd =>
-          fd   : int  :=  -1;
+          fd   : int  :=  0;
 
         when u32 =>
           u32  : Unsigned_32  :=  0;
@@ -24,7 +21,7 @@ is
           u64  : Unsigned_64  :=  0;
 
         when sock =>
-          sock : socket_type  :=  invalid_socket;
+          sock : socket_type  :=  0;
 
         when hnd =>
           hnd  : Address  :=  Null_Address;

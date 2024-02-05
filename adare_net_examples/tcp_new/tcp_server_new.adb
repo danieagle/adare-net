@@ -20,30 +20,15 @@
 -- 127.0.0.1 or ::1  or ? :-)
 
 
-with Ada.Text_IO;
-use Ada;
+with adare_net.base;  use adare_net.base;
+with adare_net_init;  use adare_net_init;
+with adare_net_exceptions;  use adare_net_exceptions;
 
-with Ada.Task_Identification;
-
+with Interfaces.C;  use Interfaces, Interfaces.C;
+with Ada.Text_IO; use Ada;
 with Ada.Command_Line;
+with Ada.Task_Identification;
 with Ada.Strings.Unbounded;
-
-with adare_net.sockets.utils;
-with adare_net.sockets.epolls;
-use adare_net.sockets;
-use adare_net.sockets.epolls;
-
-with adare_net_exceptions;
-use adare_net_exceptions;
-
-with socket_types;
-use  socket_types;
-
-with adare_net_init;
-use  adare_net_init;
-
-with Interfaces.C;
-use Interfaces, Interfaces.C;
 
 procedure tcp_server_new
 is
@@ -53,79 +38,57 @@ begin
 
   b0 :
   declare
-    host_addr           : addresses_list_access := null;
-    choosed_remote_addr : addresses_access := null; -- ToDo : rename to choosed_server_addr :-)
-    host_sock           : socket_access := null;
-    mi_poll             : epoll_access  := null;
-    mi_poll_ok          : Boolean :=  False with Unreferenced;
+    host_socket_addresses : aliased socket_addresses;
+    tmp_socket_address    : aliased socket_address := null_socket_address;
+    host_socket           : aliased socket := null_socket;
+
   begin
-    init_addresses (ip_or_host =>  "", -- host addresses
-                      port        =>  "25000",
-                      ai_socktype =>  tcp,
-                      ai_family   =>  any, -- choose ipv4 and ipv6
-                      addr        =>  host_addr);
 
-    if host_addr.all'Length < 1 then
+    host_socket_addresses := create_address
+      (host_or_ip => "",
+      network_port_or_service => "25000",
+      Addr_family => any,
+      Addr_type => tcp);
 
-      Text_IO.Put_Line (" Failed to discover addresses in this host. Quitting.");
-
-      goto end_app_label1;
-    end if;
+    Text_IO.New_Line;
 
     Text_IO.Put_Line (" Addresses Discovered in this host:");
 
-    utils.show_address_and_port (host_addr);
-
-    if not init_socket (host_sock, host_addr) then
-
+    while get_address (host_socket_addresses, tmp_socket_address) loop
+      Text_IO.Put_Line (" address => " & get_address (tmp_socket_address) & " and port => " & get_address_port (tmp_socket_address));
       Text_IO.New_Line;
+    end loop;
+
+    --  rewind (host_socket_addresses);
+
+    host_socket := create_socket (
+      sock_address  => host_socket_addresses,
+      bind_socket   => True);
+
+    if host_socket = null_socket then
       Text_IO.Put_Line (" Failed to initialize socket: " & string_error);
 
       goto end_app_label1;
     end if;
 
-    reuse_address (host_sock);
-
-    if not bind (host_sock) then
-
-      Text_IO.New_Line;
-      Text_IO.Put_Line (" Bind error: " & string_error);
-
-      goto end_app_label1;
-    end if;
-
-    if not listen (host_sock, 9) then
-
-      Text_IO.New_Line;
-      Text_IO.Put_Line (" Listen error: " & string_error);
-
-      goto end_app_label1;
-    end if;
-
-    choosed_remote_addr  :=  get_addresses (host_sock);
+    tmp_socket_address  :=  get_address (host_socket);
 
     Text_IO.New_Line;
 
-    Text_IO.Put_Line (" Binded and Listening at address "  & get_addresses (choosed_remote_addr) &
-      " and at port " & get_port (choosed_remote_addr));
+    Text_IO.Put_Line (" choosed host address => " & get_address (tmp_socket_address) & " and choosed host port => " & get_address_port (tmp_socket_address));
 
     b1 :
     declare
 
-      incomming_socket  : socket_access;
+      --  incomming_socket  : socket;
 
       task type recv_send_task (connected_sock  : socket_access);
 
       task body recv_send_task
       is
-        task_socket : constant socket_access := new socket'(connected_sock.all);
+        task_socket     : aliased socket := connected_sock.all;
 
-        task_poll   : epoll_access  := null;
-        pol_ok      : Boolean       := False with Unreferenced;
-
-        result_from_poll  : int := 0;
-
-        remote_address    :  addresses_access;
+        remote_address  : aliased constant socket_address  := get_address (task_socket);
 
         use Task_Identification;
 
@@ -133,94 +96,43 @@ begin
 
       begin
 
-        if not (initialized (task_socket) or else connected (task_socket)) then
+        if not (is_initialized (task_socket) or else is_connected (task_socket)) then
           Text_IO.Put_Line (this_task_id_str & " Incomming socket not initialized or connected.");
           Text_IO.Put_Line (this_task_id_str & " Quitting this working task.");
 
           goto finish1_task_label;
         end if;
 
-        if not init (task_poll) then
-          Text_IO.Put_Line (this_task_id_str & " failed to init poll event.");
-          Text_IO.Put_Line (this_task_id_str & " quiting.");
-          goto finish1_task_label;
-        end if;
-
-        remote_address  := get_addresses (task_socket);
-
-        reset_poll_result (task_poll);
-
         bt0 :
         declare
 
-          recv_send_buffer  : constant socket_buffer_access := new socket_buffer;
-          recv_send_buffer2 : constant socket_buffer_access := new socket_buffer;
+          recv_send_buffer  : aliased socket_buffer;
+          recv_send_buffer2 : aliased socket_buffer;
 
-          size_tmp          : ssize_t  := 1;
+          tmp_tmp_socket_address  : aliased socket_address := null_socket_address;
+
+          size_tmp  : Interfaces.C.int  := 0;
 
           use  Ada.Strings.Unbounded;
 
           message : Unbounded_String := To_Unbounded_String ("");
         begin
-          clean (recv_send_buffer);
-          clean (recv_send_buffer2);
+          clear (recv_send_buffer);
+          clear (recv_send_buffer2);
 
-          Text_IO.Put_Line (" " & this_task_id_str & " remote host connected from " &
-            get_address_and_port (remote_address));
-
-          if not add (task_poll, task_socket, receive_event) then
-            Text_IO.Put_Line (" " & this_task_id_str & " Failed to setup receive_event.");
-            Text_IO.Put_Line (" Aborting " & this_task_id_str & ".");
-
-            goto finish1_task_label;
-          end if;
+          Text_IO.Put_Line (" " & this_task_id_str & " remote host connected from [" &
+            get_address (remote_address) & "]:" & get_address_port (remote_address));
 
           Text_IO.Put_Line (" " & this_task_id_str & " will wait 2 seconds to receive data.");
 
-          result_from_poll  := poll_wait (task_poll, 2000); -- block, 2 seconds time_out
+          size_tmp  :=  receive_buffer_with_timeout (
+            sock  =>  task_socket,
+            data_to_receive =>  recv_send_buffer,
+            received_address  =>  tmp_tmp_socket_address,
+            miliseconds_timeout =>  2000
+          );
 
-          if result_from_poll = 0 then
-            Text_IO.Put_Line (" " & this_task_id_str & " 2 seconds Timeout.");
-            Text_IO.Put_Line (" " & this_task_id_str & " Aborting.");
-
-            goto finish1_task_label;
-          end if;
-
-          if result_from_poll < 0 then
-            Text_IO.Put_Line (" " & this_task_id_str & " errors while waiting an event.");
-
-            Text_IO.Put_Line (" " & this_task_id_str & " remote GraceFull Shutdown ? " &
-              Boolean'(is_gracefull_shutdown_error (task_poll, task_socket))'Image);
-
-            Text_IO.Put_Line (" " & this_task_id_str & " remote disconneted ? "
-              & Boolean'(is_hangup_error (task_poll, task_socket))'Image);
-
-            Text_IO.Put_Line (" " & this_task_id_str & " other socket errors ? "
-              & Boolean'(is_other_error (task_poll, task_socket))'Image);
-
-            Text_IO.Put_Line (" " & this_task_id_str & " Aborting.");
-
-            goto finish1_task_label;
-          end if;
-
-          if not confirm_receive_event (task_poll, task_socket) then
-            Text_IO.Put_Line (" " & this_task_id_str & " Timeout without receive event.");
-            Text_IO.Put_Line (" " & this_task_id_str & " Aborting.");
-
-            goto finish1_task_label;
-          end if;
-
-          size_tmp  := receive (task_socket, recv_send_buffer); -- block and initialize recv_send_buffer
-
-          if size_tmp = socket_error then
-
-            Text_IO.Put_Line (" " & this_task_id_str & " An error occurred during data reception.");
-            Text_IO.Put_Line (" " & this_task_id_str & " finishing task.");
-
-            goto finish1_task_label;
-          end if;
-
-          if size_tmp <= 0 then
+          if size_tmp = 0 then
             Text_IO.Put_Line (" " & this_task_id_str & " received zero length message.");
             Text_IO.Put_Line (" " & this_task_id_str & " nothing to do.");
             Text_IO.Put_Line (" " & this_task_id_str & " finishing.");
@@ -234,13 +146,13 @@ begin
 
           bt1 :
           begin
-            String'Output (recv_send_buffer2, "Thank you for send ");
+            String'Output (recv_send_buffer2'Access, "Thank you for send ");
 
             loop1 :
             loop
-              message := To_Unbounded_String (String'Input (recv_send_buffer));
+              message := To_Unbounded_String (String'Input (recv_send_buffer'Access));
 
-              String'Output (recv_send_buffer2, To_String (message));
+              String'Output (recv_send_buffer2'Access, To_String (message));
 
               Text_IO.Put_Line (" " & this_task_id_str & " message |" & To_String (message) & "|");
             end loop loop1;
@@ -253,63 +165,22 @@ begin
 
           end bt1;
 
-          reset_poll_result (task_poll);
-
-          if not update (task_poll, task_socket, send_event) then
-            Text_IO.Put_Line (" " & this_task_id_str & " failed to update poll to send data");
-
-            goto finish1_task_label;
-          end if;
-
           Text_IO.Put_Line (" " & this_task_id_str & " waiting 2 seconds to send data to remote host");
 
-          result_from_poll  := poll_wait (task_poll, 2000); -- block, 2 seconds timeout.
+          size_tmp  := send_buffer_with_timeout (task_socket, recv_send_buffer2, 2000); -- block
 
-          if result_from_poll = 0 then
-            Text_IO.Put_Line (" " & this_task_id_str & " Timeout before can send message.");
-            Text_IO.Put_Line (" " & this_task_id_str & " Aborting.");
-
+          if size_tmp < 1 then
+            Text_IO.Put_Line (" " & this_task_id_str & " failed in send data.");
             goto finish1_task_label;
           end if;
 
-          if result_from_poll < 0 then
-            Text_IO.Put_Line (" " & this_task_id_str & " errors while waiting an event.");
-
-            Text_IO.Put_Line (" " & this_task_id_str & " remote GraceFull Shutdown ? " &
-              Boolean'(is_gracefull_shutdown_error (task_poll, task_socket))'Image);
-
-            Text_IO.Put_Line (" " & this_task_id_str & " remote disconneted ? "
-              & Boolean'(is_hangup_error (task_poll, task_socket))'Image);
-
-            Text_IO.Put_Line (" " & this_task_id_str & " other socket errors ? "
-              & Boolean'(is_other_error (task_poll, task_socket))'Image);
-
-            Text_IO.Put_Line (" " & this_task_id_str & " Aborting.");
-
-            goto finish1_task_label;
-          end if;
-
-          if confirm_send_event (task_poll, task_socket) then
-
-            size_tmp  := send (task_socket, recv_send_buffer2); -- block
-
-            Text_IO.Put_Line (" " & this_task_id_str & " sended messages !");
-
-            goto finish1_task_label;
-          end if;
-
-          Text_IO.Put_Line (" " & this_task_id_str & " failed in send data.");
+          Text_IO.Put_Line (" " & this_task_id_str & " sended messages !");
 
         end bt0;
 
         <<finish1_task_label>>
 
-        if is_initialized (task_poll) then
-
-          pol_ok  := close (task_poll);
-        end if;
-
-        if initialized (task_socket) then
+        if is_initialized (task_socket) then
 
           close (task_socket);
         end if;
@@ -321,23 +192,13 @@ begin
       working_task  : recv_send_access
         with Unreferenced;
 
+      msg_seaa  : aliased stream_element_array_access := null;
+
+      tmp_received_socket : aliased socket := null_socket;
+
     begin
 
       Text_IO.New_Line;
-
-      if not init (mi_poll) then
-
-        Text_IO.Put_Line (" Failed to init main socket poll.");
-        Text_IO.Put_Line (" Aborting Server.");
-        goto end_app_label1;
-      end if;
-
-      if not add (mi_poll, host_sock, accept_socket_event) then
-
-        Text_IO.Put_Line (" Failed to add accept event in main socket poll.");
-        Text_IO.Put_Line (" Aborting Server.");
-        goto end_app_label1;
-      end if;
 
       Text_IO.Put_Line (" Start Accepting connect in Main Server.");
       Text_IO.Put_Line (" 15 seconds max timeout between clients.");
@@ -346,9 +207,11 @@ begin
       loop2 :
       loop
 
-        if poll_wait (mi_poll, 15000) < 1 or else not confirm_accept_event (mi_poll, host_sock) then
+        tmp_received_socket :=  wait_connection_with_timeout (host_socket, 15000, msg_seaa, 50);
 
-          close (host_sock); -- to disable 'listen' too.
+        if tmp_received_socket = null_socket then
+
+          close (host_socket); -- to disable 'listen' too.
 
           Text_IO.New_Line (2);
 
@@ -365,13 +228,9 @@ begin
           exit loop2;
         end if;
 
-        if accept_socket (host_sock, incomming_socket) then -- block. accepted socket incomming_socket is allways a new one.
-          -- For the curious: We believe the task(s) will not leak.
-          -- Reason: ARM-2012 7.6 (9.2/2) :-)
-          working_task  :=  new recv_send_task (incomming_socket);
-        end if;
-
-        reset_poll_result (mi_poll);
+        -- For the curious: We believe the task(s) will not leak.
+        -- Reason: ARM-2012 7.6 (9.2/2) :-)
+        working_task  :=  new recv_send_task (new socket'(tmp_received_socket));
 
         Text_IO.New_Line (2);
 
@@ -382,14 +241,9 @@ begin
 
     <<end_app_label1>>
 
-    if is_initialized (mi_poll) then
+    if is_initialized (host_socket) then
 
-      mi_poll_ok  :=  close (mi_poll);
-    end if;
-
-    if initialized (host_sock) then
-
-      close (host_sock);
+      close (host_socket);
     end if;
 
     Text_IO.Put (" " & Command_Line.Command_Name & " finished. ");

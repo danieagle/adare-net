@@ -1,10 +1,7 @@
 
 with adare_net_exceptions;  use adare_net_exceptions;
 
-with System;  use System;
-
 with adare_net.base.inners; use adare_net.base.inners;
-
 
 package body adare_net.base
   with Preelaborate
@@ -28,8 +25,12 @@ is
   is (if buffer.data /= null then buffer.data'Last - buffer.tail_end else 0);
 
   function is_initialized
-    (sock : socket) return Boolean
+    (sock : aliased in socket) return Boolean
   is (sock.sock /= 0);
+
+  function is_connected
+    (sock : aliased in socket) return Boolean
+  is (sock.connected);
 
   function a_type_label (a_type : Address_type := tmp_tcp) return Address_type_label
   is
@@ -127,9 +128,9 @@ is
       tmp_addr.storage.padding := (others => char'Val (0));
     end if;
 
-    tmp_addr.socktype := Address_type (tmp_addrinfo.ai_socktype);
+    tmp_addr.socktype :=  Address_type (tmp_addrinfo.ai_socktype);
 
-    tmp_addr.protocol     :=  Address_family (tmp_addrinfo.ai_protocol);
+    tmp_addr.protocol :=  Address_family (tmp_addrinfo.ai_protocol);
 
     tmp_addr.addr_length  :=  tmp_addrinfo.ai_addrlen;
 
@@ -187,7 +188,7 @@ is
 
       b0 :
       declare
-        mi_addrinfo : aliased addr_info := To_Pointer (mi_system_address).all;
+        mi_addrinfo : aliased constant addr_info := To_Pointer (mi_system_address).all;
         tmp_sockaddr_storage_ptr  : ainfo2.Object_Pointer := To_Pointer (mi_addrinfo.ai_addr);
       begin
 
@@ -200,9 +201,9 @@ is
           tmp_addr.storage.padding := (others => char'Val (0));
         end if;
 
-        tmp_addr.socktype := Address_type (mi_addrinfo.ai_socktype);
+        tmp_addr.socktype :=  Address_type (mi_addrinfo.ai_socktype);
 
-        tmp_addr.protocol     :=  Address_family (mi_addrinfo.ai_protocol);
+        tmp_addr.protocol :=  Address_family (mi_addrinfo.ai_protocol);
 
         tmp_addr.addr_length  :=  mi_addrinfo.ai_addrlen;
 
@@ -222,10 +223,10 @@ is
   end create_address;
 
   function create_socket
-    (sock_address : socket_address;
+    (sock_address : aliased socket_address;
      bind_socket  : Boolean := False) return socket
   is
-    mi_response   : socket  := null_socket;
+    mi_response   : aliased socket  := null_socket;
     mi_socket_fd  : socket_type;
     acc           : Interfaces.C.int := 0
       with Unreferenced;
@@ -238,76 +239,114 @@ is
         Interfaces.C.int (mi_response.storage.socktype),
         Interfaces.C.int (mi_response.storage.protocol));
 
-    if mi_socket_fd /= invalid_socket then
-      mi_response.sock := mi_socket_fd;
-
-      if bind_socket then
-        if inner_bind (mi_response.sock, mi_response.storage.storage'Address,
-          Interfaces.C.int (mi_response.storage.addr_length)) /= 0
-        then
-          mi_response.binded := True;
-
-          return mi_response;
-        end if;
-
-        acc := inner_close (mi_response.sock);
-
-        return null_socket;
-      end if;
+    if mi_socket_fd = invalid_socket then
+      mi_response := null_socket;
 
       return mi_response;
     end if;
 
-    return null_socket;
+    mi_response.sock := mi_socket_fd;
+
+    if bind_socket then
+      reuse_address (mi_response);
+
+      if inner_bind (mi_response.sock, mi_response.storage.storage'Address,
+        Interfaces.C.int (mi_response.storage.addr_length)) = 0
+      then
+        mi_response.binded := True;
+
+        return mi_response;
+      end if;
+
+      acc := inner_close (mi_response.sock);
+
+      mi_response := null_socket;
+    end if;
+
+    return mi_response;
+
   end create_socket;
 
   function create_socket
-    (sock_address : socket_addresses;
+    (sock_address : aliased in out socket_addresses;
      bind_socket  : Boolean := False) return socket
   is
-    mi_response   : socket  := null_socket;
+    mi_response   : aliased socket  := null_socket;
+    mi_address    : aliased socket_address  := null_socket_address;
     mi_socket_fd  : socket_type;
     acc           : Interfaces.C.int := 0
       with Unreferenced;
+    ok  : Boolean := False;
   begin
 
     loop1 :
-    for addr of sock_address.mi_list loop
+    while get_address (sock_address, mi_address) loop
 
-      mi_response.storage  := addr;
+      mi_response := null_socket;
+
+      mi_response.storage  := mi_address;
 
       mi_socket_fd :=
         inner_socket (int (mi_response.storage.storage.ss_family),
           Interfaces.C.int (mi_response.storage.socktype),
           Interfaces.C.int (mi_response.storage.protocol));
 
-      if mi_socket_fd /= invalid_socket then
-        mi_response.sock := mi_socket_fd;
+      if mi_socket_fd = invalid_socket then
+        goto end_loop1_label;
+      end if;
 
-        if bind_socket then
-          if inner_bind (mi_response.sock, mi_response.storage.storage'Address,
-            Interfaces.C.int (mi_response.storage.addr_length)) /= 0
-          then
-            mi_response.binded := True;
+      mi_response.sock := mi_socket_fd;
 
-            return mi_response;
-          end if;
+      if bind_socket then
+        reuse_address (mi_response);
 
-          acc := inner_close (mi_response.sock);
+        if inner_bind (mi_response.sock, mi_response.storage.storage'Address,
+          Interfaces.C.int (mi_response.storage.addr_length)) = 0
+        then
+          mi_response.binded := True;
+          ok := True;
 
-          goto end_loop1_label;
+          exit loop1;
         end if;
 
-        return mi_response;
+        acc := inner_close (mi_response.sock);
+
+        goto end_loop1_label;
+
       end if;
+
+      ok := True;
 
       <<end_loop1_label>> -- a missing continue :)
 
-      mi_response :=  null_socket;
+      exit loop1 when ok;
+
     end loop loop1;
 
-    return null_socket;
+    if not ok then
+      mi_response := null_socket;
+    end if;
+
+    return mi_response;
   end create_socket;
+
+  function connect
+    (sock : aliased in out socket) return Boolean
+  is
+  begin
+    if sock.binded or else sock.connected or else sock.listened then
+      return False;
+    end if;
+
+    if inner_connect (sock.sock, sock.storage.storage'Address, size_t (sock.storage.addr_length)) /= 0 then
+      return False;
+    end if;
+
+    sock.connected := True;
+
+    return True;
+  end connect;
+
 
   function wait_connection
     (sock     : aliased in out socket;
@@ -328,7 +367,7 @@ is
 
       if not sock.listened then
         if inner_listen (sock.sock, Interfaces.C.int (backlog)) /= 0  then
-          return null_socket;
+          goto end_label1;
         end if;
 
         sock.listened := True;
@@ -338,7 +377,7 @@ is
         mi_response.storage.storage'Address, mi_storage_size);
 
       if mi_response.sock = invalid_socket  then
-        return null_socket;
+        goto end_label1;
       end if;
 
       mi_response.storage.addr_length :=  mi_storage_size;
@@ -362,11 +401,11 @@ is
         mi_socket_fd  : socket_type := 0;
       begin
 
-        len :=  ssize_t (inner_recvfrom (sock.sock, data_tmp'Address, data_tmp'Length, 0,
+        len :=  ssize_t (inner_recvfrom (mi_response.sock, data_tmp'Address, data_tmp'Length, 0,
           mi_response.storage.storage'Address, len_tmp));
 
         if len = socket_error then
-          return null_socket;
+          goto end_label1;
         end if;
 
         mi_response.storage.addr_length := len_tmp;
@@ -377,7 +416,7 @@ is
             Interfaces.C.int (mi_response.storage.protocol));
 
         if mi_socket_fd = invalid_socket then
-          return null_socket;
+          goto end_label1;
         end if;
 
         mi_response.sock := mi_socket_fd;
@@ -389,7 +428,11 @@ is
       end b1;
     end if;
 
-    return null_socket;
+    <<end_label1>>
+
+    mi_response := null_socket;
+
+    return mi_response;
   end wait_connection;
 
   function wait_connection_with_timeout
@@ -676,7 +719,7 @@ is
           receive_data_old  : constant Stream_Element_Array := receive_data.all (1 .. pos - 1);
         begin
 
-          receive_data :=  new Stream_Element_Array'(1 .. receive_data_old'Length + (2**16 + 5) * 3 => 0);
+          receive_data :=  new Stream_Element_Array'(1 .. receive_data_old'Length + ((2**16 + 5) * 3) => 0);
           receive_data.all (receive_data_old'Range) := receive_data_old;
         end b1;
       end if;
@@ -754,6 +797,15 @@ is
     end if;
     sock_address.mi_next_cursor := Socket_Addresses_Lists.No_Element;
     sock_address.mi_initialized := False;
+  end clear;
+
+  procedure clear
+    (buffer : aliased in out socket_buffer)
+  is
+  begin
+    buffer.head_first := 0;
+    buffer.tail_end := 0;
+    buffer.data := null;
   end clear;
 
   function get_address
@@ -862,6 +914,11 @@ is
     end b0;
   end get_address;
 
+  procedure reuse_address
+    (sock  : aliased in out socket) is
+  begin
+    inner_reuse_address (sock.sock);
+  end reuse_address;
 
   procedure close (sock : in out socket) is
     socket_fd : constant int := inner_close (sock.sock)
@@ -952,5 +1009,14 @@ is
     Stream.data (Stream.tail_end + 1 .. Stream.tail_end + item_len)  :=  Item;
     Stream.tail_end :=  Stream.tail_end + item_len;
   end Write;
+
+  function string_error return String is
+    message_a : aliased char_array (1 .. 260) := (others => char'Val (0));
+    length_a  : aliased int :=  int (message_a'Last) - 1;
+  begin
+    inner_show_error (message_a, length_a);
+
+    return To_Ada (message_a (message_a'First .. message_a'First + size_t (length_a)));
+  end string_error;
 
 end adare_net.base;

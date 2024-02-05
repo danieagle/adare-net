@@ -1,12 +1,13 @@
 name = "adare_net_examples"
 description = "Adare_Net examples"
-version = "0.3.2-dev"
+version = "0.4.2-dev"
 
 authors = ["Daniel Norte de Moraes"]
 maintainers = ["Daniel Norte de Moraes <danieagle@tutanota.com>"]
 maintainers-logins = ["danieagle"]
 
-executables = ["test_get_address", "test_get_multi_addresses"]
+executables = ["test_get_address", "test_get_multi_addresses",
+  "tcp_server_new"]
 
 [build-switches]
 "*".Ada_Version = "Ada12"
