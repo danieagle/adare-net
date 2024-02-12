@@ -106,21 +106,31 @@ is
     (host_or_ip : String;
      network_port_or_service  : String;
      Addr_family  : Address_family_label;
-     Addr_type    : Address_type_label) return socket_address;
+     Addr_type    : Address_type_label;
+     response     : out socket_address) return Boolean;
 
   function create_address
     (host_or_ip : String;
      network_port_or_service  : String;
      Addr_family  : Address_family_label;
-     Addr_type : Address_type_label) return socket_addresses;
+     Addr_type    : Address_type_label;
+     response     : out socket_addresses) return Boolean;
+
 
   function create_socket
     (sock_address : aliased socket_address;
-     bind_socket  : Boolean := False) return socket;
+     response     : out socket;
+     bind_socket  : Boolean := False;
+     listen_socket  : Boolean := False;
+     backlog        : Unsigned_16 := 10) return Boolean;
 
   function create_socket
     (sock_address : aliased in out socket_addresses;
-     bind_socket  : Boolean := False) return socket;
+     response     : out socket;
+     bind_socket  : Boolean := False;
+     listen_socket  : Boolean := False;
+     backlog        : Unsigned_16 := 10) return Boolean;
+
 
   function connect
     (sock : aliased in out socket) return Boolean
@@ -128,23 +138,10 @@ is
 
   function wait_connection
     (sock           : aliased in out socket;
-     data_received  : aliased out stream_element_array_access;
-     backlog        : Unsigned_16 := 10
-     -- backlog is ignored after first use in sock. close and recreate socket
-     --   to configure backlog again.
-    ) return socket
-      with Pre => is_initialized (sock) and then backlog > 0;
-
-  function wait_connection_with_timeout
-    (sock : aliased in out socket;
-     miliseconds_timeout : Unsigned_32;
-     data_received  : aliased out stream_element_array_access;
-     backlog  : Unsigned_16 :=  10
-     -- backlog is ignored after first use in sock. close and recreate socket
-     --   to configure backlog again.
-    ) return socket
-      with Pre => is_initialized (sock) and then
-        miliseconds_timeout > 0 and then backlog > 0;
+     response       : out socket;
+     data_received  : aliased out stream_element_array_access
+    ) return Boolean
+      with Pre => is_initialized (sock) and then is_binded (sock) and then is_listened (sock);
 
   function send_buffer
     (sock : aliased socket;
@@ -157,20 +154,6 @@ is
      data_to_send : aliased Stream_Element_Array
     ) return Interfaces.C.int
     with Pre => is_initialized (sock);
-
-  function send_buffer_with_timeout
-    (sock : aliased socket;
-     data_to_send : aliased in out socket_buffer;
-     miliseconds_timeout : Unsigned_32
-    ) return Interfaces.C.int
-    with Pre => is_initialized (sock) and then miliseconds_timeout > 0;
-
-  function send_stream_with_timeout
-    (sock : aliased socket;
-     data_to_send : aliased Stream_Element_Array;
-     miliseconds_timeout : Unsigned_32
-    ) return Interfaces.C.int
-    with Pre => is_initialized (sock) and then miliseconds_timeout > 0;
 
 
   function receive_buffer
@@ -187,21 +170,6 @@ is
     ) return Interfaces.C.int
     with Pre => is_initialized (sock);
 
-  function receive_buffer_with_timeout
-    (sock : aliased socket;
-     data_to_receive : aliased in out socket_buffer;
-     received_address : aliased out socket_address;
-     miliseconds_timeout : Unsigned_32
-    ) return Interfaces.C.int
-    with Pre => is_initialized (sock) and then miliseconds_timeout > 0;
-
-  function receive_stream_with_timeout
-    (sock : aliased socket;
-     data_to_receive : aliased out stream_element_array_access;
-     received_address : aliased out socket_address;
-     miliseconds_timeout : Unsigned_32
-    ) return Interfaces.C.int
-    with Pre => is_initialized (sock) and then miliseconds_timeout > 0;
 
   procedure clear
     (sock_address : aliased in out socket_address);
@@ -239,7 +207,16 @@ is
   function is_connected
     (sock : aliased in socket) return Boolean;
 
+  function is_binded
+    (sock : aliased in socket) return Boolean;
+
+  function is_listened
+    (sock : aliased in socket) return Boolean;
+
   function string_error return String;
+
+  function get_socket
+    (sock : aliased in socket) return socket_type;
 
 private
 
@@ -336,11 +313,11 @@ private
 
   subtype Socket_Addresses_List is Socket_Addresses_Lists.Vector;
 
-   type socket_addresses is record
-     mi_next_cursor : Socket_Addresses_Lists.Cursor  := Socket_Addresses_Lists.No_Element;
-     mi_initialized : Boolean := False;
-     mi_list        : Socket_Addresses_List;
-   end record;
+  type socket_addresses is record
+    mi_next_cursor : Socket_Addresses_Lists.Cursor  := Socket_Addresses_Lists.No_Element;
+    mi_initialized : Boolean := False;
+    mi_list        : Socket_Addresses_List;
+  end record;
 
   type socket is
     record

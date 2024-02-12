@@ -3,48 +3,6 @@ package adare_net.base.inners
   with Preelaborate
 is
 
-  type who_enun is (ptr, fd, u32, u64, sock, hnd);
-
-  type epoll_data_t (i_want_you : who_enun := ptr) is
-    record
-      case i_want_you is
-        when ptr =>
-          ptr  : Address  := Null_Address;
-
-        when fd =>
-          fd   : int  :=  0;
-
-        when u32 =>
-          u32  : Unsigned_32  :=  0;
-
-        when u64 =>
-          u64  : Unsigned_64  :=  0;
-
-        when sock =>
-          sock : socket_type  :=  0;
-
-        when hnd =>
-          hnd  : Address  :=  Null_Address;
-      end case;
-    end record
-      with Convention => C, preelaborable_initialization, Unchecked_Union;
-
-  type epoll_event is
-    record
-      events  : Unsigned_32 := 0;
-      data    : epoll_data_t := (others => <>);
-    end record
-      with Convention => C, preelaborable_initialization;
-
-    cmd_add : constant unsigned_long
-      with Convention => C, import,
-      External_Name   =>  "adare_epoll_cmd_add";
-
-    cmd_del : constant unsigned_long
-      with Convention => C, import,
-      External_Name   =>  "adare_epoll_cmd_del";
-
-
   function inner_accept
     (sockfd_i     : socket_type;
     addr_i        : Address;
@@ -150,6 +108,7 @@ is
     (message_i : in out char_array;
     length_i   : in out int)
     with Import => True, Convention => C, External_Name => "c_show_error";
+
 
   function inner_epoll_create1 (flags_i : int := 0) return handle_type
     with Import => True, Convention => C, External_Name => "epoll_create1";
