@@ -6,88 +6,92 @@ package adare_net.base.waits
 is
   pragma  Assertion_Policy (Check);
 
-  type epoll is limited private;
+  type poll_of_events is limited private;
 
-  type epoll_access is access all epoll;
+  function poll_wait
+    (poll  : aliased in out poll_of_events;
+     miliseconds_timeout  : int
+    ) return Boolean
+    with Pre => is_initialized (poll) and miliseconds_timeout > 0;
+
+  function set_receive
+    (poll  : aliased in out poll_of_events;
+     sock  : aliased in socket) return Boolean
+    with Pre => is_initialized (sock);
+
+  function set_send
+    (poll  : aliased in out poll_of_events;
+     sock  : aliased in socket) return Boolean
+    with Pre => is_initialized (sock);
+
+  function remove
+    (poll  : aliased in out poll_of_events;
+     sock  : aliased in socket) return Boolean
+    with Pre => is_initialized (poll)
+                and then is_initialized  (sock)
+                and then is_in (poll, sock);
+
+  function is_receive
+    (poll  : aliased in poll_of_events;
+     sock  : aliased in socket) return Boolean
+    with Pre => is_initialized (sock) and then is_initialized (poll);
+
+  function is_send
+    (poll  : aliased in poll_of_events;
+     sock  : aliased in socket) return Boolean
+    with Pre => is_initialized (sock) and then is_initialized (poll);
+
+  procedure reset_results
+    (poll   : aliased in out poll_of_events)
+     with Pre => is_initialized (poll);
+
+
+  procedure close
+    (poll     : aliased in out poll_of_events)
+    with Pre => is_initialized (poll);
+
+  procedure deinit
+    (poll     : aliased in out poll_of_events)
+      renames close;
+
 
   function is_initialized
-    (poll : epoll_access
+    (poll : aliased in poll_of_events
     ) return Boolean;
 
   function is_in
-    (how  : not null epoll_access;
-     what_sock  : not null socket_access
-    ) return Boolean;
+    (poll  : aliased in poll_of_events;
+     sock  : aliased in socket
+    ) return Boolean
+    with Pre => is_initialized (poll) and then is_initialized (sock);
+
+private
 
   function update
-    (how  : not null epoll_access;
-     with_sock  : not null socket_access;
-     with_event_bitmap  : unsigned_long) return Boolean
-    with Pre => is_initialized (how)
-                and then is_initialized  (with_sock.all)
-                and then is_in (how, with_sock);
-
-  function remove
-    (how  : not null epoll_access;
-     what_sock  : not null socket_access) return Boolean
-    with Pre => is_initialized (how)
-                and then is_initialized  (what_sock.all)
-                and then is_in (how, what_sock);
+    (poll  : aliased in out poll_of_events;
+     sock  : aliased in socket;
+     event_bitmap  : unsigned_long) return Boolean
+    with Pre => is_initialized (poll)
+                and then is_initialized  (sock)
+                and then is_in (poll, sock);
 
   function add
-    (how  : not null epoll_access;
-     with_sock  : not null socket_access;
-     with_event_bitmap  : unsigned_long) return Boolean
-    with Pre => is_initialized (how)
-                and then is_initialized  (with_sock.all)
-                and then (not is_in (how, with_sock));
+    (poll  : aliased in out poll_of_events;
+     sock  : aliased in socket;
+     event_bitmap  : unsigned_long) return Boolean
+    with Pre => is_initialized (poll)
+                and then is_initialized  (sock)
+                and then (not is_in (poll, sock));
 
-
-  function poll_wait
-    (poll  : not null epoll_access;
-     timeout  : int
-    ) return int
-    with Pre => is_initialized (poll);
-
-  procedure reset_poll_result
-    (poll  : not null epoll_access)
-    with Pre => is_initialized (poll);
-
-
-  function confirm_send_event
-    (where_poll : not null epoll_access;
-     how        : not null socket_access) return Boolean
-    with Pre => is_initialized (where_poll) and then is_initialized (how.all);
-
-  function confirm_receive_event
-    (where_poll : not null epoll_access;
-     how        : not null socket_access) return Boolean
-    with Pre => is_initialized (where_poll)
-                 and then is_initialized (how.all);
-
-  function confirm_accept_event
-    (where_poll : not null epoll_access;
-     how        : not null socket_access) return Boolean
-    with Pre => is_initialized (where_poll)
-                 and then is_initialized (how.all);
 
   function init
-    (poll     : out epoll_access;
+    (poll     : aliased in out poll_of_events;
      min_qtie : int := 15
     ) return Boolean
     with Pre => (not is_initialized (poll))
                  and then min_qtie > 0;
 
-  function close
-    (poll     : in out epoll_access
-    ) return Boolean;
 
-  function deinit
-    (poll     : in out epoll_access
-    ) return Boolean renames close;
-
-
-private
 
   use System;
 
@@ -145,7 +149,7 @@ private
 
     type socket_array_access is access all socket_array;
 
-    type epoll is limited
+    type poll_of_events is limited
       record
         initialized : Boolean     := False;
         handle      : handle_type := failed_handle;

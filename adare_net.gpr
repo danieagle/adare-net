@@ -27,7 +27,9 @@ project adare_net is
     "adare_net_init.ads",
     "adare_net_init.adb",
     "adare_net-base.ads",
-    "adare_net-base.adb"
+    "adare_net-base.adb",
+    "adare_net-base-waits.ads",
+    "adare_net-base-waits.adb"
   );
 
   src2 := ();

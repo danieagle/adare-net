@@ -1,14 +1,13 @@
 
 -- Besides this is a multitask and reasonable complete example with Adare_net, you can do more, as:
 --
--- (1) More que one listen socket and polls,
--- (2) More length polls,
--- (3) Simultaneous listen event_types,
--- (4) Use of others types beyond String:
--- (4.1) From built-in types and records to
--- (4.2) Wide class(es) and tagged types
--- (4.3) And with a more fine treatment, all records, tagged types included, can be endian proof.
--- (5) Etc. ^^
+-- (1) More que one listen sockets,
+-- (2) Simultaneous listen event_types,
+-- (3) Use of others types beyond String:
+-- (3.1) From built-in types and records to
+-- (3.2) Wide class(es) and tagged types
+-- (3.3) And with a more fine treatment, all records, tagged types included, can be endian proof.
+-- (4) Etc. ^^
 -- But is yet up to you create a yet better real world champion software with Adare_net and you can do it!! ^^
 
 -- Info about this software:
@@ -17,10 +16,10 @@
 -- the working address can be ipv6 or ipv4. Automatically the first working address will be picked.
 -- mostly common choosen address in server part is "0.0.0.0" or "::" then use localhost or
 -- other configured ip address. eg:
--- 127.0.0.1 or ::1  or ? :-)
+-- 127.0.0.1 or ::1  or ? :-) to connect.
 
 
-with adare_net.base;  use adare_net.base;
+with adare_net.base.wait;  use adare_net.base;  use adare_net.base.wait;
 with adare_net_init;  use adare_net_init;
 with adare_net_exceptions;  use adare_net_exceptions;
 
@@ -44,7 +43,8 @@ begin
 
   begin
 
-    host_socket_addresses := create_address
+    host_socket_addresses :=
+    create_address
       (host_or_ip => "",
       network_port_or_service => "25000",
       Addr_family => any,
@@ -59,9 +59,8 @@ begin
       Text_IO.New_Line;
     end loop;
 
-    --  rewind (host_socket_addresses);
-
-    host_socket := create_socket (
+    host_socket :=
+    create_socket (
       sock_address  => host_socket_addresses,
       bind_socket   => True);
 
@@ -71,7 +70,8 @@ begin
       goto end_app_label1;
     end if;
 
-    tmp_socket_address  :=  get_address (host_socket);
+    tmp_socket_address  :=
+    get_address (host_socket);
 
     Text_IO.New_Line;
 
@@ -79,8 +79,6 @@ begin
 
     b1 :
     declare
-
-      --  incomming_socket  : socket;
 
       task type recv_send_task (connected_sock  : socket_access);
 
@@ -125,11 +123,16 @@ begin
 
           Text_IO.Put_Line (" " & this_task_id_str & " will wait 2 seconds to receive data.");
 
-          size_tmp  :=  receive_buffer_with_timeout (
+          if not wait_receive (task_socket, 2000) then
+            Text_IO.Put_Line (" " & this_task_id_str & " error or timeout. finishing");
+
+            goto finish1_task_label;
+          end if;
+
+          size_tmp  :=  receive_buffer (
             sock  =>  task_socket,
             data_to_receive =>  recv_send_buffer,
-            received_address  =>  tmp_tmp_socket_address,
-            miliseconds_timeout =>  2000
+            received_address  =>  tmp_tmp_socket_address
           );
 
           if size_tmp = 0 then
@@ -167,7 +170,13 @@ begin
 
           Text_IO.Put_Line (" " & this_task_id_str & " waiting 2 seconds to send data to remote host");
 
-          size_tmp  := send_buffer_with_timeout (task_socket, recv_send_buffer2, 2000); -- block
+          if not wait_send (task_socket, 2000) then
+            Text_IO.Put_Line (" " & this_task_id_str & " error or timeout. finishing");
+
+            goto finish1_task_label;
+          end if;
+
+          size_tmp  := send_buffer (task_socket, recv_send_buffer2); -- block
 
           if size_tmp < 1 then
             Text_IO.Put_Line (" " & this_task_id_str & " failed in send data.");
@@ -201,15 +210,15 @@ begin
       Text_IO.New_Line;
 
       Text_IO.Put_Line (" Start Accepting connect in Main Server.");
-      Text_IO.Put_Line (" 15 seconds max timeout between clients.");
+      Text_IO.Put_Line (" 12 seconds max timeout between clients.");
       Text_IO.New_Line (2);
 
       loop2 :
       loop
 
-        tmp_received_socket :=  wait_connection_with_timeout (host_socket, 15000, msg_seaa, 50);
-
-        if tmp_received_socket = null_socket then
+        if not
+        wait_accept (host_socket, 12000)
+        then
 
           close (host_socket); -- to disable 'listen' too.
 
@@ -228,13 +237,16 @@ begin
           exit loop2;
         end if;
 
+        tmp_received_socket := wait_connection (host_socket, msg_seaa, 50);
+
+
         -- For the curious: We believe the task(s) will not leak.
         -- Reason: ARM-2012 7.6 (9.2/2) :-)
         working_task  :=  new recv_send_task (new socket'(tmp_received_socket));
 
         Text_IO.New_Line (2);
 
-        Text_IO.Put_Line (" restarting 15 seconds timeout.");
+        Text_IO.Put_Line (" restarting 12 seconds timeout.");
 
       end loop loop2;
     end b1;

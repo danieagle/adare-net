@@ -473,7 +473,7 @@ is
       end b1;
     end if;
 
-   return False;
+    return False;
   end wait_connection;
 
   function send_buffer
