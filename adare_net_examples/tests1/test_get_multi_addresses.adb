@@ -14,19 +14,25 @@ begin
     mi_addresses  : aliased socket_addresses;
     mi_address    : aliased socket_address;
   begin
-    mi_addresses :=
-      create_address
+
+    Text_IO.Put_Line (" addresses from google.com ");
+
+    if create_address
       (host_or_ip => "google.com",
       network_port_or_service => "0",
       Addr_family => any,
-      Addr_type => tcp);
+      Addr_type => tcp,
+      response => mi_addresses)
+    then
 
-    Text_IO.New_Line;
-
-    while get_address (mi_addresses, mi_address) loop
-      Text_IO.Put_Line (" address => " & get_address (mi_address) & " and port => " & get_address_port (mi_address));
       Text_IO.New_Line;
-    end loop;
+
+      while get_address (mi_addresses, mi_address) loop
+        Text_IO.Put_Line (" address => " & get_address (mi_address) & " and port => " & get_address_port (mi_address));
+        Text_IO.New_Line;
+      end loop;
+
+    end if;
 
     Text_IO.Put_Line ("Completed.");
   end b0;

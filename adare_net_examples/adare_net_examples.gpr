@@ -9,7 +9,7 @@ project adare_net_examples is
   for Object_dir  use "obj";
   for Exec_Dir use "bin";
   for main use ("test_get_address", "test_get_multi_addresses",
-    "tcp_server_new"); -- , "tcp_client_new");
+    "tcp_server_new", "tcp_client_new");
 
   package Builder is
   end Builder;

@@ -7,7 +7,7 @@ maintainers = ["Daniel Norte de Moraes <danieagle@tutanota.com>"]
 maintainers-logins = ["danieagle"]
 
 executables = ["test_get_address", "test_get_multi_addresses",
-  "tcp_server_new"]
+  "tcp_server_new", "tcp_client_new"]
 
 [build-switches]
 "*".Ada_Version = "Ada12"

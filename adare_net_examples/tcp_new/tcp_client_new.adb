@@ -9,16 +9,9 @@ with Ada.Command_Line;
 with Ada.Text_IO;
 use Ada, Ada.Command_Line;
 
-with adare_net.sockets.epolls;
-with adare_net.sockets.utils;
-use adare_net.sockets;
-use adare_net.sockets.epolls;
-
-with adare_net_exceptions;
-use adare_net_exceptions;
-
-with adare_net_init;
-use  adare_net_init;
+with adare_net.base.waits;  use adare_net.base;  use adare_net.base.waits;
+with adare_net_init;  use adare_net_init;
+with adare_net_exceptions;  use adare_net_exceptions;
 
 with socket_types;
 use socket_types;
@@ -55,38 +48,37 @@ begin
 
   b0 :
   declare
-    buffer  : constant socket_buffer_access := new socket_buffer;
+    buffer  : aliased socket_buffer;
     ok      : Boolean := False;
   begin
-    clean (buffer);
+    clear (buffer);
 
     for qtd in 3 .. Argument_Count loop
-      String'Output (buffer, Argument (qtd)); -- automatic conversion
+      String'Output (buffer'Access, Argument (qtd)); -- automatic conversion
     end loop;
 
     b1 :
     declare
-      remote_addr   : addresses_list_access :=  null;
-      choosed_addr  : addresses_access :=  null;
-      host_sock     : socket_access := null;
+      remote_addr   : aliased socket_addresses;
+      choosed_addr  : aliased socket_address  :=  null_socket_address;
+      rcv_addr      : aliased socket_address  :=  null_socket_address;
+      host_sock     : aliased socket          :=  null_socket;
 
       bytes_tmp     : ssize_t :=  0;
 
-      host_poll     : epoll_access := null;
+      host_poll     : aliased poll_of_events;
 
       mi_poll_ok    : Boolean := False
         with Unreferenced;
 
       result_from_poll : int := 0;
-    begin
-      init_addresses
-        (ip_or_host    =>  Argument (1),
-         port         =>  Argument (2),
-         ai_socktype  =>  tcp,
-         ai_family    =>  any,
-         addr         =>  remote_addr);
 
-      if remote_addr.all'Length < 1 then
+      tmp_msg : stream_element_array_access := null;
+    begin
+      if not create_address
+        (host_or_ip   =>  Argument (1), network_port_or_service  =>  Argument (2),
+        Addr_family   =>  any,  Addr_type =>  tcp,  response  =>  remote_addr)
+      then
 
         Text_IO.New_Line;
         Text_IO.Put_Line (" Failed to discover remote host addresses.");
@@ -96,11 +88,16 @@ begin
         goto end_app_label1;
       end if;
 
+
       Text_IO.Put_Line (" Remote host addresses discovered:");
 
-      utils.show_address_and_port (remote_addr);
+      while get_address (remote_addr, choosed_addr) loop
+        Text_IO.Put_Line (" address => " & get_address (choosed_addr) & " and port => " & get_address_port (choosed_addr));
+        Text_IO.New_Line;
+      end loop;
 
-      if not init_socket (host_sock, remote_addr) then
+
+      if not create_socket  (remote_addr, host_sock) then
 
         Text_IO.New_Line;
         Text_IO.Put_Line (" Error while trying initialize socket:");
@@ -120,58 +117,32 @@ begin
         goto end_app_label1;
       end if;
 
-      choosed_addr := get_addresses (host_sock);
+      choosed_addr := get_address (host_sock);
 
-      Text_IO.Put_Line (" Connected at address :=  "  & get_addresses (choosed_addr) &
-        " and at port := " & get_port (choosed_addr));
+      Text_IO.Put_Line (" Connected at address :=  "  & get_address (choosed_addr) &
+        " and at port := " & get_address_port (choosed_addr));
 
       Text_IO.New_Line;
 
       Text_IO.Put_Line (" Waiting to send messages. ");
 
 
-      if not init (host_poll) then
+      if not set_send (host_poll, host_sock) then
         Text_IO.Put_Line (" Failed to init event poll. terminating.");
-
-        goto end_app_label1;
-      end if;
-
-
-      if not add (host_poll, host_sock, send_event) then
-        Text_IO.Put_Line (" Failed to config send event. terminating.");
 
         goto end_app_label1;
       end if;
 
       Text_IO.Put_Line (" starting 2.5 seconds to send to server. ");
 
-      result_from_poll := poll_wait (host_poll, 2500); -- block, 2.5 seconds timeout.
-
-      if result_from_poll = 0 then
+      if not (poll_wait (host_poll, 2500) and then is_send (host_poll, host_sock)) then
         Text_IO.Put_Line (" 2.5 seconds timeout without send event.");
         Text_IO.Put_Line (" terminating. ");
 
         goto end_app_label1;
-
       end if;
 
-      if result_from_poll < 0 then
-        Text_IO.Put_Line (string_error);
-        Text_IO.Put_Line (" terminating. ");
-
-        goto end_app_label1;
-
-      end if;
-
-      if not confirm_send_event (host_poll, host_sock) then
-        Text_IO.Put_Line (" 2.5 seconds timeout without send event for host socket.");
-        Text_IO.Put_Line (" terminating. ");
-
-        goto end_app_label1;
-
-      end if;
-
-      bytes_tmp := send (host_sock, buffer);
+      bytes_tmp := ssize_t (send_buffer (host_sock, buffer));
 
       if bytes_tmp = socket_error then
 
@@ -183,7 +154,8 @@ begin
 
       if bytes_tmp < 1 then
 
-        Text_IO.Put_Line (" Failed in send messages to " & get_address_and_port (choosed_addr));
+        Text_IO.Put_Line (" Failed in send messages to " & get_address (choosed_addr) &
+        " and at port := " & get_address_port (choosed_addr));
 
         if bytes_tmp = 0 then
 
@@ -203,37 +175,25 @@ begin
 
       Text_IO.New_Line;
 
-      reset_poll_result (host_poll);
+      reset_results (host_poll);
 
-      if not update (host_poll, host_sock, receive_event) then
+      if not set_receive (host_poll, host_sock) then
+
         Text_IO.Put_Line (" failed to update to receive event.");
         Text_IO.Put_Line (" terminating.");
         goto end_app_label1;
       end if;
 
-      Text_IO.Put_Line (" Waiting 2 seconds to receive message(s). ");
+      Text_IO.Put_Line (" Waiting 5 seconds to receive message(s). ");
 
-      result_from_poll := poll_wait (host_poll, 2000); -- block, 5 seconds timout
-
-      if result_from_poll = 0 then
-        Text_IO.Put_Line (" 2 seconds timeout without host socket receive event. bye! :-)");
-
-        goto end_app_label1;
-      end if;
-
-      if result_from_poll < 0 then
-        Text_IO.Put_Line (" 2 seconds timeout, with error: " & string_error);
+      if not (poll_wait (host_poll, 5000) and then is_receive (host_poll, host_sock)) then
+        Text_IO.Put_Line (" 2.5 seconds timeout without receive event.");
+        Text_IO.Put_Line (" terminating. ");
 
         goto end_app_label1;
       end if;
 
-      if not confirm_receive_event (host_poll, host_sock) then
-        Text_IO.Put_Line (" 2 _ seconds without host socket receive event. bye! :-)");
-
-        goto end_app_label1;
-      end if;
-
-      bytes_tmp  := receive (host_sock, buffer); -- block
+      bytes_tmp  := ssize_t (receive_buffer (host_sock, buffer, rcv_addr)); -- block
 
       if bytes_tmp = socket_error or else bytes_tmp < 0 then
 
@@ -251,7 +211,8 @@ begin
         goto end_app_label1;
       end if;
 
-      Text_IO.Put_Line (" Received message(s) from " & get_address_and_port (choosed_addr));
+      Text_IO.Put_Line (" Received message(s) from " & get_address (choosed_addr) &
+        " and at port := " & get_address_port (choosed_addr));
 
       Text_IO.Put_Line (" Messages length " & bytes_tmp'Image & " bytes.");
 
@@ -265,7 +226,7 @@ begin
         loop3 :
         loop
 
-          Text_IO.Put_Line (" |" & String'Input (buffer) & "|");
+          Text_IO.Put_Line (" |" & String'Input (buffer'Access) & "|");
 
         end loop loop3;
 
@@ -273,7 +234,8 @@ begin
         when buffer_insufficient_space_error =>
 
           Text_IO.New_Line;
-          Text_IO.Put_Line (" All messages received from " & get_address_and_port (choosed_addr) & " showed.");
+          Text_IO.Put_Line (" All messages received from " & get_address (choosed_addr) &
+        " and at port := " & get_address_port (choosed_addr) & " showed.");
       end b2;
 
       ok := True;
@@ -281,10 +243,10 @@ begin
       <<end_app_label1>>
 
       if is_initialized (host_poll) then
-        mi_poll_ok := close (host_poll);
+        close (host_poll);
       end if;
 
-      if initialized (host_sock) then
+      if is_initialized (host_sock) then
         close (host_sock);
       end if;
 

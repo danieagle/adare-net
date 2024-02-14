@@ -19,7 +19,7 @@
 -- 127.0.0.1 or ::1  or ? :-) to connect.
 
 
-with adare_net.base.wait;  use adare_net.base;  use adare_net.base.wait;
+with adare_net.base.waits;  use adare_net.base;  use adare_net.base.waits;
 with adare_net_init;  use adare_net_init;
 with adare_net_exceptions;  use adare_net_exceptions;
 
@@ -40,15 +40,23 @@ begin
     host_socket_addresses : aliased socket_addresses;
     tmp_socket_address    : aliased socket_address := null_socket_address;
     host_socket           : aliased socket := null_socket;
+    host_poll             : aliased poll_of_events;
 
   begin
 
-    host_socket_addresses :=
-    create_address
+    if not create_address
       (host_or_ip => "",
       network_port_or_service => "25000",
       Addr_family => any,
-      Addr_type => tcp);
+      Addr_type => tcp,
+      response => host_socket_addresses)
+    then
+      Text_IO.Put_Line ("Failed to discover host addresses.");
+      Text_IO.New_Line;
+      Text_IO.Put_Line ("last error message => " & string_error);
+
+      goto end_app_label1;
+    end if;
 
     Text_IO.New_Line;
 
@@ -59,19 +67,13 @@ begin
       Text_IO.New_Line;
     end loop;
 
-    host_socket :=
-    create_socket (
-      sock_address  => host_socket_addresses,
-      bind_socket   => True);
-
-    if host_socket = null_socket then
+    if not create_socket  (host_socket_addresses, host_socket, True, True, 35) then
       Text_IO.Put_Line (" Failed to initialize socket: " & string_error);
 
       goto end_app_label1;
     end if;
 
-    tmp_socket_address  :=
-    get_address (host_socket);
+    tmp_socket_address  :=  get_address (host_socket);
 
     Text_IO.New_Line;
 
@@ -91,6 +93,8 @@ begin
         use Task_Identification;
 
         this_task_id_str  : constant String := Image (Current_Task);
+
+        task_poll : aliased poll_of_events;
 
       begin
 
@@ -121,9 +125,16 @@ begin
           Text_IO.Put_Line (" " & this_task_id_str & " remote host connected from [" &
             get_address (remote_address) & "]:" & get_address_port (remote_address));
 
+          if not set_receive (task_poll, task_socket) then
+
+            Text_IO.Put_Line (" " & this_task_id_str & " failed to initialize task_poll.");
+
+            goto finish1_task_label;
+          end if;
+
           Text_IO.Put_Line (" " & this_task_id_str & " will wait 2 seconds to receive data.");
 
-          if not wait_receive (task_socket, 2000) then
+          if not poll_wait (task_poll, 2000) then
             Text_IO.Put_Line (" " & this_task_id_str & " error or timeout. finishing");
 
             goto finish1_task_label;
@@ -170,8 +181,19 @@ begin
 
           Text_IO.Put_Line (" " & this_task_id_str & " waiting 2 seconds to send data to remote host");
 
-          if not wait_send (task_socket, 2000) then
+          reset_results (task_poll);
+
+          if not set_send (task_poll, task_socket) then
+            Text_IO.Put_Line (" " & this_task_id_str & " . finishing");
+            Text_IO.Put_Line (" " & this_task_id_str & " . last message " & string_error);
+
+            goto finish1_task_label;
+          end if;
+
+          if not (poll_wait (task_poll, 2000) and then is_send (task_poll, task_socket)) then
+
             Text_IO.Put_Line (" " & this_task_id_str & " error or timeout. finishing");
+            Text_IO.Put_Line (" " & this_task_id_str & " . last message " & string_error);
 
             goto finish1_task_label;
           end if;
@@ -194,6 +216,11 @@ begin
           close (task_socket);
         end if;
 
+        if is_initialized (task_poll) then
+
+          close (task_poll);
+        end if;
+
       end recv_send_task;
 
       type recv_send_access is access all recv_send_task;
@@ -209,22 +236,27 @@ begin
 
       Text_IO.New_Line;
 
+      if not set_receive (host_poll, host_socket) then
+        Text_IO.Put_Line ("failed to initialize host poll events. finishing server.");
+        Text_IO.Put_Line ("last message " & string_error);
+
+        goto end_app_label1;
+      end if;
+
       Text_IO.Put_Line (" Start Accepting connect in Main Server.");
-      Text_IO.Put_Line (" 12 seconds max timeout between clients.");
+      Text_IO.Put_Line (" 20 seconds max timeout between clients.");
       Text_IO.New_Line (2);
 
       loop2 :
       loop
 
-        if not
-        wait_accept (host_socket, 12000)
-        then
+        if not (poll_wait (host_poll, 20000) and then is_receive (host_poll, host_socket)) then
 
           close (host_socket); -- to disable 'listen' too.
 
           Text_IO.New_Line (2);
 
-          Text_IO.Put_Line (" Main event 15 seconds Time_out.");
+          Text_IO.Put_Line (" Main event 20 seconds Time_out.");
           Text_IO.Put_Line (" Waiting 5 seconds to allow enough time for working tasks finish.");
 
           Text_IO.New_Line (2);
@@ -237,21 +269,26 @@ begin
           exit loop2;
         end if;
 
-        tmp_received_socket := wait_connection (host_socket, msg_seaa, 50);
+        if wait_connection (host_socket, tmp_received_socket, msg_seaa) then
 
-
-        -- For the curious: We believe the task(s) will not leak.
-        -- Reason: ARM-2012 7.6 (9.2/2) :-)
-        working_task  :=  new recv_send_task (new socket'(tmp_received_socket));
+          -- For the curious: We believe the task(s) will not leak.
+          -- Reason: ARM-2012 7.6 (9.2/2) :-)
+          working_task  :=  new recv_send_task (new socket'(tmp_received_socket));
+        end if;
 
         Text_IO.New_Line (2);
 
-        Text_IO.Put_Line (" restarting 12 seconds timeout.");
+        Text_IO.Put_Line (" restarting 20 seconds timeout.");
 
       end loop loop2;
     end b1;
 
     <<end_app_label1>>
+
+    if is_initialized (host_poll) then
+
+      close (host_poll);
+    end if;
 
     if is_initialized (host_socket) then
 
