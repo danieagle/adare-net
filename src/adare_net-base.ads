@@ -139,37 +139,48 @@ is
   function wait_connection
     (sock           : aliased in out socket;
      response       : out socket;
-     data_received  : aliased out stream_element_array_access
+     data_received  : aliased out stream_element_array_access;
+     miliseconds_start_timeout  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
       with Pre => is_initialized (sock) and then is_binded (sock) and then is_listened (sock);
 
   function send_buffer
     (sock : aliased socket;
-     data_to_send : aliased in out socket_buffer
-    ) return Interfaces.C.int
+     data_to_send : aliased in out socket_buffer;
+     send_count   : aliased out ssize_t;
+     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
+     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
+    ) return Boolean
     with Pre => is_initialized (sock);
 
   function send_stream
     (sock : aliased socket;
-     data_to_send : aliased Stream_Element_Array
-    ) return Interfaces.C.int
+     data_to_send : aliased Stream_Element_Array;
+     send_count   : aliased out ssize_t;
+     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
+     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
+    ) return Boolean
     with Pre => is_initialized (sock);
-
 
   function receive_buffer
     (sock : aliased socket;
      data_to_receive  : aliased in out socket_buffer;
-     received_address : aliased out socket_address
-    ) return Interfaces.C.int
+     received_address : aliased out socket_address;
+     receive_count    : aliased out ssize_t;
+     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
+     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
+    ) return Boolean
     with Pre => is_initialized (sock);
 
   function receive_stream
     (sock : aliased socket;
-     data_to_receive : aliased out stream_element_array_access;
-     received_address : aliased out socket_address
-    ) return Interfaces.C.int
+     data_to_receive  : aliased out stream_element_array_access;
+     received_address : aliased out socket_address;
+     receive_count    : aliased out ssize_t;
+     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
+     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
+    ) return Boolean
     with Pre => is_initialized (sock);
-
 
   procedure clear
     (sock_address : aliased in out socket_address);
