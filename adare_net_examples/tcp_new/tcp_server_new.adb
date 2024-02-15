@@ -81,7 +81,7 @@ begin
     b1 :
     declare
 
-      task type recv_send_task (connected_sock  : socket_access)
+      task type recv_send_task (connected_sock  : not null socket_access)
         with Dynamic_Predicate => is_initialized (connected_sock.all)
           or else is_connected (connected_sock.all);
 

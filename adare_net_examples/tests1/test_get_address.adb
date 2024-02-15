@@ -22,7 +22,7 @@ begin
       response => mi_address)
     then
 
-      Text_IO.Put_Line (" addresses from google.com ");
+      Text_IO.Put_Line (" one address from google.com ");
       Text_IO.Put_Line (" address => " & get_address (mi_address) & " and port => " & get_address_port (mi_address));
         Text_IO.New_Line;
 

@@ -9,15 +9,15 @@ with Ada.Command_Line;
 with Ada.Text_IO;
 use Ada, Ada.Command_Line;
 
-with adare_net.base.waits;  use adare_net.base;  use adare_net.base.waits;
+with adare_net.base;  use adare_net.base;
 with adare_net_init;  use adare_net_init;
 with adare_net_exceptions;  use adare_net_exceptions;
 
 with socket_types;
 use socket_types;
 
-with Interfaces.C;
-use Interfaces.C;
+--  with Interfaces.C;
+--  use Interfaces.C;
 
 procedure tcp_client_new
 is
@@ -51,7 +51,7 @@ begin
     buffer  : aliased socket_buffer;
     ok      : Boolean := False;
   begin
-    clear (buffer);
+    clear (buffer); -- optional
 
     for qtd in 3 .. Argument_Count loop
       String'Output (buffer'Access, Argument (qtd)); -- automatic conversion
@@ -64,14 +64,7 @@ begin
       rcv_addr      : aliased socket_address  :=  null_socket_address;
       host_sock     : aliased socket          :=  null_socket;
 
-      bytes_tmp     : ssize_t :=  0;
-
-      host_poll     : aliased poll_of_events;
-
-      mi_poll_ok    : Boolean := False
-        with Unreferenced;
-
-      result_from_poll : int := 0;
+      bytes_tmp     : aliased ssize_t :=  0;
 
       tmp_msg : stream_element_array_access := null;
     begin
@@ -88,14 +81,12 @@ begin
         goto end_app_label1;
       end if;
 
-
       Text_IO.Put_Line (" Remote host addresses discovered:");
 
       while get_address (remote_addr, choosed_addr) loop
         Text_IO.Put_Line (" address => " & get_address (choosed_addr) & " and port => " & get_address_port (choosed_addr));
         Text_IO.New_Line;
       end loop;
-
 
       if not create_socket  (remote_addr, host_sock) then
 
@@ -124,89 +115,41 @@ begin
 
       Text_IO.New_Line;
 
-      Text_IO.Put_Line (" Waiting to send messages. ");
+      Text_IO.Put_Line (" Waiting until 2 seconds to send messages. ");
 
-
-      if not set_send (host_poll, host_sock) then
-        Text_IO.Put_Line (" Failed to init event poll. terminating.");
-
-        goto end_app_label1;
-      end if;
-
-      Text_IO.Put_Line (" starting 2.5 seconds to send to server. ");
-
-      if not (poll_wait (host_poll, 2500) and then is_send (host_poll, host_sock)) then
-        Text_IO.Put_Line (" 2.5 seconds timeout without send event.");
-        Text_IO.Put_Line (" terminating. ");
+      if not send_buffer  (sock => host_sock,
+        data_to_send  =>  buffer,
+        send_count  =>  bytes_tmp,
+        miliseconds_start_timeout =>  2000,
+        miliseconds_next_timeouts =>  500) or else bytes_tmp < 1
+      then
+        Text_IO.Put_Line (" there are a error while sending data to remote host server.");
+        Text_IO.Put_Line (" nothing to do.");
+        Text_IO.Put_Line (" last error message => " & string_error);
+        Text_IO.Put_Line (" finishing.");
 
         goto end_app_label1;
       end if;
 
-      bytes_tmp := ssize_t (send_buffer (host_sock, buffer));
-
-      if bytes_tmp = socket_error then
-
-        Text_IO.Put_Line (" An error occurred during sending data.");
-        Text_IO.Put_Line (" Finishing task.");
-
-        goto end_app_label1;
-      end if;
-
-      if bytes_tmp < 1 then
-
-        Text_IO.Put_Line (" Failed in send messages to " & get_address (choosed_addr) &
-        " and at port := " & get_address_port (choosed_addr));
-
-        if bytes_tmp = 0 then
-
-          Text_IO.Put_Line ("remote closed the socket");
-
-        else
-
-          Text_IO.Put_Line ("With Error => " & string_error);
-
-        end if;
-
-        goto end_app_label1;
-
-      end if;
 
       Text_IO.Put_Line (" Successfull sended " & bytes_tmp'Image & " bytes.");
 
       Text_IO.New_Line;
 
-      reset_results (host_poll);
+      Text_IO.Put_Line (" Waiting until 5 seconds to receive message(s). ");
+      Text_IO.Put_Line (" with 0,5 seconds after started receiving. ");
 
-      if not set_receive (host_poll, host_sock) then
-
-        Text_IO.Put_Line (" failed to update to receive event.");
-        Text_IO.Put_Line (" terminating.");
-        goto end_app_label1;
-      end if;
-
-      Text_IO.Put_Line (" Waiting 5 seconds to receive message(s). ");
-
-      if not (poll_wait (host_poll, 5000) and then is_receive (host_poll, host_sock)) then
-        Text_IO.Put_Line (" 2.5 seconds timeout without receive event.");
-        Text_IO.Put_Line (" terminating. ");
-
-        goto end_app_label1;
-      end if;
-
-      bytes_tmp  := ssize_t (receive_buffer (host_sock, buffer, rcv_addr)); -- block
-
-      if bytes_tmp = socket_error or else bytes_tmp < 0 then
-
-        Text_IO.Put_Line (" An error occurred during receiving data.");
-        Text_IO.Put_Line (" Finishing task.");
-
-        goto end_app_label1;
-      end if;
-
-      if bytes_tmp = 0 then
-
-        Text_IO.Put_Line (" nothing received. bye! :-) ");
-        Text_IO.Put_Line (" Finishing task.");
+      if not receive_buffer (sock => host_sock,
+        data_to_receive =>  buffer,
+        received_address  =>  rcv_addr,
+        receive_count =>  bytes_tmp,
+        miliseconds_start_timeout =>  5000,
+        miliseconds_next_timeouts =>  500) or else bytes_tmp < 1
+      then
+        Text_IO.Put_Line (" there are a error while receiving or received zero length message.");
+        Text_IO.Put_Line (" nothing to do.");
+        Text_IO.Put_Line (" last error message => " & string_error);
+        Text_IO.Put_Line (" finishing.");
 
         goto end_app_label1;
       end if;
@@ -241,10 +184,6 @@ begin
       ok := True;
 
       <<end_app_label1>>
-
-      if is_initialized (host_poll) then
-        close (host_poll);
-      end if;
 
       if is_initialized (host_sock) then
         close (host_sock);
