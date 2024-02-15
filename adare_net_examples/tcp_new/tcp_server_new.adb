@@ -19,11 +19,11 @@
 -- 127.0.0.1 or ::1  or ? :-) to connect.
 
 
-with adare_net.base.waits;  use adare_net.base;  use adare_net.base.waits;
+with adare_net.base;  use adare_net.base;
 with adare_net_init;  use adare_net_init;
 with adare_net_exceptions;  use adare_net_exceptions;
+with socket_types; use socket_types;
 
-with Interfaces.C;  use Interfaces, Interfaces.C;
 with Ada.Text_IO; use Ada;
 with Ada.Command_Line;
 with Ada.Task_Identification;
@@ -40,8 +40,6 @@ begin
     host_socket_addresses : aliased socket_addresses;
     tmp_socket_address    : aliased socket_address := null_socket_address;
     host_socket           : aliased socket := null_socket;
-    host_poll             : aliased poll_of_events;
-
   begin
 
     if not create_address
@@ -77,12 +75,15 @@ begin
 
     Text_IO.New_Line;
 
-    Text_IO.Put_Line (" choosed host address => " & get_address (tmp_socket_address) & " and choosed host port => " & get_address_port (tmp_socket_address));
+    Text_IO.Put_Line (" choosed host address => " & get_address (tmp_socket_address) & " and choosed host port => " &
+      get_address_port (tmp_socket_address));
 
     b1 :
     declare
 
-      task type recv_send_task (connected_sock  : socket_access);
+      task type recv_send_task (connected_sock  : socket_access)
+        with Dynamic_Predicate => is_initialized (connected_sock.all)
+          or else is_connected (connected_sock.all);
 
       task body recv_send_task
       is
@@ -94,16 +95,7 @@ begin
 
         this_task_id_str  : constant String := Image (Current_Task);
 
-        task_poll : aliased poll_of_events;
-
       begin
-
-        if not (is_initialized (task_socket) or else is_connected (task_socket)) then
-          Text_IO.Put_Line (this_task_id_str & " Incomming socket not initialized or connected.");
-          Text_IO.Put_Line (this_task_id_str & " Quitting this working task.");
-
-          goto finish1_task_label;
-        end if;
 
         bt0 :
         declare
@@ -113,7 +105,7 @@ begin
 
           tmp_tmp_socket_address  : aliased socket_address := null_socket_address;
 
-          size_tmp  : Interfaces.C.int  := 0;
+          size_tmp  : aliased ssize_t  := 0;
 
           use  Ada.Strings.Unbounded;
 
@@ -125,30 +117,19 @@ begin
           Text_IO.Put_Line (" " & this_task_id_str & " remote host connected from [" &
             get_address (remote_address) & "]:" & get_address_port (remote_address));
 
-          if not set_receive (task_poll, task_socket) then
+          Text_IO.Put_Line (" " & this_task_id_str & " will wait 2 seconds to start receive data.");
+          Text_IO.Put_Line (" " & this_task_id_str & " will wait 0.5 seconds between continuos receive.");
 
-            Text_IO.Put_Line (" " & this_task_id_str & " failed to initialize task_poll.");
-
-            goto finish1_task_label;
-          end if;
-
-          Text_IO.Put_Line (" " & this_task_id_str & " will wait 2 seconds to receive data.");
-
-          if not poll_wait (task_poll, 2000) then
-            Text_IO.Put_Line (" " & this_task_id_str & " error or timeout. finishing");
-
-            goto finish1_task_label;
-          end if;
-
-          size_tmp  :=  receive_buffer (
-            sock  =>  task_socket,
+          if not receive_buffer (sock => task_socket,
             data_to_receive =>  recv_send_buffer,
-            received_address  =>  tmp_tmp_socket_address
-          );
-
-          if size_tmp = 0 then
-            Text_IO.Put_Line (" " & this_task_id_str & " received zero length message.");
+            received_address  =>  tmp_tmp_socket_address,
+            receive_count =>  size_tmp,
+            miliseconds_start_timeout =>  2000,
+            miliseconds_next_timeouts =>  500) or else size_tmp < 1
+          then
+            Text_IO.Put_Line (" " & this_task_id_str & " there are a error while receiving or received zero length message.");
             Text_IO.Put_Line (" " & this_task_id_str & " nothing to do.");
+            Text_IO.Put_Line (" " & this_task_id_str & " last error message => " & string_error);
             Text_IO.Put_Line (" " & this_task_id_str & " finishing.");
 
             goto finish1_task_label;
@@ -179,29 +160,20 @@ begin
 
           end bt1;
 
-          Text_IO.Put_Line (" " & this_task_id_str & " waiting 2 seconds to send data to remote host");
+          Text_IO.Put_Line (" " & this_task_id_str & " waiting 2 seconds to start send data to remote host");
+          Text_IO.Put_Line (" " & this_task_id_str & " will wait 0.5 seconds between continuos send.");
 
-          reset_results (task_poll);
+          if not send_buffer  (sock => task_socket,
+            data_to_send  =>  recv_send_buffer2,
+            send_count  =>  size_tmp,
+            miliseconds_start_timeout =>  2000,
+            miliseconds_next_timeouts =>  500) or else size_tmp < 1
+          then
+            Text_IO.Put_Line (" " & this_task_id_str & " there are a error while sending data to remote host.");
+            Text_IO.Put_Line (" " & this_task_id_str & " nothing to do.");
+            Text_IO.Put_Line (" " & this_task_id_str & " last error message => " & string_error);
+            Text_IO.Put_Line (" " & this_task_id_str & " finishing.");
 
-          if not set_send (task_poll, task_socket) then
-            Text_IO.Put_Line (" " & this_task_id_str & " . finishing");
-            Text_IO.Put_Line (" " & this_task_id_str & " . last message " & string_error);
-
-            goto finish1_task_label;
-          end if;
-
-          if not (poll_wait (task_poll, 2000) and then is_send (task_poll, task_socket)) then
-
-            Text_IO.Put_Line (" " & this_task_id_str & " error or timeout. finishing");
-            Text_IO.Put_Line (" " & this_task_id_str & " . last message " & string_error);
-
-            goto finish1_task_label;
-          end if;
-
-          size_tmp  := send_buffer (task_socket, recv_send_buffer2); -- block
-
-          if size_tmp < 1 then
-            Text_IO.Put_Line (" " & this_task_id_str & " failed in send data.");
             goto finish1_task_label;
           end if;
 
@@ -214,11 +186,6 @@ begin
         if is_initialized (task_socket) then
 
           close (task_socket);
-        end if;
-
-        if is_initialized (task_poll) then
-
-          close (task_poll);
         end if;
 
       end recv_send_task;
@@ -236,22 +203,21 @@ begin
 
       Text_IO.New_Line;
 
-      if not set_receive (host_poll, host_socket) then
-        Text_IO.Put_Line ("failed to initialize host poll events. finishing server.");
-        Text_IO.Put_Line ("last message " & string_error);
-
-        goto end_app_label1;
-      end if;
-
       Text_IO.Put_Line (" Start Accepting connect in Main Server.");
       Text_IO.Put_Line (" 20 seconds max timeout between clients.");
       Text_IO.New_Line (2);
 
       loop2 :
       loop
+        if wait_connection  (sock =>  host_socket,  response  => tmp_received_socket,
+          data_received =>  msg_seaa, miliseconds_start_timeout => 20000)
+        then
 
-        if not (poll_wait (host_poll, 20000) and then is_receive (host_poll, host_socket)) then
+          -- For the curious: We believe the task(s) will not leak.
+          -- Reason: ARM-2012 7.6 (9.2/2) :-)
+          working_task  :=  new recv_send_task (new socket'(tmp_received_socket));
 
+        else
           close (host_socket); -- to disable 'listen' too.
 
           Text_IO.New_Line (2);
@@ -269,13 +235,6 @@ begin
           exit loop2;
         end if;
 
-        if wait_connection (host_socket, tmp_received_socket, msg_seaa) then
-
-          -- For the curious: We believe the task(s) will not leak.
-          -- Reason: ARM-2012 7.6 (9.2/2) :-)
-          working_task  :=  new recv_send_task (new socket'(tmp_received_socket));
-        end if;
-
         Text_IO.New_Line (2);
 
         Text_IO.Put_Line (" restarting 20 seconds timeout.");
@@ -284,11 +243,6 @@ begin
     end b1;
 
     <<end_app_label1>>
-
-    if is_initialized (host_poll) then
-
-      close (host_poll);
-    end if;
 
     if is_initialized (host_socket) then
 
