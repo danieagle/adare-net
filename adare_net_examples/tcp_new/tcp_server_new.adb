@@ -95,91 +95,84 @@ begin
 
         this_task_id_str  : constant String := Image (Current_Task);
 
+        recv_send_buffer  : aliased socket_buffer;
+        recv_send_buffer2 : aliased socket_buffer;
+
+        tmp_tmp_socket_address  : aliased socket_address := null_socket_address;
+
+        size_tmp  : aliased ssize_t  := 0;
+
+        use  Ada.Strings.Unbounded;
+
+        message : Unbounded_String := To_Unbounded_String ("");
       begin
+        clear (recv_send_buffer); -- optional, reset all data in buffer
+        clear (recv_send_buffer2);  -- optional, reset all data in buffer
 
-        bt0 :
-        declare
+        Text_IO.Put_Line (" " & this_task_id_str & " remote host connected from [" &
+          get_address (remote_address) & "]:" & get_address_port (remote_address));
 
-          recv_send_buffer  : aliased socket_buffer;
-          recv_send_buffer2 : aliased socket_buffer;
+        Text_IO.Put_Line (" " & this_task_id_str & " will wait 2 seconds to start receive data.");
+        Text_IO.Put_Line (" " & this_task_id_str & " will wait 0.5 seconds between continuos receive.");
 
-          tmp_tmp_socket_address  : aliased socket_address := null_socket_address;
+        if not receive_buffer (sock => task_socket,
+          data_to_receive =>  recv_send_buffer,
+          received_address  =>  tmp_tmp_socket_address,
+          receive_count =>  size_tmp,
+          miliseconds_start_timeout =>  2000,
+          miliseconds_next_timeouts =>  500) or else size_tmp < 1
+        then
+          Text_IO.Put_Line (" " & this_task_id_str & " there are a error while receiving or received zero length message.");
+          Text_IO.Put_Line (" " & this_task_id_str & " nothing to do.");
+          Text_IO.Put_Line (" " & this_task_id_str & " last error message => " & string_error);
+          Text_IO.Put_Line (" " & this_task_id_str & " finishing.");
 
-          size_tmp  : aliased ssize_t  := 0;
+          goto finish1_task_label;
+        end if;
 
-          use  Ada.Strings.Unbounded;
+        Text_IO.Put_Line (" " & this_task_id_str & " received messages!");
 
-          message : Unbounded_String := To_Unbounded_String ("");
+        Text_IO.Put_Line (" " & this_task_id_str & " message length " & size_tmp'Image & " bytes.");
+
+        bt1 :
         begin
-          clear (recv_send_buffer);
-          clear (recv_send_buffer2);
+          String'Output (recv_send_buffer2'Access, "Thank you for send ");
 
-          Text_IO.Put_Line (" " & this_task_id_str & " remote host connected from [" &
-            get_address (remote_address) & "]:" & get_address_port (remote_address));
+          loop1 :
+          loop
+            message := To_Unbounded_String (String'Input (recv_send_buffer'Access));
 
-          Text_IO.Put_Line (" " & this_task_id_str & " will wait 2 seconds to start receive data.");
-          Text_IO.Put_Line (" " & this_task_id_str & " will wait 0.5 seconds between continuos receive.");
+            String'Output (recv_send_buffer2'Access, To_String (message));
 
-          if not receive_buffer (sock => task_socket,
-            data_to_receive =>  recv_send_buffer,
-            received_address  =>  tmp_tmp_socket_address,
-            receive_count =>  size_tmp,
-            miliseconds_start_timeout =>  2000,
-            miliseconds_next_timeouts =>  500) or else size_tmp < 1
-          then
-            Text_IO.Put_Line (" " & this_task_id_str & " there are a error while receiving or received zero length message.");
-            Text_IO.Put_Line (" " & this_task_id_str & " nothing to do.");
-            Text_IO.Put_Line (" " & this_task_id_str & " last error message => " & string_error);
-            Text_IO.Put_Line (" " & this_task_id_str & " finishing.");
+            Text_IO.Put_Line (" " & this_task_id_str & " message |" & To_String (message) & "|");
+          end loop loop1;
 
-            goto finish1_task_label;
-          end if;
+        exception
 
-          Text_IO.Put_Line (" " & this_task_id_str & " received messages!");
+          when buffer_insufficient_space_error =>
 
-          Text_IO.Put_Line (" " & this_task_id_str & " message length " & size_tmp'Image & " bytes.");
+            Text_IO.Put_Line (" " & this_task_id_str & " all messages showed.");
 
-          bt1 :
-          begin
-            String'Output (recv_send_buffer2'Access, "Thank you for send ");
+        end bt1;
 
-            loop1 :
-            loop
-              message := To_Unbounded_String (String'Input (recv_send_buffer'Access));
+        Text_IO.Put_Line (" " & this_task_id_str & " waiting 2 seconds to start send data to remote host");
+        Text_IO.Put_Line (" " & this_task_id_str & " will wait 0.5 seconds between continuos send.");
 
-              String'Output (recv_send_buffer2'Access, To_String (message));
+        if not send_buffer  (sock => task_socket,
+          data_to_send  =>  recv_send_buffer2,
+          send_count  =>  size_tmp,
+          miliseconds_start_timeout =>  2000,
+          miliseconds_next_timeouts =>  500) or else size_tmp < 1
+        then
+          Text_IO.Put_Line (" " & this_task_id_str & " there are a error while sending data to remote host.");
+          Text_IO.Put_Line (" " & this_task_id_str & " nothing to do.");
+          Text_IO.Put_Line (" " & this_task_id_str & " last error message => " & string_error);
+          Text_IO.Put_Line (" " & this_task_id_str & " finishing.");
 
-              Text_IO.Put_Line (" " & this_task_id_str & " message |" & To_String (message) & "|");
-            end loop loop1;
+          goto finish1_task_label;
+        end if;
 
-          exception
-
-            when buffer_insufficient_space_error =>
-
-              Text_IO.Put_Line (" " & this_task_id_str & " all messages showed.");
-
-          end bt1;
-
-          Text_IO.Put_Line (" " & this_task_id_str & " waiting 2 seconds to start send data to remote host");
-          Text_IO.Put_Line (" " & this_task_id_str & " will wait 0.5 seconds between continuos send.");
-
-          if not send_buffer  (sock => task_socket,
-            data_to_send  =>  recv_send_buffer2,
-            send_count  =>  size_tmp,
-            miliseconds_start_timeout =>  2000,
-            miliseconds_next_timeouts =>  500) or else size_tmp < 1
-          then
-            Text_IO.Put_Line (" " & this_task_id_str & " there are a error while sending data to remote host.");
-            Text_IO.Put_Line (" " & this_task_id_str & " nothing to do.");
-            Text_IO.Put_Line (" " & this_task_id_str & " last error message => " & string_error);
-            Text_IO.Put_Line (" " & this_task_id_str & " finishing.");
-
-            goto finish1_task_label;
-          end if;
-
-          Text_IO.Put_Line (" " & this_task_id_str & " sended messages !");
-
-        end bt0;
+        Text_IO.Put_Line (" " & this_task_id_str & " sended messages !");
 
         <<finish1_task_label>>
 
