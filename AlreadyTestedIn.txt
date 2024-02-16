@@ -3,10 +3,3 @@ v.latest =>
 1) Ubuntu 24.04-dev Linux AMD64 + gnat 13.2 (external) +
     gcc 13.2 (external) + gprbuild 2023 (external)
 
-2) Windows Win10_22H2_x64 AMD64 + gnat 13.2 (native) + gcc 13.2 (native) +
-    gprbuild 22.0.0 (native)
-
-3) Windows Win10_22H2_x64 AMD64 + gnat 13.2 (external) + gcc 13.2 (external) +
-    gprbuild 2023  (external)
-
-4) MacOSX ? Someone can try and report feedback ? :-D Pleeeaase! Enjoy!!

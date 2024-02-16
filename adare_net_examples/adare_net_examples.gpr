@@ -5,11 +5,11 @@ project adare_net_examples is
 
   for Languages use ("Ada");
 
-  for Source_Dirs use ("config", "tests1", "tcp_new");
+  for Source_Dirs use ("config", "tests1", "tcp_new", "udp_new");
   for Object_dir  use "obj";
   for Exec_Dir use "bin";
   for main use ("test_get_address", "test_get_multi_addresses",
-    "tcp_server_new", "tcp_client_new");
+    "tcp_server_new", "tcp_client_new", "udp_server_new", "udp_client_new");
 
   package Builder is
   end Builder;

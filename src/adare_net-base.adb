@@ -386,9 +386,16 @@ is
   function connect
     (sock : aliased in out socket) return Boolean
   is
+
   begin
     if sock.binded or else sock.connected or else sock.listened then
       return False;
+    end if;
+
+    if a_type_label (sock.storage.socktype) = udp then
+      sock.connected := True;
+
+      return True;
     end if;
 
     if inner_connect (sock.sock, sock.storage.storage'Address, size_t (sock.storage.addr_length)) /= 0 then
@@ -980,11 +987,13 @@ is
       end if;
 
       if stype = ipv6 then
-        inner_inet_ntop (int (tmp_addr_union.i6.sin6_family), tmp_addr_union.i6.sin6_addr'Address, dest'Address, socklen_t (dest'Length));
+        inner_inet_ntop (int (tmp_addr_union.i6.sin6_family), tmp_addr_union.i6.sin6_addr'Address, dest'Address,
+          socklen_t (dest'Length));
       end if;
 
       if stype = ipv4 then
-        inner_inet_ntop (int (tmp_addr_union.i4.sin_family), tmp_addr_union.i4.sin_addr'Address, dest'Address, socklen_t (dest'Length));
+        inner_inet_ntop (int (tmp_addr_union.i4.sin_family), tmp_addr_union.i4.sin_addr'Address, dest'Address,
+          socklen_t (dest'Length));
       end if;
 
       loop1 :
