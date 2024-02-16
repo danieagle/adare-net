@@ -109,6 +109,8 @@ begin
         clear (recv_send_buffer); -- optional, reset all data in buffer
         clear (recv_send_buffer2);  -- optional, reset all data in buffer
 
+        Text_IO.New_Line (2);
+
         Text_IO.Put_Line (" " & this_task_id_str & " remote host connected from [" &
           get_address (remote_address) & "]:" & get_address_port (remote_address));
 

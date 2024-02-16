@@ -83,15 +83,12 @@ private
                 and then is_initialized  (sock)
                 and then (not is_in (poll, sock));
 
-
   function init
     (poll     : aliased in out poll_of_events;
      min_qtie : int := 15
     ) return Boolean
     with Pre => (not is_initialized (poll))
                  and then min_qtie > 0;
-
-
 
   use System;
 

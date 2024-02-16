@@ -299,6 +299,10 @@ is
       mi_response.listened := True;
     end if;
 
+    if listen_socket and then proto = udp then
+      mi_response.listened := True;
+    end if;
+
     response := mi_response;
 
     return True;
@@ -361,7 +365,7 @@ is
           end if;
         end if;
 
-        mi_response.listened := True;
+        mi_response.listened := True; -- work ok! for tcp and udp
       end if;
 
       ok := True;
@@ -467,7 +471,7 @@ is
         len :=  ssize_t (inner_recvfrom (sock.sock, data_tmp'Address, data_tmp'Length, 0,
           mi_response.storage.storage'Address, len_tmp));
 
-        if len = socket_error then
+        if len = socket_error or else len < 1 then
           return False;
         end if;
 

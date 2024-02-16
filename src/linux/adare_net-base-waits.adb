@@ -206,7 +206,6 @@ is
     poll.count               := poll.count + 1;
 
     return True;
-
   end add;
 
   procedure reset_results

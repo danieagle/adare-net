@@ -246,7 +246,6 @@ private
   function a_type (type_label : Address_type_label := tcp) return Address_type
     is (case type_label is when tcp => tmp_tcp, when udp => tmp_udp);
 
-  msg_peek_flag : constant int with Import => True, Convention => C, external_name => "c_msg_peek";
 
   type in_addr is
     record
