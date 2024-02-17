@@ -10,10 +10,6 @@ package body adare_net.base
 is
 
   function actual_data_size
-    (buffer : not null socket_buffer_access) return Integer_64
-  is (if buffer.data /= null then (Integer_64 ((buffer.tail_end + 1) - buffer.head_first)) else 0);
-
-  function actual_data_size
     (buffer : aliased socket_buffer) return Integer_64
   is (if buffer.data /= null then (Integer_64 ((buffer.tail_end + 1) - buffer.head_first)) else 0);
 

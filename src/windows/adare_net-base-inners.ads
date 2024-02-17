@@ -1,16 +1,14 @@
 
-with System;
-
-package adare_net.sockets.inners
+package adare_net.base.inners
   with Preelaborate
 is
-  use System;
 
   function inner_accept
     (sockfd_i     : socket_type;
     addr_i        : Address;
     addr_length_i : in out socklen_t) return socket_type
     with Import => True, Convention => StdCall, External_Name => "accept";
+
 
   function inner_bind
     (sockfd_i           : in socket_type;
@@ -26,7 +24,7 @@ is
     (sockfd_i : socket_type;
     addr_i    : Address;
     leng_i    : size_t) return int
-    with Import => True, Convention => StdCall,  External_Name => "connect";
+    with Import => True, Convention => StdCall, External_Name => "connect";
 
   function inner_getaddrinfo
     (host_or_ip_i : Address;
@@ -38,7 +36,8 @@ is
 
   procedure inner_free_addrinfo
     (res_i  : Address)
-    with Import => True, Convention => C, External_Name => "freeaddrinfo";
+    with Import => True, Convention => StdCall, External_Name => "freeaddrinfo";
+
 
   function inner_socket
     (domain_i   : in int;
@@ -58,7 +57,7 @@ is
      flags_i  : int;
      from_i   : Address;
      from_len_i : in out socklen_t
-    ) return int
+    ) return ssize_t
     with Import => True, Convention => StdCall, External_Name => "recvfrom";
 
   function inner_recv
@@ -66,7 +65,7 @@ is
      buf_i  : Address;
      len_i  : size_t;
      flags_i  : int
-     ) return int
+     ) return ssize_t
      with Import => True, Convention => StdCall, External_Name => "recv";
 
   procedure inner_reset_errno
@@ -81,7 +80,7 @@ is
      buf_i  : Address;
      len_i  : size_t;
      flags_i  : int
-    ) return int
+    ) return ssize_t
     with Import => True, Convention => StdCall, External_Name => "send";
 
   function inner_sendto
@@ -91,7 +90,7 @@ is
      flags_i  : int;
      to_i     : Address;
      to_len_i : socklen_t
-     ) return int
+     ) return ssize_t
      with Import => True, Convention => StdCall, External_Name => "sendto";
 
   procedure inner_inet_ntop
@@ -109,6 +108,7 @@ is
     (message_i : in out char_array;
     length_i   : in out int)
     with Import => True, Convention => StdCall, External_Name => "c_show_error";
+
 
   function inner_epoll_create1 (flags_i : int := 0) return handle_type
     with Import => True, Convention => StdCall, External_Name => "epoll_create1";
@@ -132,4 +132,4 @@ is
     ) return int
     with Import => True, Convention => StdCall, External_Name => "epoll_wait";
 
-end adare_net.sockets.inners;
+end adare_net.base.inners;

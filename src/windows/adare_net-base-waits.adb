@@ -102,11 +102,7 @@ is
   begin
     event.events := Unsigned_32 (event_bitmap);
 
-    --  if Alire_Host_OS = "windows" then
-    --    event.data.sock := sock;
-    --  else
-    event.data.fd := int (tmp_sock);
-    --  end if;
+    event.data.sock := tmp_sock;
 
     return (0 = inner_epoll_ctl (poll.handle, epoll_mod, tmp_sock, event'Address));
   end update;
@@ -178,11 +174,7 @@ is
 
     event.events := Unsigned_32 (event_bitmap);
 
-    --  if Alire_Host_OS = "windows" then
-    --    event.data.sock := sock;
-    --  else
-    event.data.fd := int (tmp_sock);
-    --  end if;
+    event.data.sock := tmp_sock;
 
     ok := (0 = inner_epoll_ctl (poll.handle, epoll_add, tmp_sock, event'Address));
 
@@ -235,23 +227,14 @@ is
       loop0 :
       for E of poll.event_poll.all (1 .. poll.last_wait_returned) loop
         index := index + 1;
-        exit loop0 when E.data.fd = int (mi_socket);
-        --  exit loop0 when (if Alire_Host_OS /= "windows" then E.data.fd = int (mi_socket) else E.data.sock = mi_socket);
+        exit loop0 when E.data.sock = mi_socket;
       end loop loop0;
 
-      --  if Alire_Host_OS /= "windows" then
-      if poll.event_poll.all (index).data.fd /= int (mi_socket) then
+      if where_poll.event_poll.all (index).data.sock /= mi_socket then
         return False;
       end if;
 
-      return ((poll.event_poll.all (index).events and Unsigned_32 (send_event)) > 0);
-      --  end if;
-
-      --  if where_poll.event_poll.all (index).data.sock /= mi_socket then
-      --    return False;
-      --  end if;
-
-      --  return ((where_poll.event_poll.all (index).events and Unsigned_32 (send_event)) > 0);
+      return ((where_poll.event_poll.all (index).events and Unsigned_32 (send_event)) > 0);
     end b0;
   end is_send;
 
@@ -266,30 +249,22 @@ is
 
     b0 :
     declare
-      --  use Adare_Net_Config;
       mi_socket : constant socket_type := get_socket (sock);
       index : int := 0;
     begin
       loop0 :
       for E of poll.event_poll.all (1 .. poll.last_wait_returned) loop
         index := index + 1;
-        exit loop0 when E.data.fd = int (mi_socket);
-        --  exit loop0 when (if Alire_Host_OS /= "windows" then E.data.fd = int (mi_socket) else E.data.sock = mi_socket);
+
+        exit loop0 when E.data.sock = mi_socket;
       end loop loop0;
 
-      --  if Alire_Host_OS /= "windows" then
-      if poll.event_poll.all (index).data.fd /= int (mi_socket) then
+
+      if where_poll.event_poll.all (index).data.sock /= mi_socket then
         return False;
       end if;
 
-      return ((poll.event_poll.all (index).events and Unsigned_32 (receive_event)) > 0);
-      --  end if;
-
-      --  if where_poll.event_poll.all (index).data.sock /= mi_socket then
-      --    return False;
-      --  end if;
-
-      --  return ((where_poll.event_poll.all (index).events and Unsigned_32 (receive_event)) > 0);
+      return ((where_poll.event_poll.all (index).events and Unsigned_32 (receive_event)) > 0);
     end b0;
   end is_receive;
 
