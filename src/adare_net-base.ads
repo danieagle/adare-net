@@ -59,8 +59,6 @@ is
   ipv4_length : constant socklen_t with Import => True, Convention => C, External_Name => "c_v4_addrstrlen";
   ipv6_length : constant socklen_t with Import => True, Convention => C, External_Name => "c_v6_str_length";
 
-  --  type addr_info is private;
-
   type socket_address is  private;
 
   type socket_address_access is access all socket_address;
@@ -348,11 +346,15 @@ private
     end record
       with Preelaborable_initialization;
 
-    package ainfo is new System.Address_To_Access_Conversions (addr_info);
-    use ainfo;
 
-    package ainfo2 is new System.Address_To_Access_Conversions (sockaddr_storage);
-    use ainfo2;
+
+
+  package ainfo is new System.Address_To_Access_Conversions (addr_info);
+  use ainfo;
+
+
+  package ainfo2 is new System.Address_To_Access_Conversions (sockaddr_storage);
+  use ainfo2;
 
   function storage_size return socklen_t
     with Inline;
