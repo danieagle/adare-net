@@ -37,8 +37,6 @@ begin
     Text_IO.Put_Line ("Completed.");
   end b0;
 
-  null;
-
   stop_adare_net;
 
 end test_get_multi_addresses;

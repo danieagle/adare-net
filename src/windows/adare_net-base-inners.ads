@@ -132,4 +132,18 @@ is
     ) return int
     with Import => True, Convention => StdCall, External_Name => "epoll_wait";
 
+  function inner_memset
+    (dest_i : Address;
+     c_i    : int;
+     count_i  : size_t
+    ) return Address
+    with Import => True, Convention => StdCall, External_Name => "memset";
+
+  function inner_memcpy
+    (dest_i   : Address;
+     src_i    : Address;
+     count_i  : size_t
+    ) return Address
+    with Import => True, Convention => StdCall, External_Name => "memcpy";
+
 end adare_net.base.inners;

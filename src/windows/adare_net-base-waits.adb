@@ -230,11 +230,11 @@ is
         exit loop0 when E.data.sock = mi_socket;
       end loop loop0;
 
-      if where_poll.event_poll.all (index).data.sock /= mi_socket then
+      if poll.event_poll.all (index).data.sock /= mi_socket then
         return False;
       end if;
 
-      return ((where_poll.event_poll.all (index).events and Unsigned_32 (send_event)) > 0);
+      return ((poll.event_poll.all (index).events and Unsigned_32 (send_event)) > 0);
     end b0;
   end is_send;
 
@@ -260,11 +260,11 @@ is
       end loop loop0;
 
 
-      if where_poll.event_poll.all (index).data.sock /= mi_socket then
+      if poll.event_poll.all (index).data.sock /= mi_socket then
         return False;
       end if;
 
-      return ((where_poll.event_poll.all (index).events and Unsigned_32 (receive_event)) > 0);
+      return ((poll.event_poll.all (index).events and Unsigned_32 (receive_event)) > 0);
     end b0;
   end is_receive;
 

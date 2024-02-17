@@ -11,7 +11,7 @@ begin
 
   b0 :
   declare
-    mi_address    : aliased socket_address;
+    mi_address    : aliased socket_address := null_socket_address;
   begin
 
     if create_address
@@ -24,8 +24,7 @@ begin
 
       Text_IO.Put_Line (" one address from google.com ");
       Text_IO.Put_Line (" address => " & get_address (mi_address) & " and port => " & get_address_port (mi_address));
-        Text_IO.New_Line;
-
+      Text_IO.New_Line;
     end if;
 
     Text_IO.Put_Line ("Completed.");

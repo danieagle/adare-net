@@ -1,6 +1,4 @@
 
-private with System;
-
 package adare_net.base.waits
   with Preelaborate
 is
@@ -89,8 +87,6 @@ private
     ) return Boolean
     with Pre => (not is_initialized (poll))
                  and then min_qtie > 0;
-
-  use System;
 
   receive_event : constant unsigned_long
     with Convention => C, import,

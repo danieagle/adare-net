@@ -59,8 +59,7 @@ is
   ipv4_length : constant socklen_t with Import => True, Convention => C, External_Name => "c_v4_addrstrlen";
   ipv6_length : constant socklen_t with Import => True, Convention => C, External_Name => "c_v6_str_length";
 
-
-  type addr_info is private;
+  --  type addr_info is private;
 
   type socket_address is  private;
 
@@ -348,20 +347,6 @@ private
       head_first, tail_end  : Stream_Element_Count := 0;
     end record
       with Preelaborable_initialization;
-
-
-  type addr_info is
-    record
-      ai_flags    : Interfaces.C.int := 0;
-      ai_family   : Interfaces.C.int := 0;
-      ai_socktype : Interfaces.C.int := 0;
-      ai_protocol : Interfaces.C.int := 0;
-      ai_addrlen  : socklen_t := 0;
-      ai_addr     : Address := Null_Address;
-      ai_canonname  : Address :=  Null_Address;
-      ai_next       : Address :=  Null_Address;
-    end record
-      with Convention => C;
 
     package ainfo is new System.Address_To_Access_Conversions (addr_info);
     use ainfo;
