@@ -106,7 +106,7 @@ is
      Addr_type    : Address_type_label;
      response     : out socket_address) return Boolean;
 
-  function create_address
+  function create_addresses
     (host_or_ip : String;
      network_port_or_service  : String;
      Addr_family  : Address_family_label;
@@ -347,14 +347,8 @@ private
       with Preelaborable_initialization;
 
 
-
-
   package ainfo is new System.Address_To_Access_Conversions (addr_info);
   use ainfo;
-
-
-  package ainfo2 is new System.Address_To_Access_Conversions (sockaddr_storage);
-  use ainfo2;
 
   function storage_size return socklen_t
     with Inline;

@@ -43,7 +43,7 @@ begin
     host_socket           : aliased socket := null_socket;
   begin
 
-    if not create_address
+    if not create_addresses
       (host_or_ip => "",
       network_port_or_service => "25000",
       Addr_family => any,
@@ -120,7 +120,7 @@ begin
           get_address (remote_address) & "]:" & get_address_port (remote_address));
 
         Text_IO.Put_Line (" " & this_task_id_str & " will wait 2 seconds to start receive data.");
-        Text_IO.Put_Line (" " & this_task_id_str & " will wait 0.5 seconds between continuos receive.");
+        Text_IO.Put_Line (" " & this_task_id_str & " will wait 0.5 seconds between continuous receive.");
 
         if not receive_buffer (sock => task_socket,
           data_to_receive =>  recv_send_buffer,
@@ -167,7 +167,7 @@ begin
         end bt1;
 
         Text_IO.Put_Line (" " & this_task_id_str & " waiting 2 seconds to start send data to remote host");
-        Text_IO.Put_Line (" " & this_task_id_str & " will wait 0.5 seconds between continuos send.");
+        Text_IO.Put_Line (" " & this_task_id_str & " will wait 0.5 seconds between continuous send.");
 
         if not send_buffer  (sock => task_socket,
           data_to_send  =>  recv_send_buffer2,
