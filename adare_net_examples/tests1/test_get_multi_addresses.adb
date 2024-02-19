@@ -17,7 +17,7 @@ begin
 
     Text_IO.Put_Line (" addresses from google.com ");
 
-    if create_address
+    if create_addresses
       (host_or_ip => "google.com",
       network_port_or_service => "0",
       Addr_family => any,

@@ -68,7 +68,7 @@ begin
 
       tmp_msg : stream_element_array_access := null;
     begin
-      if not create_address
+      if not create_addresses
         (host_or_ip   =>  Argument (1), network_port_or_service  =>  Argument (2),
         Addr_family   =>  any,  Addr_type =>  tcp,  response  =>  remote_addr)
       then
