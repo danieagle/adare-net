@@ -6,14 +6,13 @@ is
   function inner_accept
     (sockfd_i     : socket_type;
     addr_i        : Address;
-    addr_length_i : in out socklen_t) return socket_type
+    addr_length_i : Address) return socket_type
     with Import => True, Convention => C, External_Name => "accept";
 
-
   function inner_bind
-    (sockfd_i           : in socket_type;
+    (sockfd_i           : socket_type;
     addr_i              : Address;
-    address_length_i    : in int) return int
+    address_length_i    : socklen_t) return int
     with Import => True, Convention => C, External_Name => "bind";
 
   function inner_close
@@ -23,7 +22,7 @@ is
   function inner_connect
     (sockfd_i : socket_type;
     addr_i    : Address;
-    leng_i    : size_t) return int
+    leng_i    : socklen_t) return int
     with Import => True, Convention => C, External_Name => "connect";
 
   function inner_getaddrinfo
@@ -33,11 +32,9 @@ is
      response_i : Address) return int
     with Import => True, Convention => C, External_Name => "getaddrinfo";
 
-
   procedure inner_free_addrinfo
     (res_i  : Address)
     with Import => True, Convention => C, External_Name => "freeaddrinfo";
-
 
   function inner_socket
     (domain_i   : in int;
@@ -56,7 +53,7 @@ is
      len_i  : size_t;
      flags_i  : int;
      from_i   : Address;
-     from_len_i : in out socklen_t
+     from_len_i : Address
     ) return ssize_t
     with Import => True, Convention => C, External_Name => "recvfrom";
 
@@ -93,11 +90,11 @@ is
      ) return ssize_t
      with Import => True, Convention => C, External_Name => "sendto";
 
-  procedure inner_inet_ntop
+  function inner_inet_ntop
     (af : int;
      src  : Address;
      dst  : Address;
-     size : socklen_t)
+     size : socklen_t) return Address
      with Import => True, Convention => C, External_Name => "inet_ntop";
 
   function inner_ntohs

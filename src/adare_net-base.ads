@@ -98,21 +98,12 @@ is
   function actual_data_size
     (buffer : aliased socket_buffer) return Integer_64;
 
-
-  function create_address
-    (host_or_ip : String;
-     network_port_or_service  : String;
-     Addr_family  : Address_family_label;
-     Addr_type    : Address_type_label;
-     response     : out socket_address) return Boolean;
-
   function create_addresses
     (host_or_ip : String;
      network_port_or_service  : String;
      Addr_family  : Address_family_label;
      Addr_type    : Address_type_label;
      response     : out socket_addresses) return Boolean;
-
 
   function create_socket
     (sock_address : aliased socket_address;

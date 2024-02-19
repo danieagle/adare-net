@@ -1,10 +1,11 @@
 separate (adare_net.base)
+
 function create_addresses
   (host_or_ip : String;
-    network_port_or_service  : String;
-    Addr_family  : Address_family_label;
-    Addr_type    : Address_type_label;
-    response     : out socket_addresses) return Boolean
+   network_port_or_service  : String;
+   Addr_family  : Address_family_label;
+   Addr_type    : Address_type_label;
+   response     : out socket_addresses) return Boolean
 is
   ai_passive  : constant Interfaces.C.int
     with Import => True, Convention => C, External_Name => "c_ai_passive";
@@ -18,8 +19,8 @@ is
           ai_socktype => Interfaces.C.int (a_type (Addr_type)),
           ai_protocol => 0,
           ai_addrlen => 0,
-          ai_addr => Null_Address,
           ai_canonname => Null_Address,
+          ai_addr => Null_Address,
           ai_next => Null_Address);
 
   tmp_getted_response : Address  := Null_Address;
@@ -37,10 +38,14 @@ is
       hints_i      =>  hint'Address,
       response_i   =>  tmp_getted_response'Address);
 
+  mi_null_addrinfo  : aliased constant addr_info := To_Pointer (tmp_getted_response).all;
+
 begin
   response := mi_socket_addresses;
 
-  if ret_value /= 0 or else tmp_getted_response = Null_Address then
+  if ret_value /= 0 or else tmp_getted_response = Null_Address or else
+    (mi_null_addrinfo.ai_addr = Null_Address and then mi_null_addrinfo.ai_next = Null_Address)
+  then
     return False;
   end if;
 
@@ -57,7 +62,7 @@ begin
       mi_addrinfo : aliased constant addr_info := To_Pointer (mi_system_address).all;
     begin
 
-      if mi_addrinfo.ai_addrlen > 0 then
+      if mi_addrinfo.ai_addrlen > 0 and then mi_addrinfo.ai_addr /= Null_Address then
         acc := inner_memcpy (tmp_addr.storage'Address, mi_addrinfo.ai_addr,
           size_t (mi_addrinfo.ai_addrlen));
       end if;

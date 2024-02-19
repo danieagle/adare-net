@@ -84,15 +84,6 @@ is
     return tmp_size.storage'Size / 8;
   end storage_size;
 
-
-  function create_address
-    (host_or_ip : String;
-     network_port_or_service  : String;
-     Addr_family  : Address_family_label;
-     Addr_type    : Address_type_label;
-     response     : out socket_address) return Boolean
-  is separate;
-
   function create_addresses
     (host_or_ip : String;
      network_port_or_service  : String;
@@ -136,7 +127,7 @@ is
       reuse_address (mi_response);
 
       if inner_bind (mi_response.sock, mi_response.storage.storage'Address,
-        Interfaces.C.int (mi_response.storage.addr_length)) /= 0
+        mi_response.storage.addr_length) /= 0
       then
         acc := inner_close (mi_response.sock);
         return False;
@@ -173,70 +164,23 @@ is
   is
     mi_response   : aliased socket  := null_socket;
     mi_address    : aliased socket_address  := null_socket_address;
-    mi_socket_fd  : socket_type;
-    acc           : Interfaces.C.int := 0
-      with Unreferenced;
-    ok  : Boolean := False;
   begin
+
+    rewind (sock_address);
 
     response := null_socket;
 
     loop1 :
     while get_address (sock_address, mi_address) loop
 
-      mi_response := null_socket;
+      if create_socket (mi_address, mi_response, bind_socket, listen_socket, backlog) then
+        response := mi_response;
 
-      mi_response.storage  := mi_address;
-
-      mi_socket_fd :=
-        inner_socket (int (mi_response.storage.storage.ss_family),
-          Interfaces.C.int (mi_response.storage.socktype),
-          Interfaces.C.int (mi_response.storage.protocol));
-
-      if mi_socket_fd = invalid_socket then
-        goto end_loop1_label;
+        return True;
       end if;
-
-      mi_response.sock := mi_socket_fd;
-
-      if bind_socket then
-        reuse_address (mi_response);
-
-        if inner_bind (mi_response.sock, mi_response.storage.storage'Address,
-          Interfaces.C.int (mi_response.storage.addr_length)) /= 0
-        then
-          acc := inner_close (mi_response.sock);
-
-          goto end_loop1_label;
-        end if;
-
-        mi_response.binded := True;
-      end if;
-
-      if listen_socket then
-        if a_type_label (mi_response.storage.socktype) = tcp then
-          if inner_listen (mi_response.sock, int (backlog)) /= 0  then
-            acc := inner_close (mi_response.sock);
-            goto end_loop1_label;
-          end if;
-        end if;
-
-        mi_response.listened := True; -- work ok! for tcp and udp
-      end if;
-
-      ok := True;
-
-      exit loop1;
-
-      <<end_loop1_label>> -- a missing continue :)
-
     end loop loop1;
 
-    if ok then
-      response := mi_response;
-    end if;
-
-    return ok;
+    return False;
   end create_socket;
 
   function connect
@@ -254,7 +198,7 @@ is
       return True;
     end if;
 
-    if inner_connect (sock.sock, sock.storage.storage'Address, size_t (sock.storage.addr_length)) /= 0 then
+    if inner_connect (sock.sock, sock.storage.storage'Address, sock.storage.addr_length) /= 0 then
       return False;
     end if;
 
@@ -302,7 +246,7 @@ is
 
     if proto = tcp then
       mi_response.sock := inner_accept (sock.sock,
-        mi_response.storage.storage'Address, mi_storage_size);
+        mi_response.storage.storage'Address, mi_storage_size'Address);
 
       if mi_response.sock = invalid_socket then
         return False;
@@ -331,8 +275,8 @@ is
         mi_socket_fd  : socket_type := 0;
       begin
 
-        len :=  ssize_t (inner_recvfrom (sock.sock, data_tmp'Address, data_tmp'Length, 0,
-          mi_response.storage.storage'Address, len_tmp));
+        len :=  inner_recvfrom (sock.sock, data_tmp'Address, data_tmp'Length, 0,
+          mi_response.storage.storage'Address, len_tmp'Address);
 
         if len = socket_error or else len < 1 then
           return False;
@@ -370,83 +314,7 @@ is
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
-  is
-    use adare_net.base.waits;
-    pos           : Stream_Element_Offset :=  data_to_send.head_first;
-    remaining     : ssize_t :=  ssize_t (actual_data_size (data_to_send));
-    sended_length : ssize_t :=  0;
-    total_sended  : ssize_t :=  0;
-    proto         : constant Address_type_label :=  a_type_label (sock.storage.socktype);
-    poll          : aliased poll_of_events;
-  begin
-    send_count := 0;
-
-    if remaining = 0 then
-      return True;
-    end if;
-
-    if miliseconds_start_timeout > 0  or else miliseconds_next_timeouts > 0 then
-      if not set_send (poll, sock) then
-        return False;
-      end if;
-
-      if miliseconds_start_timeout > 0 then
-        if not (poll_wait (poll, int (miliseconds_start_timeout)) and then is_send (poll, sock)) then
-          return False;
-        end if;
-      end if;
-    end if;
-
-    loop1 :
-    loop
-      case proto is
-
-        when tcp =>
-
-          sended_length := ssize_t (inner_send (sock.sock, data_to_send.data (pos)'Address,
-            size_t (remaining), 0));
-
-        when udp =>
-
-          sended_length := ssize_t (inner_sendto (sock.sock, data_to_send.data (pos)'Address,
-            size_t (remaining), 0,
-            sock.storage.storage'Address,
-            sock.storage.addr_length));
-
-      end case;
-
-      exit loop1 when sended_length < 1 or else sended_length = socket_error;
-
-      pos := pos + Stream_Element_Offset (sended_length);
-
-      total_sended  := total_sended + sended_length;
-
-      exit loop1 when remaining = sended_length;
-
-      remaining :=  remaining - sended_length;
-
-      exit loop1 when remaining < 1;
-
-      if miliseconds_next_timeouts > 0 then
-        reset_results (poll);
-
-        if not (poll_wait (poll, int (miliseconds_next_timeouts)) and then is_send (poll, sock)) then
-          exit loop1;
-        end if;
-      end if;
-
-    end loop loop1;
-
-    data_to_send.head_first := data_to_send.head_first + Stream_Element_Count (total_sended);
-
-    send_count := total_sended;
-
-    if miliseconds_start_timeout > 0  or else miliseconds_next_timeouts > 0 then
-      close (poll);
-    end if;
-
-    return True;
-  end send_buffer;
+  is separate;
 
   function send_stream
     (sock : aliased socket;
@@ -455,81 +323,7 @@ is
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
-  is
-    use adare_net.base.waits;
-    pos           : Stream_Element_Offset :=  data_to_send'First;
-    remaining     : ssize_t :=  data_to_send'Length;
-    sended_length : ssize_t :=  0;
-    total_sended  : ssize_t :=  0;
-    proto         : constant Address_type_label :=  a_type_label (sock.storage.socktype);
-    poll          : aliased poll_of_events;
-  begin
-    send_count := 0;
-
-    if remaining = 0 then
-      return True;
-    end if;
-
-    if miliseconds_start_timeout > 0  or else miliseconds_next_timeouts > 0 then
-      if not set_send (poll, sock) then
-        return False;
-      end if;
-
-      if miliseconds_start_timeout > 0 then
-        if not (poll_wait (poll, int (miliseconds_start_timeout)) and then is_send (poll, sock)) then
-          return False;
-        end if;
-      end if;
-    end if;
-
-    loop1 :
-    loop
-      case proto is
-
-        when tcp =>
-
-          sended_length := ssize_t (inner_send (sock.sock, data_to_send (pos)'Address,
-            size_t (remaining), 0));
-
-        when udp =>
-
-          sended_length := ssize_t (inner_sendto (sock.sock, data_to_send (pos)'Address,
-            size_t (remaining), 0,
-            sock.storage.storage'Address,
-            sock.storage.addr_length));
-
-      end case;
-
-      exit loop1 when sended_length < 1 or else sended_length = socket_error;
-
-      pos := pos + Stream_Element_Offset (sended_length);
-
-      total_sended  := total_sended + sended_length;
-
-      exit loop1 when remaining = sended_length;
-
-      remaining :=  remaining - sended_length;
-
-      exit loop1 when remaining < 1;
-
-      if miliseconds_next_timeouts > 0 then
-        reset_results (poll);
-
-        if not (poll_wait (poll, int (miliseconds_next_timeouts)) and then is_send (poll, sock)) then
-          exit loop1;
-        end if;
-      end if;
-
-    end loop loop1;
-
-    send_count := total_sended;
-
-    if miliseconds_start_timeout > 0  or else miliseconds_next_timeouts > 0 then
-      close (poll);
-    end if;
-
-    return True;
-  end send_stream;
+  is separate;
 
   function receive_buffer
     (sock : aliased socket;
@@ -539,91 +333,7 @@ is
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
-  is
-    use adare_net.base.waits;
-
-    received_length : ssize_t :=  0;
-    total_received  : ssize_t :=  0;
-
-    proto           : constant Address_type_label :=  a_type_label (sock.storage.socktype);
-
-    receive_data          : Stream_Element_Array  :=  (1 .. (2**16 + 5) * 3 => 0);
-    receive_data_address  : constant Address  :=  receive_data (1)'Address;
-    receive_data_length   : constant size_t   :=  receive_data'Length;
-
-    socket_address_length : socklen_t         :=  storage_size;
-
-    tmp_received_address  : aliased socket_address :=
-      (if proto = tcp then null_socket_address else sock.storage);
-
-    poll                  : aliased poll_of_events;
-  begin
-
-    receive_count := 0;
-    received_address := null_socket_address;
-
-    if miliseconds_start_timeout > 0  or else miliseconds_next_timeouts > 0 then
-      if not set_receive (poll, sock) then
-        return False;
-      end if;
-
-      if miliseconds_start_timeout > 0 then
-        if not (poll_wait (poll, int (miliseconds_start_timeout)) and then is_receive (poll, sock)) then
-          return False;
-        end if;
-      end if;
-    end if;
-
-
-    loop1 :
-    loop
-
-      case proto is
-        when tcp =>
-
-          received_length := ssize_t (inner_recv (sock.sock, receive_data_address,
-            receive_data_length, 0));
-
-        when udp =>
-
-          received_length :=  ssize_t (inner_recvfrom (sock.sock, receive_data_address, receive_data_length, 0,
-            tmp_received_address.storage'Address, socket_address_length));
-
-          tmp_received_address.addr_length := socket_address_length;
-
-          socket_address_length :=  storage_size;
-
-      end case;
-
-
-      exit loop1 when received_length < 1 or else received_length = socket_error;
-
-      total_received  :=  total_received  + received_length;
-
-      Stream_Element_Array'Write (data_to_receive'Access, receive_data (1 .. Stream_Element_Offset (received_length)));
-
-      if miliseconds_next_timeouts > 0 then
-        reset_results (poll);
-
-        if not (poll_wait (poll, int (miliseconds_next_timeouts)) and then is_receive (poll, sock)) then
-          exit loop1;
-        end if;
-      end if;
-
-    end loop loop1;
-
-    if proto = udp then
-      received_address := tmp_received_address;
-    end if;
-
-    receive_count := total_received;
-
-    if miliseconds_start_timeout > 0  or else miliseconds_next_timeouts > 0 then
-      close (poll);
-    end if;
-
-    return True;
-  end receive_buffer;
+  is separate;
 
   function receive_stream
     (sock : aliased socket;
@@ -633,101 +343,7 @@ is
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
-  is
-    use adare_net.base.waits;
-
-    proto : constant Address_type_label :=  a_type_label (sock.storage.socktype);
-
-    tmp_received_address  : aliased socket_address :=
-      (if proto = tcp then null_socket_address else sock.storage);
-
-    received_length : ssize_t :=  0;
-    total_received  : ssize_t :=  0;
-
-    receive_data    : stream_element_array_access :=  new Stream_Element_Array'(1 .. (2**16 + 5) * 3 => 0);
-    pos             : Stream_Element_Offset       := receive_data.all'First;
-
-    socket_address_length : socklen_t             :=  storage_size;
-
-    poll          : aliased poll_of_events;
-  begin
-
-    receive_count     :=  0;
-    received_address  :=  null_socket_address;
-    data_to_receive   :=  null;
-
-    if miliseconds_start_timeout > 0  or else miliseconds_next_timeouts > 0 then
-      if not set_receive (poll, sock) then
-        return False;
-      end if;
-
-      if miliseconds_start_timeout > 0  then
-        if not (poll_wait (poll, int (miliseconds_start_timeout)) and then is_receive (poll, sock)) then
-          return False;
-        end if;
-      end if;
-    end if;
-
-    loop1 :
-    loop
-
-      case proto is
-        when tcp =>
-
-          received_length := ssize_t (inner_recv (sock.sock, receive_data.all (pos)'Address,
-            receive_data.all'Length - size_t (pos), 0));
-
-        when udp =>
-
-          received_length :=  ssize_t (inner_recvfrom (sock.sock, receive_data.all (pos)'Address,
-            receive_data.all'Length - size_t (pos), 0,
-            tmp_received_address.storage'Address, socket_address_length));
-
-          tmp_received_address.addr_length := socket_address_length;
-
-          socket_address_length :=  storage_size;
-
-      end case;
-
-      exit loop1 when received_length < 1 or else received_length = socket_error;
-
-      total_received  :=  total_received  + received_length;
-
-      pos :=  pos + Stream_Element_Offset (received_length);
-
-      if pos + ((2**16 + 5) * 2) > receive_data.all'Length then
-        b1 :
-        declare
-          receive_data_old  : constant Stream_Element_Array := receive_data.all (1 .. pos - 1);
-        begin
-
-          receive_data :=  new Stream_Element_Array'(1 .. receive_data_old'Length + ((2**16 + 5) * 3) => 0);
-          receive_data.all (receive_data_old'Range) := receive_data_old;
-        end b1;
-      end if;
-
-      if miliseconds_next_timeouts > 0 then
-        reset_results (poll);
-
-        if not (poll_wait (poll, int (miliseconds_next_timeouts)) and then is_receive (poll, sock)) then
-          exit loop1;
-        end if;
-      end if;
-    end loop loop1;
-
-    if proto = udp then
-      received_address := tmp_received_address;
-    end if;
-
-    data_to_receive := new Stream_Element_Array'(receive_data.all (1 .. Stream_Element_Offset (total_received)));
-    receive_count := total_received;
-
-    if miliseconds_start_timeout > 0  or else miliseconds_next_timeouts > 0 then
-      close (poll);
-    end if;
-
-    return True;
-  end receive_stream;
+  is separate;
 
   procedure clear
     (sock_address : aliased in out socket_address)
@@ -826,6 +442,8 @@ is
   is
       tmp_addr_union : storage_union := (others => <>);
       stype          : Address_family_label;
+      acc            : Address  := Null_Address
+        with Unreferenced;
 
   begin
     tmp_addr_union.ss := sock_address.storage;
@@ -843,13 +461,13 @@ is
       end if;
 
       if stype = ipv6 then
-        inner_inet_ntop (int (tmp_addr_union.i6.sin6_family), tmp_addr_union.i6.sin6_addr'Address, dest'Address,
-          socklen_t (dest'Length));
+        acc := inner_inet_ntop (int (tmp_addr_union.i6.sin6_family), tmp_addr_union.i6.sin6_addr'Address, dest'Address,
+          dest'Length);
       end if;
 
       if stype = ipv4 then
-        inner_inet_ntop (int (tmp_addr_union.i4.sin_family), tmp_addr_union.i4.sin_addr'Address, dest'Address,
-          socklen_t (dest'Length));
+        acc := inner_inet_ntop (int (tmp_addr_union.i4.sin_family), tmp_addr_union.i4.sin_addr'Address, dest'Address,
+          dest'Length);
       end if;
 
       loop1 :
