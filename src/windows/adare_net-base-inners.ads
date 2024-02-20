@@ -57,16 +57,6 @@ is
     ) return ssize_t
     with Import => True, Convention => StdCall, External_Name => "recvfrom";
 
-
---      int WSAAPI recvfrom(
---    [in]                SOCKET   s,
---    [out]               char     *buf,
---    [in]                int      len,
---    [in]                int      flags,
---    [out]               sockaddr *from,
---    [in, out, optional] int      *fromlen
---  );
-
   function inner_recv
     (sock_i : socket_type;
      buf_i  : Address;
