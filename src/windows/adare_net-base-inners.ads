@@ -53,12 +53,22 @@ is
   function inner_recvfrom
     (sock_i : socket_type;
      buf_i  : Address;
-     len_i  : size_t;
+     len_i  : int;
      flags_i  : int;
      from_i   : Address;
-     from_len_i : in out socklen_t
-    ) return ssize_t
+     from_len_i : in out int
+    ) return int
     with Import => True, Convention => StdCall, External_Name => "recvfrom";
+
+
+--      int WSAAPI recvfrom(
+--    [in]                SOCKET   s,
+--    [out]               char     *buf,
+--    [in]                int      len,
+--    [in]                int      flags,
+--    [out]               sockaddr *from,
+--    [in, out, optional] int      *fromlen
+--  );
 
   function inner_recv
     (sock_i : socket_type;
