@@ -13,7 +13,6 @@ is
     (buffer : aliased socket_buffer) return Integer_64
   is (if buffer.data /= null then (Integer_64 ((buffer.tail_end + 1) - buffer.head_first)) else 0);
 
-
   function max_data_length
     (buffer : aliased socket_buffer) return Stream_Element_Offset
   is (if buffer.data /= null then (buffer.head_first - buffer.data'First) + (buffer.data'Last - buffer.tail_end) else 0);
@@ -41,7 +40,6 @@ is
   function get_socket
     (sock : aliased in socket) return socket_type
   is (sock.sock);
-
 
   function a_type_label (a_type : Address_type := tmp_tcp) return Address_type_label
   is
@@ -186,7 +184,6 @@ is
   function connect
     (sock : aliased in out socket) return Boolean
   is
-
   begin
     if sock.binded or else sock.connected or else sock.listened then
       return False;
@@ -206,7 +203,6 @@ is
 
     return True;
   end connect;
-
 
   function wait_connection
     (sock           : aliased in out socket;
@@ -412,7 +408,6 @@ is
     sock_address.mi_initialized := False;
   end rewind;
 
-
   function get_address_port
     (sock_address : aliased in socket_address) return ports
   is
@@ -440,11 +435,10 @@ is
   function get_address
     (sock_address : aliased in socket_address) return String
   is
-      tmp_addr_union : storage_union := (others => <>);
-      stype          : Address_family_label;
-      acc            : Address  := Null_Address
-        with Unreferenced;
-
+    tmp_addr_union : storage_union := (others => <>);
+    stype          : Address_family_label;
+    acc            : Address  := Null_Address
+      with Unreferenced;
   begin
     tmp_addr_union.ss := sock_address.storage;
     stype := family_label (Address_family (tmp_addr_union.ss.ss_family));
@@ -495,7 +489,6 @@ is
     sock := null_socket;
   end close;
 
-
   overriding
   procedure Read
     (Stream : in out socket_buffer;
@@ -529,7 +522,6 @@ is
     Last  :=  Item'Last;
     Stream.head_first :=  Stream.head_first + Item'Length;
   end Read;
-
 
   overriding
   procedure Write

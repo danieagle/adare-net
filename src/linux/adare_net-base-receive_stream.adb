@@ -49,14 +49,14 @@
       case proto is
         when tcp =>
 
-          received_length := ssize_t (inner_recv (sock.sock, receive_data.all (pos)'Address,
-            receive_data.all'Length - size_t (pos), 0));
+          received_length := inner_recv (sock.sock, receive_data.all (pos)'Address,
+            receive_data.all'Length - size_t (pos), 0);
 
         when udp =>
 
-          received_length :=  ssize_t (inner_recvfrom (sock.sock, receive_data.all (pos)'Address,
+          received_length := inner_recvfrom (sock.sock, receive_data.all (pos)'Address,
             receive_data.all'Length - size_t (pos), 0,
-            tmp_received_address.storage'Address, socket_address_length));
+            tmp_received_address.storage'Address, socket_address_length'Address);
 
           tmp_received_address.addr_length := socket_address_length;
 

@@ -40,15 +40,12 @@
 
         when tcp =>
 
-          sended_length := ssize_t (inner_send (sock.sock, data_to_send (pos)'Address,
-            size_t (remaining), 0));
+          sended_length := inner_send (sock.sock, data_to_send (pos)'Address, size_t (remaining), 0);
 
         when udp =>
 
-          sended_length := ssize_t (inner_sendto (sock.sock, data_to_send (pos)'Address,
-            size_t (remaining), 0,
-            sock.storage.storage'Address,
-            sock.storage.addr_length));
+          sended_length := inner_sendto (sock.sock, data_to_send (pos)'Address, size_t (remaining), 0,
+            sock.storage.storage'Address, sock.storage.addr_length);
 
       end case;
 

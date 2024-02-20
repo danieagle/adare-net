@@ -1,12 +1,12 @@
 
 separate (adare_net.base)
 function receive_buffer
- (sock : aliased     socket; data_to_receive : aliased in out socket_buffer;
-  received_address          : aliased out socket_address;
-  receive_count             : aliased out ssize_t;
-  miliseconds_start_timeout :     Unsigned_32 := 0; -- default is wait forever.
-  miliseconds_next_timeouts :             Unsigned_32 :=
-   0 -- default is wait forever.
+ (sock  : aliased socket;
+  data_to_receive   : aliased in out socket_buffer;
+  received_address  : aliased out socket_address;
+  receive_count     : aliased out ssize_t;
+  miliseconds_start_timeout : Unsigned_32 :=  0;
+  miliseconds_next_timeouts : Unsigned_32 :=  0
 ) return Boolean
 is
   use adare_net.base.waits;
@@ -52,18 +52,12 @@ begin
     case proto is
       when tcp =>
 
-        received_length :=
-         ssize_t
-          (inner_recv
-            (sock.sock, receive_data_address, receive_data_length, 0));
+        received_length :=  inner_recv (sock.sock, receive_data_address, receive_data_length, 0);
 
       when udp =>
 
-        received_length :=
-         ssize_t
-          (inner_recvfrom
-            (sock.sock, receive_data_address, receive_data_length, 0,
-             tmp_received_address.storage'Address, socket_address_length));
+        received_length :=  inner_recvfrom (sock.sock, receive_data_address, receive_data_length, 0,
+             tmp_received_address.storage'Address, socket_address_length'Address);
 
         tmp_received_address.addr_length := socket_address_length;
 
@@ -82,10 +76,7 @@ begin
     if miliseconds_next_timeouts > 0 then
       reset_results (poll);
 
-      if not
-       (poll_wait (poll, int (miliseconds_next_timeouts))
-        and then is_receive (poll, sock))
-      then
+      if not (poll_wait (poll, int (miliseconds_next_timeouts)) and then is_receive (poll, sock)) then
         exit loop1;
       end if;
     end if;
