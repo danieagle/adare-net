@@ -31,8 +31,8 @@ is
       ai_socktype : Interfaces.C.int := 0;
       ai_protocol : Interfaces.C.int := 0;
       ai_addrlen  : socklen_t := 0;
-      ai_canonname  : Address :=  Null_Address;
       ai_addr       : Address := Null_Address;
+      ai_canonname  : Address :=  Null_Address;
       ai_next       : Address :=  Null_Address;
     end record
       with Convention => C;
