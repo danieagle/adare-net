@@ -6,9 +6,8 @@ is
   function inner_accept
     (sockfd_i     : socket_type;
     addr_i        : Address;
-    addr_length_i : in out socklen_t) return socket_type
+    addr_length_i : Address) return socket_type
     with Import => True, Convention => StdCall, External_Name => "accept";
-
 
   function inner_bind
     (sockfd_i           : in socket_type;
@@ -23,7 +22,7 @@ is
   function inner_connect
     (sockfd_i : socket_type;
     addr_i    : Address;
-    leng_i    : size_t) return int
+    leng_i    : int) return int
     with Import => True, Convention => StdCall, External_Name => "connect";
 
   function inner_getaddrinfo
@@ -33,11 +32,9 @@ is
      response_i : Address) return int
     with Import => True, Convention => StdCall, External_Name => "getaddrinfo";
 
-
   procedure inner_free_addrinfo
     (res_i  : Address)
     with Import => True, Convention => StdCall, External_Name => "freeaddrinfo";
-
 
   function inner_socket
     (domain_i   : in int;
@@ -56,8 +53,8 @@ is
      len_i  : int;
      flags_i  : int;
      from_i   : Address;
-     from_len_i : in out int
-    ) return int
+     from_len_i : Address -- *int
+    ) return ssize_t
     with Import => True, Convention => StdCall, External_Name => "recvfrom";
 
 
@@ -73,7 +70,7 @@ is
   function inner_recv
     (sock_i : socket_type;
      buf_i  : Address;
-     len_i  : size_t;
+     len_i  : int;
      flags_i  : int
      ) return ssize_t
      with Import => True, Convention => StdCall, External_Name => "recv";
@@ -88,26 +85,26 @@ is
   function inner_send
     (sock_i : socket_type;
      buf_i  : Address;
-     len_i  : size_t;
+     len_i  : int;
      flags_i  : int
-    ) return ssize_t
+    ) return int
     with Import => True, Convention => StdCall, External_Name => "send";
 
   function inner_sendto
     (sock_i : socket_type;
      buf_i  : Address;
-     len_i  : size_t;
+     len_i  : int;
      flags_i  : int;
      to_i     : Address;
-     to_len_i : socklen_t
-     ) return ssize_t
+     to_len_i : int
+     ) return int
      with Import => True, Convention => StdCall, External_Name => "sendto";
 
   procedure inner_inet_ntop
     (af : int;
      src  : Address;
      dst  : Address;
-     size : socklen_t)
+     size : size_t)
      with Import => True, Convention => StdCall, External_Name => "inet_ntop";
 
   function inner_ntohs
