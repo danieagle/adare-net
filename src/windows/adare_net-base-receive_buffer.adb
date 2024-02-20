@@ -20,7 +20,7 @@ is
   receive_data_address : constant Address     := receive_data (1)'Address;
   receive_data_length  : constant size_t      := receive_data'Length;
 
-  socket_address_length : socklen_t := storage_size;
+  socket_address_length : Interfaces.C.int  :=  Interfaces.C.int (storage_size);
 
   tmp_received_address : aliased socket_address :=
    (if proto = tcp then null_socket_address else sock.storage);
@@ -52,16 +52,18 @@ begin
     case proto is
       when tcp =>
 
-        received_length :=  inner_recv (sock.sock, receive_data_address, receive_data_length, 0);
+        received_length :=  ssize_t (inner_recv (sock.sock, receive_data_address,
+          Interfaces.C.int (receive_data_length), 0));
 
       when udp =>
 
-        received_length :=  inner_recvfrom (sock.sock, receive_data_address, receive_data_length, 0,
-             tmp_received_address.storage'Address, socket_address_length'Address);
+        received_length :=  ssize_t (inner_recvfrom (sock.sock, receive_data_address,
+          Interfaces.C.int (receive_data_length), 0,
+             tmp_received_address.storage'Address, socket_address_length'Address));
 
-        tmp_received_address.addr_length := socket_address_length;
+        tmp_received_address.addr_length := socklen_t (socket_address_length);
 
-        socket_address_length := storage_size;
+        socket_address_length := Interfaces.C.int (storage_size);
 
     end case;
 

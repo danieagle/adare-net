@@ -12,7 +12,7 @@ begin
   b0 :
   declare
     mi_addresses  : aliased socket_addresses;
-    mi_address    : aliased socket_address;
+    mi_address    : aliased socket_address := null_socket_address;
   begin
 
     Text_IO.Put_Line (" addresses from google.com ");

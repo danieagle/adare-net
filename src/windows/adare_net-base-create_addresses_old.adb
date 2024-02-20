@@ -38,7 +38,7 @@ is
       hints_i      =>  hint'Address,
       response_i   =>  tmp_getted_response'Address);
 
-  mi_null_addrinfo  : aliased constant addr_info := To_Pointer (tmp_getted_response).all;
+  mi_null_addrinfo  : constant addr_info := To_Pointer (tmp_getted_response).all;
 
 begin
   response := mi_socket_addresses;

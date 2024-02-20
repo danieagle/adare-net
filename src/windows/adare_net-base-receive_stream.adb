@@ -22,7 +22,7 @@
     receive_data    : stream_element_array_access :=  new Stream_Element_Array'(1 .. (2**16 + 5) * 3 => 0);
     pos             : Stream_Element_Offset       := receive_data.all'First;
 
-    socket_address_length : socklen_t             :=  storage_size;
+    socket_address_length : Interfaces.C.int  :=  Interfaces.C.int (storage_size);
 
     poll          : aliased poll_of_events;
   begin
@@ -49,18 +49,18 @@
       case proto is
         when tcp =>
 
-          received_length := inner_recv (sock.sock, receive_data.all (pos)'Address,
-            receive_data.all'Length - size_t (pos), 0);
+          received_length := ssize_t (inner_recv (sock.sock, receive_data.all (pos)'Address,
+            receive_data.all'Length - Interfaces.C.int (pos), 0));
 
         when udp =>
 
-          received_length := inner_recvfrom (sock.sock, receive_data.all (pos)'Address,
-            receive_data.all'Length - size_t (pos), 0,
-            tmp_received_address.storage'Address, socket_address_length'Address);
+          received_length := ssize_t (inner_recvfrom (sock.sock, receive_data.all (pos)'Address,
+            receive_data.all'Length - Interfaces.C.int (pos), 0,
+            tmp_received_address.storage'Address, socket_address_length'Address));
 
-          tmp_received_address.addr_length := socket_address_length;
+          tmp_received_address.addr_length := socklen_t (socket_address_length);
 
-          socket_address_length :=  storage_size;
+          socket_address_length :=  Interfaces.C.int (storage_size);
 
       end case;
 

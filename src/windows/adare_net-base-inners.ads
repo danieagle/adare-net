@@ -54,7 +54,7 @@ is
      flags_i  : int;
      from_i   : Address;
      from_len_i : Address -- *int
-    ) return ssize_t
+    ) return int
     with Import => True, Convention => StdCall, External_Name => "recvfrom";
 
   function inner_recv
@@ -62,7 +62,7 @@ is
      buf_i  : Address;
      len_i  : int;
      flags_i  : int
-     ) return ssize_t
+     ) return int
      with Import => True, Convention => StdCall, External_Name => "recv";
 
   procedure inner_reset_errno
@@ -90,11 +90,11 @@ is
      ) return int
      with Import => True, Convention => StdCall, External_Name => "sendto";
 
-  procedure inner_inet_ntop
+  function inner_inet_ntop
     (af : int;
      src  : Address;
      dst  : Address;
-     size : size_t)
+     size : size_t) return Address
      with Import => True, Convention => StdCall, External_Name => "inet_ntop";
 
   function inner_ntohs

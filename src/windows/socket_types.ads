@@ -35,6 +35,6 @@ is
       ai_canonname  : Address :=  Null_Address;
       ai_next       : Address :=  Null_Address;
     end record
-      with Convention => C, Preelaborable_initialization;
+      with Convention => C;
 
 end socket_types;

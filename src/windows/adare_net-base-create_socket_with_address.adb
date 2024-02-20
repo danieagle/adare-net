@@ -36,7 +36,7 @@
       reuse_address (mi_response);
 
       if inner_bind (mi_response.sock, mi_response.storage.storage'Address,
-        mi_response.storage.addr_length) /= 0
+        Interfaces.C.int (mi_response.storage.addr_length)) /= 0
       then
         acc := inner_close (mi_response.sock);
         return False;
