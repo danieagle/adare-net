@@ -105,7 +105,7 @@ is
      Addr_type    : Address_type_label;
      response     : out socket_addresses) return Boolean;
 
-  function create_socket
+  function create_socket_with_address
     (sock_address : aliased socket_address;
      response     : out socket;
      bind_socket  : Boolean := False;
