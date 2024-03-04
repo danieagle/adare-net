@@ -15,7 +15,85 @@ extern "C" {
   const int c_sock_dgram = SOCK_DGRAM;
   const int c_sock_stream = SOCK_STREAM;
 
-  const int c_ai_passive = AI_PASSIVE;
+  const int8_t c_size_int = (int8_t) sizeof (int);
+  const int8_t c_size_uint16 = (int8_t) sizeof (uint16_t);
+
+void create_addresses (
+  const void* host,
+  const void* service,
+  void* data,
+  size_t* data_length,
+  enum address_family addr_family,
+  enum address_type addr_type
+){
+
+  if (data == NULL)
+  {
+    *data_length = 0;
+    return;
+  }
+
+  if (*data_length <  sizeof (int))
+  {
+    return;
+  }
+
+  struct addrinfo hints, *servinfo, *p;
+
+  memset(&hints, 0, sizeof hints);
+  hints.ai_family = (addr_family == any ? AF_UNSPEC : (addr_family == ipv6 ? AF_INET6 : AF_INET));
+
+  hints.ai_socktype = (addr_type == tcp ? SOCK_STREAM : SOCK_DGRAM);
+
+  hints.ai_flags = (host == NULL ? AI_PASSIVE : 0);
+
+  if (getaddrinfo(
+    (host == NULL ? NULL : (char *)host),
+    (service == NULL ? NULL : (char *)service),
+    &hints, &servinfo)
+    != 0
+  )
+  {
+      *data_length = 0;
+      return;
+  }
+
+  int i = 0;
+  int d = sizeof (int) + sizeof (uint16_t); // protocol + address length
+  int e = *data_length;
+  char* dt = data;
+
+  uint16_t  a_u16 = 0;
+  int       a_int = (int)(addr_type == tcp ? SOCK_STREAM : SOCK_DGRAM);
+
+  memcpy (&dt[i], &a_int, sizeof (int));
+
+  i += sizeof (int);
+
+  for (p = servinfo; p != NULL && i + d + (int)p->ai_addrlen < e; p = p->ai_next, ++i)
+  {
+    a_int = p->ai_protocol;
+
+    memcpy(&dt[i], &a_int, sizeof(int));
+
+    i += sizeof(int);
+
+    a_u16 = (uint16_t) p->ai_addrlen;
+
+    memcpy(&dt[i], &a_u16, sizeof (uint16_t));
+
+    i += sizeof (uint16_t);
+
+    memcpy(&dt[i], p->ai_addr, p->ai_addrlen);
+
+    i += p->ai_addrlen;
+
+  }
+
+  freeaddrinfo(servinfo);
+  *data_length = i;
+}
+
 
 void c_show_error (
   char message [],

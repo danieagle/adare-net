@@ -36,6 +36,19 @@ typedef int c_socket_type;
 extern "C" {
 #endif
 
+enum address_family {any, ipv4, ipv6};
+
+enum address_type {tcp, udp};
+
+void create_addresses (
+  const void* host,
+  const void* service,
+  void* data,
+  size_t* data_length,
+  enum address_family addr_family,
+  enum address_type addr_type
+);
+
 void c_show_error (
   char message[],
   int * len

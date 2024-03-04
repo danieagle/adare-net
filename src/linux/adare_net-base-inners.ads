@@ -25,17 +25,6 @@ is
     leng_i    : socklen_t) return int
     with Import => True, Convention => C, External_Name => "connect";
 
-  function inner_getaddrinfo
-    (host_or_ip_i : Address;
-     port_i   : Address;
-     hints_i  : Address;
-     response_i : Address) return int
-    with Import => True, Convention => C, External_Name => "getaddrinfo";
-
-  procedure inner_free_addrinfo
-    (res_i  : Address)
-    with Import => True, Convention => C, External_Name => "freeaddrinfo";
-
   function inner_socket
     (domain_i   : in int;
     type_i      : in int;
@@ -142,5 +131,15 @@ is
      count_i  : size_t
     ) return Address
     with Import => True, Convention => C, External_Name => "memcpy";
+
+  procedure inner_create_addresses
+    (host_i    : Address;
+     service_i : Address;
+     data_i    : Address;
+     data_length_i : Address;
+     addr_family_i : Address_family_label;
+     addr_type_i   : Address_type_label
+    )
+    with Import => True, Convention => C,  External_Name => "create_addresses";
 
 end adare_net.base.inners;

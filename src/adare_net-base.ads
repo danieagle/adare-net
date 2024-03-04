@@ -1,3 +1,4 @@
+
 with Interfaces.C;
 
 with Ada.Streams;
@@ -6,8 +7,6 @@ with socket_types;
 
 with System; use System;
 with System.Address_To_Access_Conversions;
-
-with Ada.Containers.Vectors;
 
 package adare_net.base
   with Preelaborate
@@ -26,61 +25,43 @@ is
 
   type ports  is new  Unsigned_16;
 
-
   type Address_family is new Unsigned_16;
 
-  type Address_family_label is (any, ipv4, ipv6);
+  type Address_family_label is (any, ipv4, ipv6)
+    with Convention => C;
 
-  tmp_any   : constant Address_family with Import => True, Convention => C, external_name => "c_af_unspec";
-  tmp_ipv4  : constant Address_family with Import => True, Convention => C, external_name => "c_af_inet";
-  tmp_ipv6  : constant Address_family with Import => True, Convention => C, external_name => "c_af_inet6";
-
-  function family (family_label : Address_family_label := any) return Address_family
+  function family (family_label : Address_family_label) return Address_family
     with Inline;
 
-  function family_label (a_family : Address_family := tmp_any) return Address_family_label
+  function family_label (a_family : Address_family) return Address_family_label
     with Inline;
 
 
   type Address_type is new int;
 
-  type Address_type_label is (tcp, udp);
+  type Address_type_label is (tcp, udp)
+    with Convention => C;
 
-  tmp_tcp : constant Address_type with Import => True, Convention => C, external_name => "c_sock_stream";
-  tmp_udp : constant Address_type with Import => True, Convention => C, external_name => "c_sock_dgram";
-
-  function a_type (type_label : Address_type_label := tcp) return Address_type
+  function a_type (type_label : Address_type_label) return Address_type
     with Inline;
 
-  function a_type_label (a_type : Address_type  := tmp_tcp) return Address_type_label
+  function a_type_label (a_type : Address_type) return Address_type_label
     with Inline;
 
 
-  ipv4_length : constant socklen_t with Import => True, Convention => C, External_Name => "c_v4_addrstrlen";
-  ipv6_length : constant socklen_t with Import => True, Convention => C, External_Name => "c_v6_str_length";
-
-  type socket_address is  private;
-
+  type socket_address is limited private;
   type socket_address_access is access all socket_address;
 
-  null_socket_address : constant socket_address;
-
-
-  type socket_addresses is  private;
-
+  type socket_addresses is limited private;
+  type socket_addresses_access is access all socket_addresses;
 
   type stream_element_array_access is access all Stream_Element_Array;
-
+  type char_array_access is access all char_array;
 
   type socket is private;
-
   type socket_access is access all socket;
 
-  null_socket : constant socket;
-
-
   type socket_buffer  is new Root_Stream_Type with private;
-
   type socket_buffer_access is access all socket_buffer;
 
 
@@ -103,100 +84,107 @@ is
      network_port_or_service  : String;
      Addr_family  : Address_family_label;
      Addr_type    : Address_type_label;
-     response     : out socket_addresses) return Boolean;
+     response     : aliased out socket_addresses;
+     quantity     : Unsigned_16 := 9) return Boolean;
 
   function create_socket_with_address
     (sock_address : aliased socket_address;
-     response     : out socket;
+     response     : aliased out socket;
      bind_socket  : Boolean := False;
      listen_socket  : Boolean := False;
      backlog        : Unsigned_16 := 10) return Boolean;
 
-  function create_socket
-    (sock_address : aliased in out socket_addresses;
-     response     : out socket;
-     bind_socket  : Boolean := False;
-     listen_socket  : Boolean := False;
-     backlog        : Unsigned_16 := 10) return Boolean;
+  --  function create_socket
+  --    (sock_address : aliased in out socket_addresses;
+  --     response     : out socket;
+  --     bind_socket  : Boolean := False;
+  --     listen_socket  : Boolean := False;
+  --     backlog        : Unsigned_16 := 10) return Boolean;
 
 
-  function connect
-    (sock : aliased in out socket) return Boolean
-     with Pre => is_initialized (sock);
+  --  function connect
+  --    (sock : aliased in out socket) return Boolean
+  --     with Pre => is_initialized (sock);
 
-  function wait_connection
-    (sock           : aliased in out socket;
-     response       : out socket;
-     data_received  : aliased out stream_element_array_access;
-     miliseconds_start_timeout  : Unsigned_32 := 0 -- default is wait forever.
-    ) return Boolean
-      with Pre => is_initialized (sock) and then is_binded (sock) and then is_listened (sock);
+  --  function wait_connection
+  --    (sock           : aliased in out socket;
+  --     response       : out socket;
+  --     data_received  : aliased out stream_element_array_access;
+  --     miliseconds_start_timeout  : Unsigned_32 := 0 -- default is wait forever.
+  --    ) return Boolean
+  --      with Pre => is_initialized (sock) and then is_binded (sock) and then is_listened (sock);
 
-  function send_buffer
-    (sock : aliased socket;
-     data_to_send : aliased in out socket_buffer;
-     send_count   : aliased out ssize_t;
-     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
-     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
-    ) return Boolean
-    with Pre => is_initialized (sock);
+  --  function send_buffer
+  --    (sock : aliased socket;
+  --     data_to_send : aliased in out socket_buffer;
+  --     send_count   : aliased out ssize_t;
+  --     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
+  --     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
+  --    ) return Boolean
+  --    with Pre => is_initialized (sock);
 
-  function send_stream
-    (sock : aliased socket;
-     data_to_send : aliased Stream_Element_Array;
-     send_count   : aliased out ssize_t;
-     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
-     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
-    ) return Boolean
-    with Pre => is_initialized (sock);
+  --  function send_stream
+  --    (sock : aliased socket;
+  --     data_to_send : aliased Stream_Element_Array;
+  --     send_count   : aliased out ssize_t;
+  --     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
+  --     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
+  --    ) return Boolean
+  --    with Pre => is_initialized (sock);
 
-  function receive_buffer
-    (sock : aliased socket;
-     data_to_receive  : aliased in out socket_buffer;
-     received_address : aliased out socket_address;
-     receive_count    : aliased out ssize_t;
-     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
-     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
-    ) return Boolean
-    with Pre => is_initialized (sock);
+  --  function receive_buffer
+  --    (sock : aliased socket;
+  --     data_to_receive  : aliased in out socket_buffer;
+  --     received_address : aliased out socket_address;
+  --     receive_count    : aliased out ssize_t;
+  --     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
+  --     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
+  --    ) return Boolean
+  --    with Pre => is_initialized (sock);
 
-  function receive_stream
-    (sock : aliased socket;
-     data_to_receive  : aliased out stream_element_array_access;
-     received_address : aliased out socket_address;
-     receive_count    : aliased out ssize_t;
-     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
-     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
-    ) return Boolean
-    with Pre => is_initialized (sock);
+  --  function receive_stream
+  --    (sock : aliased socket;
+  --     data_to_receive  : aliased out stream_element_array_access;
+  --     received_address : aliased out socket_address;
+  --     receive_count    : aliased out ssize_t;
+  --     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
+  --     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
+  --    ) return Boolean
+  --    with Pre => is_initialized (sock);
 
-  procedure clear
-    (sock_address : aliased in out socket_address);
+  --  procedure clear
+  --    (sock_address : aliased in out socket_address);
 
-  procedure clear -- remove all stored socket_address's
-    (sock_address : aliased in out socket_addresses);
+  --  procedure clear -- remove all stored socket_address's
+  --    (sock_address : aliased in out socket_addresses);
 
-  procedure clear
-    (buffer : aliased in out socket_buffer);
+  --  procedure clear
+  --    (buffer : aliased in out socket_buffer);
 
-  procedure rewind -- rewind to the first socket_address in socket_addresses
-    (sock_address : aliased in out socket_addresses);
+  --  procedure rewind -- rewind to the first socket_address in socket_addresses
+  --    (sock_address : aliased in out socket_addresses);
 
-  function get_address
-    (sock : aliased in socket) return socket_address;
+  --  function get_address
+  --    (sock : aliased in socket) return socket_address;
 
   function get_address
     (sock_address : aliased in out socket_addresses;
      result : aliased out socket_address) return Boolean;
 
-  function get_address_port
-    (sock_address : aliased in socket_address) return ports;
+  --  function get_address_port
+  --    (sock_address : aliased in socket_address) return ports;
 
-  function get_address_port
-    (sock_address : aliased in socket_address) return String;
+  --  function get_address_port
+  --    (sock_address : aliased in socket_address) return String;
 
-  function get_address
-    (sock_address : aliased in socket_address) return String;
+  --  function get_address
+  --    (sock_address : aliased in socket_address) return String;
+
+  function is_empty
+    (sock_address : aliased in socket_address) return Boolean;
+
+  function is_empty
+    (sock_address : aliased in socket_addresses) return Boolean;
 
   procedure close (sock : in out socket);
 
@@ -227,13 +215,6 @@ private
 
   function data_tail_length
     (buffer : aliased socket_buffer) return Stream_Element_Offset;
-
-  function family (family_label : Address_family_label := any) return Address_family
-    is (case family_label is when any => tmp_any, when ipv4 => tmp_ipv4, when ipv6 => tmp_ipv6);
-
-  function a_type (type_label : Address_type_label := tcp) return Address_type
-    is (case type_label is when tcp => tmp_tcp, when udp => tmp_udp);
-
 
   type in_addr is
     record
@@ -266,69 +247,28 @@ private
     end record
       with Convention => C;
 
-  type sockaddr_storage is
-    record
-      ss_family : aliased Unsigned_16 := 0;
-      padding   : aliased char_array (1 .. 132) := (others => char'Val (0));
-    end record
-      with Convention => C, Preelaborable_initialization;
-
-  type sockaddr_storage_access is access all sockaddr_storage;
-
-
-  type storage_union_tmp is (mi_storage, mi_ipv4, mi_ipv6);
-
-  type storage_union (mi_discr : storage_union_tmp := mi_storage) is
-    record
-      case mi_discr is
-        when mi_storage =>
-          ss  : sockaddr_storage := (others => <>);
-
-        when mi_ipv6 =>
-          i6  : sockaddr_in6 := (others => <>);
-
-        when mi_ipv4 =>
-          i4  : sockaddr_in := (others => <>);
-
-      end case;
-    end record
-      with Unchecked_Union, Convention => C;
-
   type socket_address  is
     record
-      storage   : aliased sockaddr_storage  := (others => <>);
-      socktype  : aliased Address_type    := 0; -- e.g: tcp
-      protocol  : aliased Address_family  := 0; -- e.g: any
-      addr_length : aliased socklen_t     := 0;
+      stor  : char_array_access := null;
     end record
       with Convention => C;
 
-  null_socket_address   : constant socket_address := (others => <>);
-
-
-  package Socket_Addresses_Lists is new Ada.Containers.Vectors (Index_Type => Positive, Element_Type => socket_address);
-  use Socket_Addresses_Lists;
-
-  subtype Socket_Addresses_List is Socket_Addresses_Lists.Vector;
-
   type socket_addresses is record
-    mi_next_cursor : Socket_Addresses_Lists.Cursor  := Socket_Addresses_Lists.No_Element;
-    mi_initialized : Boolean := False;
-    mi_list        : Socket_Addresses_List;
-  end record;
+    stor  : char_array_access := null;
+    next_cursor : size_t  := 0;
+    initialized : Boolean := False;
+  end record
+      with Convention => C;
 
   type socket is
     record
-      storage   : aliased socket_address;
-      sock      : aliased socket_type  := 0; -- /= 0 => socket() initialized
+      storage   : socket_address;
+      sock      : socket_type  := 0; -- /= 0 => socket() initialized
       connected : Boolean :=  False;
       binded    : Boolean :=  False;
       listened  : Boolean :=  False;
   end record
     with Convention => C;
-
-  null_socket : constant socket := (others => <>);
-
 
   type socket_buffer is new Root_Stream_Type with
     record
@@ -337,11 +277,25 @@ private
     end record
       with Preelaborable_initialization;
 
+  package a_int is new System.Address_To_Access_Conversions (int);
+  package a_uint16 is new System.Address_To_Access_Conversions (Unsigned_16);
 
-  package ainfo is new System.Address_To_Access_Conversions (addr_info);
-  use ainfo;
+  package a_sockaddr_in6 is new System.Address_To_Access_Conversions (sockaddr_in6);
+  package a_sockaddr_in4 is new System.Address_To_Access_Conversions (sockaddr_in);
 
-  function storage_size return socklen_t
-    with Inline;
+
+  sizint : constant Integer_8 with Import => True, Convention => C, External_Name => "c_size_int";
+  sizuint16 : constant Integer_8 with Import => True, Convention => C, External_Name => "c_size_uint16";
+
+  function pos_protocol (pos_actual : size_t) return size_t
+  is (pos_actual) with Inline;
+
+  function pos_addrlen (pos_actual : size_t) return size_t
+  is (pos_actual + size_t (sizint)) with Inline;
+
+  function pos_family (pos_actual : size_t) return size_t
+  is (pos_actual + size_t (sizint) + size_t (sizuint16)) with Inline;
+
+  function pos_address (pos_actual : size_t) return size_t renames pos_family;
 
 end adare_net.base;
