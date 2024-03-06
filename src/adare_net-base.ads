@@ -164,21 +164,21 @@ is
   procedure rewind -- rewind to the first socket_address in socket_addresses
     (sock_address : aliased in out socket_addresses);
 
-  --  function get_address
-  --    (sock : aliased in socket) return socket_address;
+  function get_address
+    (sock : aliased in socket) return socket_address;
 
   function get_address
     (sock_address : aliased in out socket_addresses;
      result : aliased out socket_address) return Boolean;
 
-  --  function get_address_port
-  --    (sock_address : aliased in socket_address) return ports;
+  function get_address_port
+    (sock_address : aliased in socket_address) return ports;
 
-  --  function get_address_port
-  --    (sock_address : aliased in socket_address) return String;
+  function get_address_port
+    (sock_address : aliased in socket_address) return String;
 
-  --  function get_address
-  --    (sock_address : aliased in socket_address) return String;
+  function get_address
+    (sock_address : aliased in socket_address) return String;
 
   function is_empty
     (sock_address : aliased in socket_address) return Boolean;

@@ -435,9 +435,9 @@ is
   --    buffer.data := null;
   --  end clear;
 
-  --  function get_address
-  --    (sock : aliased in socket) return socket_address
-  --  is (sock.storage);
+  function get_address
+    (sock : aliased in socket) return socket_address
+  is (socket_address'(stor => new char_array'(sock.storage.stor.all)));
 
   function get_address
     (sock_address : aliased in out socket_addresses;
@@ -484,73 +484,99 @@ is
     sock_address.initialized := False;
   end rewind;
 
-  --  function get_address_port
-  --    (sock_address : aliased in socket_address) return ports
-  --  is
-  --    tmp_addr_union : storage_union := (others => <>);
-  --    stype :  Address_family_label;
-  --  begin
-  --    tmp_addr_union.ss := sock_address.storage;
+  function get_address_port
+    (sock_address : aliased in socket_address) return ports
+  is
+    a_start     : constant size_t   :=  sock_address.stor.all'First;
+    a_family_addr : constant Address  :=
+      sock_address.stor.all (a_start  + size_t (sizint) + size_t (sizint) + size_t (sizuint16))'Address;
+    a_family_label  : constant Address_family_label := family_label (Address_family (a_uint16.To_Pointer (a_family_addr).all));
+  begin
+    if is_empty (sock_address) then
+      return 0;
+    end if;
 
-  --    stype := family_label (Address_family (tmp_addr_union.ss.ss_family));
+    if a_family_label = ipv4 then
+      b4 :
+      declare
+        tmp_addr  : constant sockaddr_in  := a_sockaddr_in4.To_Pointer (a_family_addr).all;
+      begin
+        return ports (inner_ntohs (tmp_addr.sin_port));
+      end b4;
+    end if;
 
-  --    return ports (inner_ntohs ((if stype = ipv6 then tmp_addr_union.i6.sin6_port
-  --      elsif stype = ipv4 then tmp_addr_union.i4.sin_port else 0)));
-  --  end get_address_port;
+    if a_family_label = ipv6 then
+      b6 :
+      declare
+        tmp_addr  : constant sockaddr_in6  := a_sockaddr_in6.To_Pointer (a_family_addr).all;
+      begin
+        return ports (inner_ntohs (tmp_addr.sin6_port));
+      end b6;
+    end if;
 
+    return 0;
+  end get_address_port;
 
-  --  function get_address_port
-  --    (sock_address : aliased in socket_address) return String
-  --  is
-  --    string_port : constant String :=  ports'(get_address_port (sock_address))'Image;
-  --  begin
-  --    return string_port (string_port'First + 1 .. string_port'Last);
-  --  end get_address_port;
+  function get_address_port
+    (sock_address : aliased in socket_address) return String
+  is
+    string_port : constant String :=  ports'(get_address_port (sock_address))'Image;
+  begin
+    return string_port (string_port'First + 1 .. string_port'Last);
+  end get_address_port;
 
+  function get_address
+    (sock_address : aliased in socket_address) return String
+  is
+    a_start       : constant size_t   :=  sock_address.stor.all'First;
+    a_family_addr : constant Address  :=  sock_address.stor.all (a_start  + size_t (sizint) +
+      size_t (sizint) + size_t (sizuint16))'Address;
+    a_family_label  : constant Address_family_label := family_label (Address_family
+      (a_uint16.To_Pointer (a_family_addr).all));
 
-  --  function get_address
-  --    (sock_address : aliased in socket_address) return String
-  --  is
-  --    tmp_addr_union : storage_union := (others => <>);
-  --    stype          : Address_family_label;
-  --    acc            : Address  := Null_Address
-  --      with Unreferenced;
-  --  begin
-  --    tmp_addr_union.ss := sock_address.storage;
-  --    stype := family_label (Address_family (tmp_addr_union.ss.ss_family));
+    dest : char_array :=
+      (1 .. size_t (if a_family_label = ipv4  then ipv4_length elsif a_family_label = ipv6  then ipv6_length else 0) => char'Val (0));
 
-  --    b0 :
-  --    declare
-  --      dest : char_array :=
-  --      (1 .. size_t (if stype = ipv4  then ipv4_length elsif stype = ipv6  then ipv6_length else 0) => char'Val (0));
+    dest_length : size_t := dest'Length;
 
-  --      dest_length : size_t := dest'Length;
-  --    begin
-  --      if dest_length = 0 then
-  --        return "unknown";
-  --      end if;
+    acc : Address := Null_Address
+      with Unreferenced;
 
-  --      if stype = ipv6 then
-  --        acc := inner_inet_ntop (int (tmp_addr_union.i6.sin6_family), tmp_addr_union.i6.sin6_addr'Address, dest'Address,
-  --          dest'Length);
-  --      end if;
+  begin
+    if is_empty (sock_address) or else dest'Length < 1 then
+      return "Unknown";
+    end if;
 
-  --      if stype = ipv4 then
-  --        acc := inner_inet_ntop (int (tmp_addr_union.i4.sin_family), tmp_addr_union.i4.sin_addr'Address, dest'Address,
-  --          dest'Length);
-  --      end if;
+    if a_family_label = ipv4 then
+      b4 :
+      declare
+        tmp_addr  : constant sockaddr_in  := a_sockaddr_in4.To_Pointer (a_family_addr).all;
+      begin
+        acc := inner_inet_ntop (int (tmp_addr.sin_family), tmp_addr.sin_addr'Address, dest'Address,
+          dest'Length);
+      end b4;
+    end if;
 
-  --      loop1 :
-  --      for E of reverse dest loop
+    if a_family_label = ipv6 then
+      b6 :
+      declare
+        tmp_addr  : constant sockaddr_in6  := a_sockaddr_in6.To_Pointer (a_family_addr).all;
+      begin
+        acc := inner_inet_ntop (int (tmp_addr.sin6_family), tmp_addr.sin6_addr'Address, dest'Address,
+          dest'Length);
+      end b6;
+    end if;
 
-  --        exit loop1 when E /= char'Val (0);
+    loop1 :
+    for E of reverse dest loop
 
-  --        dest_length := dest_length - 1;
-  --      end loop loop1;
+      exit loop1 when E /= char'Val (0);
 
-  --      return To_Ada (dest (1 .. dest_length), False);
-  --    end b0;
-  --  end get_address;
+      dest_length := dest_length - 1;
+    end loop loop1;
+
+    return To_Ada (dest (1 .. dest_length), False);
+  end get_address;
 
   procedure reuse_address
     (sock  : aliased in out socket) is
