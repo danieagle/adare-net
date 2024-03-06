@@ -51,7 +51,6 @@ is
     (sock : aliased in socket) return socket_type
   is (sock.sock);
 
-
   function is_empty
     (sock_address : aliased in socket_address) return Boolean
   is (sock_address.stor /= null);
@@ -59,7 +58,6 @@ is
   function is_empty
     (sock_address : aliased in socket_addresses) return Boolean
   is (sock_address.stor /= null);
-
 
   function a_type (type_label : Address_type_label) return Address_type
   is (case type_label is when tcp => tmp_tcp, when udp => tmp_udp);
@@ -102,7 +100,7 @@ is
   end family_label;
 
   function create_addresses
-    (host_or_ip : String;
+    (host_or_ip   : String;
      network_port_or_service  : String;
      Addr_family  : Address_family_label;
      Addr_type    : Address_type_label;
@@ -131,7 +129,7 @@ is
     return True;
   end create_addresses;
 
-  function create_socket_with_address
+  function create_socket
     (sock_address : aliased socket_address;
      response     : aliased out socket;
      bind_socket  : Boolean := False;
@@ -211,40 +209,67 @@ is
       return True;
 
     end b0;
-  end create_socket_with_address;
+  end create_socket;
 
+  function create_socket
+    (sock_address : aliased in out socket_addresses;
+     response     : out socket;
+     bind_socket  : Boolean := False;
+     listen_socket  : Boolean := False;
+     backlog        : Unsigned_16 := 10) return Boolean
+  is
+    mi_response   : aliased socket          := (others => <>);
+    mi_address    : aliased socket_address  := (others => <>);
+  begin
 
-  --  function create_socket
-  --    (sock_address : aliased in out socket_addresses;
-  --     response     : out socket;
-  --     bind_socket  : Boolean := False;
-  --     listen_socket  : Boolean := False;
-  --     backlog        : Unsigned_16 := 10) return Boolean
-  --  is
-  --    mi_response   : aliased socket  := null_socket;
-  --    mi_address    : aliased socket_address  := null_socket_address;
-  --  begin
+    rewind (sock_address);
 
-  --    rewind (sock_address);
+    response := (others => <>);
 
-  --    response := null_socket;
+    loop1 :
+    while get_address (sock_address, mi_address) loop
 
-  --    loop1 :
-  --    while get_address (sock_address, mi_address) loop
+      if create_socket (mi_address, mi_response, bind_socket, listen_socket, backlog) then
+        response := mi_response;
 
-  --      if create_socket_with_address (mi_address, mi_response, bind_socket, listen_socket, backlog) then
-  --        response := mi_response;
+        return True;
+      end if;
+    end loop loop1;
 
-  --        return True;
-  --      end if;
-  --    end loop loop1;
+    return False;
+  end create_socket;
 
-  --    return False;
-  --  end create_socket;
+  function connect
+    (sock : aliased in out socket) return Boolean
+  is
+  begin
+    if sock.binded or else sock.connected or else sock.listened then
+      return False;
+    end if;
 
-  --  function connect
-  --    (sock : aliased in out socket) return Boolean
-  --  is separate;
+    b0 :
+    declare
+      a_start       : constant size_t   :=  sock.storage.stor.all'First;
+      a_type_addr   : constant Address  :=  sock.storage.stor.all (a_start)'Address;
+      a_addr_length : constant Address  :=  sock.storage.stor.all (a_start + size_t (sizint) + size_t (sizint))'Address;
+    begin
+      if a_type_label (Address_type (a_int.To_Pointer (a_type_addr).all)) = udp then
+        sock.connected := True;
+
+        return True;
+      end if;
+
+      if inner_connect (sock.sock, sock.storage.stor.all'Address,
+        Interfaces.C.int (a_uint16.To_Pointer (a_addr_length).all)) /= 0
+      then
+        return False;
+      end if;
+
+      sock.connected := True;
+
+      return True;
+    end b0;
+  end connect;
 
   --  function wait_connection
   --    (sock           : aliased in out socket;
@@ -451,12 +476,13 @@ is
     return False;
   end get_address;
 
-  --  procedure rewind  -- rewind to the first socket_address in socket_addresses
-  --    (sock_address : aliased in out socket_addresses)
-  --  is
-  --  begin
-  --    sock_address.mi_initialized := False;
-  --  end rewind;
+  procedure rewind  -- rewind to the first socket_address in socket_addresses
+    (sock_address : aliased in out socket_addresses)
+  is
+  begin
+    sock_address.next_cursor := sock_address.stor.all'First + size_t (sizint);
+    sock_address.initialized := False;
+  end rewind;
 
   --  function get_address_port
   --    (sock_address : aliased in socket_address) return ports

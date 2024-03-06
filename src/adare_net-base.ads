@@ -80,31 +80,31 @@ is
     (buffer : aliased socket_buffer) return Integer_64;
 
   function create_addresses
-    (host_or_ip : String;
+    (host_or_ip   : String;
      network_port_or_service  : String;
      Addr_family  : Address_family_label;
      Addr_type    : Address_type_label;
      response     : aliased out socket_addresses;
      quantity     : Unsigned_16 := 9) return Boolean;
 
-  function create_socket_with_address
-    (sock_address : aliased socket_address;
+  function create_socket
+    (sock_address : aliased in socket_address;
      response     : aliased out socket;
      bind_socket  : Boolean := False;
      listen_socket  : Boolean := False;
      backlog        : Unsigned_16 := 10) return Boolean;
 
-  --  function create_socket
-  --    (sock_address : aliased in out socket_addresses;
-  --     response     : out socket;
-  --     bind_socket  : Boolean := False;
-  --     listen_socket  : Boolean := False;
-  --     backlog        : Unsigned_16 := 10) return Boolean;
+  function create_socket
+    (sock_address : aliased in out socket_addresses;
+     response     : out socket;
+     bind_socket  : Boolean := False;
+     listen_socket  : Boolean := False;
+     backlog        : Unsigned_16 := 10) return Boolean;
 
 
-  --  function connect
-  --    (sock : aliased in out socket) return Boolean
-  --     with Pre => is_initialized (sock);
+  function connect
+    (sock : aliased in out socket) return Boolean
+     with Pre => is_initialized (sock);
 
   --  function wait_connection
   --    (sock           : aliased in out socket;
@@ -161,8 +161,8 @@ is
   --  procedure clear
   --    (buffer : aliased in out socket_buffer);
 
-  --  procedure rewind -- rewind to the first socket_address in socket_addresses
-  --    (sock_address : aliased in out socket_addresses);
+  procedure rewind -- rewind to the first socket_address in socket_addresses
+    (sock_address : aliased in out socket_addresses);
 
   --  function get_address
   --    (sock : aliased in socket) return socket_address;

@@ -22,8 +22,14 @@ is
   function inner_connect
     (sockfd_i : socket_type;
     addr_i    : Address;
-    leng_i    : socklen_t) return int
+    leng_i    : int) return int
     with Import => True, Convention => C, External_Name => "connect";
+
+  --  function inner_connect
+  --    (sockfd_i : socket_type;
+  --    addr_i    : Address;
+  --    leng_i    : socklen_t) return int
+  --    with Import => True, Convention => C, External_Name => "connect";
 
   function inner_socket
     (domain_i   : in int;
