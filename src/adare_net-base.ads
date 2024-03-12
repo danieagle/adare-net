@@ -22,7 +22,6 @@ is
   pragma Assert (Interfaces.C.char'Size = Ada.Streams.Stream_Element'Size,
     "Actually C.char'Size need be equal to Stream_Element'Size but ask maintainers about this. :-)");
 
-
   type ports  is new  Unsigned_16;
 
   type Address_family is new Unsigned_16;
@@ -30,12 +29,11 @@ is
   type Address_family_label is (any, ipv4, ipv6)
     with Convention => C;
 
-  function family (family_label : Address_family_label) return Address_family
+  function a_family (a_family_label : Address_family_label) return Address_family
     with Inline;
 
-  function family_label (a_family : Address_family) return Address_family_label
+  function a_family_label (a_family : Address_family) return Address_family_label
     with Inline;
-
 
   type Address_type is new int;
 
@@ -48,7 +46,6 @@ is
   function a_type_label (a_type : Address_type) return Address_type_label
     with Inline;
 
-
   type socket_address is limited private;
   type socket_address_access is access all socket_address;
 
@@ -58,12 +55,11 @@ is
   type stream_element_array_access is access all Stream_Element_Array;
   type char_array_access is access all char_array;
 
-  type socket is private;
+  type socket is limited private;
   type socket_access is access all socket;
 
   type socket_buffer  is new Root_Stream_Type with private;
   type socket_buffer_access is access all socket_buffer;
-
 
   overriding
   procedure Read
@@ -92,36 +88,38 @@ is
      response     : aliased out socket;
      bind_socket  : Boolean := False;
      listen_socket  : Boolean := False;
-     backlog        : Unsigned_16 := 10) return Boolean;
+     backlog        : Unsigned_16 := 10) return Boolean
+     with Pre => not is_empty (sock_address);
 
   function create_socket
     (sock_address : aliased in out socket_addresses;
-     response     : out socket;
+     response     : aliased out socket;
      bind_socket  : Boolean := False;
      listen_socket  : Boolean := False;
-     backlog        : Unsigned_16 := 10) return Boolean;
-
+     backlog        : Unsigned_16 := 10) return Boolean
+     with Pre => not is_empty (sock_address);
 
   function connect
     (sock : aliased in out socket) return Boolean
-     with Pre => is_initialized (sock);
+     with Pre => is_initialized (sock) and then
+      not (is_binded (sock) or else is_listened (sock) or else is_connected (sock));
 
-  --  function wait_connection
-  --    (sock           : aliased in out socket;
-  --     response       : out socket;
-  --     data_received  : aliased out stream_element_array_access;
-  --     miliseconds_start_timeout  : Unsigned_32 := 0 -- default is wait forever.
-  --    ) return Boolean
-  --      with Pre => is_initialized (sock) and then is_binded (sock) and then is_listened (sock);
+  function wait_connection
+    (sock           : aliased in out socket;
+     response       : aliased out socket;
+     data_received  : aliased out stream_element_array_access;
+     miliseconds_start_timeout  : Unsigned_32 := 0 -- default is wait forever.
+    ) return Boolean
+      with Pre => is_initialized (sock) and then is_binded (sock) and then is_listened (sock);
 
-  --  function send_buffer
-  --    (sock : aliased socket;
-  --     data_to_send : aliased in out socket_buffer;
-  --     send_count   : aliased out ssize_t;
-  --     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
-  --     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
-  --    ) return Boolean
-  --    with Pre => is_initialized (sock);
+  function send_buffer
+    (sock : aliased socket;
+     data_to_send : aliased in out socket_buffer;
+     send_count   : aliased out ssize_t;
+     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
+     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
+    ) return Boolean
+    with Pre => is_initialized (sock);
 
   --  function send_stream
   --    (sock : aliased socket;
@@ -152,33 +150,39 @@ is
   --    ) return Boolean
   --    with Pre => is_initialized (sock);
 
-  --  procedure clear
-  --    (sock_address : aliased in out socket_address);
+  procedure clear
+    (sock_address : aliased in out socket_address);
 
-  --  procedure clear -- remove all stored socket_address's
-  --    (sock_address : aliased in out socket_addresses);
-
-  --  procedure clear
-  --    (buffer : aliased in out socket_buffer);
-
-  procedure rewind -- rewind to the first socket_address in socket_addresses
+  procedure clear -- remove all stored socket_address's
     (sock_address : aliased in out socket_addresses);
 
+  procedure clear
+    (buffer : aliased in out socket_buffer);
+
+  procedure rewind -- rewind to the first socket_address in socket_addresses
+    (sock_address : aliased in out socket_addresses)
+    with Pre => not is_empty (sock_address);
+
   function get_address
-    (sock : aliased in socket) return socket_address;
+    (sock : aliased in socket) return socket_address
+      with Pre => not is_initialized (sock);
 
   function get_address
     (sock_address : aliased in out socket_addresses;
-     result : aliased out socket_address) return Boolean;
+     result : aliased out socket_address) return Boolean
+      with Pre => not is_empty (sock_address);
 
   function get_address_port
-    (sock_address : aliased in socket_address) return ports;
+    (sock_address : aliased in socket_address) return ports
+      with Pre => not is_empty (sock_address);
 
   function get_address_port
-    (sock_address : aliased in socket_address) return String;
+    (sock_address : aliased in socket_address) return String
+      with Pre => not is_empty (sock_address);
 
   function get_address
-    (sock_address : aliased in socket_address) return String;
+    (sock_address : aliased in socket_address) return String
+      with Pre => not is_empty (sock_address);
 
   function is_empty
     (sock_address : aliased in socket_address) return Boolean;
@@ -287,15 +291,15 @@ private
   sizint : constant Integer_8 with Import => True, Convention => C, External_Name => "c_size_int";
   sizuint16 : constant Integer_8 with Import => True, Convention => C, External_Name => "c_size_uint16";
 
-  function pos_protocol (pos_actual : size_t) return size_t
-  is (pos_actual) with Inline;
+  --  function pos_protocol (pos_actual : size_t) return size_t
+  --  is (pos_actual) with Inline;
 
-  function pos_addrlen (pos_actual : size_t) return size_t
-  is (pos_actual + size_t (sizint)) with Inline;
+  --  function pos_addrlen (pos_actual : size_t) return size_t
+  --  is (pos_actual + size_t (sizint)) with Inline;
 
-  function pos_family (pos_actual : size_t) return size_t
-  is (pos_actual + size_t (sizint) + size_t (sizuint16)) with Inline;
+  --  function pos_family (pos_actual : size_t) return size_t
+  --  is (pos_actual + size_t (sizint) + size_t (sizuint16)) with Inline;
 
-  function pos_address (pos_actual : size_t) return size_t renames pos_family;
+  --  function pos_address (pos_actual : size_t) return size_t renames pos_family;
 
 end adare_net.base;

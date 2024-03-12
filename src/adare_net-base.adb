@@ -33,7 +33,7 @@ is
 
   function is_initialized
     (sock : aliased in socket) return Boolean
-  is (sock.sock /= 0);
+  is (sock.sock /= 0 and then sock.storage.stor /= null);
 
   function is_connected
     (sock : aliased in socket) return Boolean
@@ -53,11 +53,33 @@ is
 
   function is_empty
     (sock_address : aliased in socket_address) return Boolean
-  is (sock_address.stor /= null);
+  is (sock_address.stor = null);
 
   function is_empty
     (sock_address : aliased in socket_addresses) return Boolean
-  is (sock_address.stor /= null);
+  is (sock_address.stor = null);
+
+  function a_family (a_family_label : Address_family_label) return Address_family
+  is (case a_family_label is when any => tmp_any, when ipv4 => tmp_ipv4, when ipv6 => tmp_ipv6);
+
+  function a_family_label (a_family : Address_family) return Address_family_label
+  is
+  begin
+
+    if a_family = tmp_any then
+      return any;
+    end if;
+
+    if a_family = tmp_ipv4 then
+      return ipv4;
+    end if;
+
+    if a_family = tmp_ipv6 then
+      return ipv6;
+    end if;
+
+    raise Constraint_Error with " unknown Address_family ";
+  end a_family_label;
 
   function a_type (type_label : Address_type_label) return Address_type
   is (case type_label is when tcp => tmp_tcp, when udp => tmp_udp);
@@ -77,28 +99,6 @@ is
     raise Constraint_Error with " unknown Address_Type ";
   end a_type_label;
 
-  function family (family_label : Address_family_label) return Address_family
-  is (case family_label is when any => tmp_any, when ipv4 => tmp_ipv4, when ipv6 => tmp_ipv6);
-
-  function family_label (a_family : Address_family) return Address_family_label
-  is
-  begin
-
-    if a_family = tmp_any then
-      return any;
-    end if;
-
-    if a_family = tmp_ipv4 then
-      return ipv4;
-    end if;
-
-    if a_family = tmp_ipv6 then
-      return ipv6;
-    end if;
-
-    raise Constraint_Error with " unknown Address_family ";
-  end family_label;
-
   function create_addresses
     (host_or_ip   : String;
      network_port_or_service  : String;
@@ -107,7 +107,7 @@ is
      response     : aliased out socket_addresses;
      quantity     : Unsigned_16 := 9) return Boolean
   is
-    tmp_data        : char_array  := (1 .. 255 * size_t (quantity) => char'Val (0));
+    tmp_data        : char_array  := (1 .. 270 * size_t (quantity) => char'Val (0));
     tmp_data_length : size_t      :=  tmp_data'Length;
     tmp_host        : char_array  := To_C (host_or_ip);
     tmp_service     : char_array  := To_C (network_port_or_service);
@@ -138,7 +138,7 @@ is
   is
   begin
 
-    if sock_address.stor = null or else sock_address.stor.all'Length < 2 * (size_t (sizint) + size_t (sizuint16)) then
+    if sock_address.stor.all'Length < 2 * (size_t (sizint) + size_t (sizuint16)) then
       return False;
     end if;
 
@@ -146,13 +146,12 @@ is
 
     b0 :
     declare
-
       a_start     : constant size_t   :=  response.storage.stor.all'First;
 
       a_type_addr : constant Address  :=  response.storage.stor.all (a_start)'Address;
       a_protocol_addr : constant Address  :=  response.storage.stor.all (a_start + size_t (sizint))'Address;
       a_addr_length   : constant Address  :=  response.storage.stor.all (a_start + size_t (sizint) + size_t (sizint))'Address;
-      a_family_addr : constant Address  :=
+      a_family_addr   : constant Address  :=
         response.storage.stor.all (a_start  + size_t (sizint) + size_t (sizint) + size_t (sizuint16))'Address;
 
       a_addr  : constant Address  :=  a_family_addr;
@@ -178,9 +177,7 @@ is
       if bind_socket then
         reuse_address (response);
 
-        if inner_bind (response.sock, response.storage.stor.all'Address,
-          socklen_t (a_uint16.To_Pointer (a_addr_length).all)) /= 0
-        then
+        if inner_bind (response.sock, a_addr, int (a_uint16.To_Pointer (a_addr_length).all)) /= 0 then
           acc := inner_close (response.sock);
 
           response := (others => <>);
@@ -213,7 +210,7 @@ is
 
   function create_socket
     (sock_address : aliased in out socket_addresses;
-     response     : out socket;
+     response     : aliased out socket;
      bind_socket  : Boolean := False;
      listen_socket  : Boolean := False;
      backlog        : Unsigned_16 := 10) return Boolean
@@ -243,15 +240,17 @@ is
     (sock : aliased in out socket) return Boolean
   is
   begin
-    if sock.binded or else sock.connected or else sock.listened then
-      return False;
-    end if;
 
     b0 :
     declare
-      a_start       : constant size_t   :=  sock.storage.stor.all'First;
-      a_type_addr   : constant Address  :=  sock.storage.stor.all (a_start)'Address;
-      a_addr_length : constant Address  :=  sock.storage.stor.all (a_start + size_t (sizint) + size_t (sizint))'Address;
+      --  a_start       : constant size_t   :=  sock.storage.stor.all'First;
+      a_type_addr   : constant Address  :=  sock.storage.stor.all (sock.storage.stor.all'First)'Address;
+      a_addr_length : constant Address  :=
+        sock.storage.stor.all (sock.storage.stor.all'First + size_t (sizint) + size_t (sizint))'Address;
+
+      a_addr  : constant Address  :=
+        sock.storage.stor.all (sock.storage.stor.all'First  + size_t (sizint) + size_t (sizint) + size_t (sizuint16))'Address;
+
     begin
       if a_type_label (Address_type (a_int.To_Pointer (a_type_addr).all)) = udp then
         sock.connected := True;
@@ -259,9 +258,7 @@ is
         return True;
       end if;
 
-      if inner_connect (sock.sock, sock.storage.stor.all'Address,
-        Interfaces.C.int (a_uint16.To_Pointer (a_addr_length).all)) /= 0
-      then
+      if inner_connect (sock.sock, a_addr, int (a_uint16.To_Pointer (a_addr_length).all)) /= 0 then
         return False;
       end if;
 
@@ -271,113 +268,196 @@ is
     end b0;
   end connect;
 
-  --  function wait_connection
-  --    (sock           : aliased in out socket;
-  --     response       : out socket;
-  --     data_received  : aliased out stream_element_array_access;
-  --     miliseconds_start_timeout  : Unsigned_32 := 0 -- default is wait forever.
-  --    ) return Boolean
-  --  is separate;
-  --  --    use adare_net.base.waits;
+  function wait_connection
+    (sock           : aliased in out socket;
+     response       : aliased out socket;
+     data_received  : aliased out stream_element_array_access;
+     miliseconds_start_timeout  : Unsigned_32 := 0 -- default is wait forever.
+    ) return Boolean
+  is
+    use adare_net.base.waits;
 
-  --  --    mi_response     : socket    := sock;
-  --  --    mi_storage_size : socklen_t := storage_size;
-  --  --    proto           : constant Address_type_label := a_type_label (sock.storage.socktype);
-  --  --    poll            : aliased poll_of_events;
-  --  --  begin
+    proto       : constant Address_type_label
+      :=  a_type_label (Address_type (a_int.To_Pointer (sock.storage.stor.all (sock.storage.stor.all'First)'Address).all));
 
-  --  --    response      :=  null_socket;
-  --  --    data_received := null;
+    poll        : aliased poll_of_events;
+  begin
 
-  --  --    if not sock.listened then
-  --  --      return False;
-  --  --    end if;
+    response  := (others => <>);
+    data_received := null;
 
-  --  --    if miliseconds_start_timeout > 0  then
-  --  --      if not set_receive (poll, sock) then
-  --  --        return False;
-  --  --      end if;
+    if miliseconds_start_timeout > 0  then
+      if not set_receive (poll, sock) then
+        return False;
+      end if;
 
-  --  --      if not (poll_wait (poll, int (miliseconds_start_timeout)) and then is_receive (poll, sock)) then
-  --  --        close (poll);
+      if not (poll_wait (poll, int (miliseconds_start_timeout)) and then is_receive (poll, sock)) then
+        close (poll);
 
-  --  --        return False;
-  --  --      end if;
+        return False;
+      end if;
 
-  --  --      close (poll);
-  --  --    end if;
+      close (poll);
+    end if;
 
-  --  --    if proto = tcp then
-  --  --      mi_response.sock := inner_accept (sock.sock,
-  --  --        mi_response.storage.storage'Address, mi_storage_size'Address);
+    b0 :
+    declare
+      storage           : aliased char_array  := (1 .. 270 => char'Val (0));
+      storage_addr_len  : constant Address    := storage (storage'First + size_t (sizint) + size_t (sizint))'Address;
+      storage_addr  : constant Address  := storage (storage'First + size_t (sizint) + size_t (sizint) + size_t (sizuint16))'Address;
+      storage_len   : aliased size_t    := storage'Length - (size_t (sizint) + size_t (sizint) + size_t (sizuint16));
+    begin
+      storage (1 .. size_t (sizint) + size_t (sizint))
+            := sock.storage.stor.all (sock.storage.stor.all'First .. sock.storage.stor.all'First +
+              size_t (sizint) + size_t (sizint) - 1);
 
-  --  --      if mi_response.sock = invalid_socket then
-  --  --        return False;
-  --  --      end if;
+      if proto = tcp then
 
-  --  --      mi_response.storage.addr_length :=  mi_storage_size;
+        response.sock := inner_accept (sock.sock, storage_addr, storage_len'Address);
 
-  --  --      mi_response.connected :=  True;
-  --  --      mi_response.binded    :=  False;
-  --  --      mi_response.listened  :=  False;
+        if response.sock = invalid_socket then
+          response  := (others => <>);
 
-  --  --      response  := mi_response;
+          return False;
+        end if;
 
-  --  --      return True;
-  --  --    end if;
+        a_uint16.To_Pointer (storage_addr_len).all := Unsigned_16 (storage_len);
 
-  --  --    if proto = udp then
-  --  --      b1 :
-  --  --      declare
-  --  --        data_tmp  : Stream_Element_Array := (1 .. (2**16 + 5) * 3 => 0);
-  --  --        len       : ssize_t;
-  --  --        len_tmp   : aliased socklen_t := storage_size;
-  --  --        acc       : Interfaces.C.int := 0
-  --  --          with Unreferenced;
+        response.connected :=  True;
+        response.binded    :=  False;
+        response.listened  :=  False;
 
-  --  --        mi_socket_fd  : socket_type := 0;
-  --  --      begin
+        response.storage.stor  := new char_array'(storage (1 .. storage_len + size_t (sizint) + size_t (sizint) + size_t (sizuint16)));
 
-  --  --        len :=  ssize_tinner_recvfrom (sock.sock, data_tmp'Address, data_tmp'Length, 0,
-  --  --          mi_response.storage.storage'Address, len_tmp'Address);
+        return True;
+      end if;
 
-  --  --        if len = socket_error or else len < 1 then
-  --  --          return False;
-  --  --        end if;
+      if proto = udp then
+        b1 :
+        declare
+          data_tmp  : Stream_Element_Array := (1 .. (2**16 + 5) * 3 => 0);
+          len       : ssize_t;
+          addr_sock : aliased socket_address  := (stor => null);
+        begin
 
-  --  --        mi_response.storage.addr_length := len_tmp;
+          len :=  inner_recvfrom (sock.sock, data_tmp'Address, data_tmp'Length, 0,
+            storage_addr, storage_len'Address);
 
-  --  --        mi_socket_fd :=
-  --  --          inner_socket (int (mi_response.storage.storage.ss_family),
-  --  --            Interfaces.C.int (mi_response.storage.socktype),
-  --  --            Interfaces.C.int (mi_response.storage.protocol));
+          if len = socket_error or else len < 1 then
+            return False;
+          end if;
 
-  --  --        if mi_socket_fd = invalid_socket then
-  --  --          return False;
-  --  --        end if;
+          a_uint16.To_Pointer (storage_addr_len).all := Unsigned_16 (storage_len);
+          addr_sock.stor  := new char_array'(storage (1 .. storage_len + size_t (sizint) + size_t (sizint) + size_t (sizuint16)));
 
-  --  --        mi_response.sock := mi_socket_fd;
+          if not create_socket
+               (sock_address  => addr_sock,
+                response      => response,
+                bind_socket   => False,
+                listen_socket => False,
+                backlog       => 10)
+          then
+            return False;
+          end if;
 
-  --  --        data_received := new Stream_Element_Array'(data_tmp (1 .. Ada.Streams.Stream_Element_Offset (len)));
+          data_received := new Stream_Element_Array'(data_tmp (1 .. Ada.Streams.Stream_Element_Offset (len)));
 
-  --  --        response := mi_response;
+          response.connected :=  True;
 
-  --  --        return True;
+          return True;
+        end b1;
+      end if;
+    end b0;
 
-  --  --      end b1;
-  --  --    end if;
+    return False;
+  end wait_connection;
 
-  --  --    return False;
-  --  --  end wait_connection;
+  function send_buffer
+    (sock : aliased socket;
+     data_to_send : aliased in out socket_buffer;
+     send_count   : aliased out ssize_t;
+     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
+     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
+    ) return Boolean
+  is
+    use adare_net.base.waits;
+    pos           : Stream_Element_Offset :=  data_to_send.head_first;
+    remaining     : ssize_t :=  ssize_t (actual_data_size (data_to_send));
+    sended_length : ssize_t :=  0;
+    total_sended  : ssize_t :=  0;
+    proto         : constant Address_type_label :=
+      a_type_label (Address_type (a_int.To_Pointer (sock.storage.stor.all (sock.storage.stor.all'First)'Address).all));
 
-  --  function send_buffer
-  --    (sock : aliased socket;
-  --     data_to_send : aliased in out socket_buffer;
-  --     send_count   : aliased out ssize_t;
-  --     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
-  --     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
-  --    ) return Boolean
-  --  is separate;
+    addr_len  : constant int  := int (a_uint16.To_Pointer (sock.storage.stor.all (sock.storage.stor.all'First + size_t (sizint) + size_t (sizint))'Address).all);
+    addr      : constant Address  := sock.storage.stor.all (sock.storage.stor.all'First + size_t (sizint) + size_t (sizint) + size_t (sizuint16))'Address;
+
+    poll          : aliased poll_of_events;
+  begin
+    send_count := 0;
+
+    if remaining = 0 then
+      return True;
+    end if;
+
+    if miliseconds_start_timeout > 0  or else miliseconds_next_timeouts > 0 then
+      if not set_send (poll, sock) then
+        return False;
+      end if;
+
+      if miliseconds_start_timeout > 0 then
+        if not (poll_wait (poll, int (miliseconds_start_timeout)) and then is_send (poll, sock)) then
+          return False;
+        end if;
+      end if;
+    end if;
+
+    loop1 :
+    loop
+      case proto is
+
+        when tcp =>
+
+          sended_length := inner_send (sock.sock, data_to_send.data (pos)'Address, size_t (remaining), 0);
+
+        when udp =>
+
+          sended_length := inner_sendto (sock.sock, data_to_send.data (pos)'Address, size_t (remaining), 0,
+            addr, addr_len);
+
+      end case;
+
+      exit loop1 when sended_length < 1 or else sended_length = socket_error;
+
+      pos := pos + Stream_Element_Offset (sended_length);
+
+      total_sended  := total_sended + sended_length;
+
+      exit loop1 when remaining = sended_length;
+
+      remaining :=  remaining - sended_length;
+
+      exit loop1 when remaining < 1;
+
+      if miliseconds_next_timeouts > 0 then
+        reset_results (poll);
+
+        if not (poll_wait (poll, int (miliseconds_next_timeouts)) and then is_send (poll, sock)) then
+          exit loop1;
+        end if;
+      end if;
+
+    end loop loop1;
+
+    data_to_send.head_first := data_to_send.head_first + Stream_Element_Count (total_sended);
+
+    send_count := total_sended;
+
+    if miliseconds_start_timeout > 0  or else miliseconds_next_timeouts > 0 then
+      close (poll);
+    end if;
+
+    return True;
+  end send_buffer;
 
   --  function send_stream
   --    (sock : aliased socket;
@@ -408,32 +488,30 @@ is
   --    ) return Boolean
   --  is separate;
 
-  --  procedure clear
-  --    (sock_address : aliased in out socket_address)
-  --  is
-  --  begin
-  --    sock_address  :=  null_socket_address;
-  --  end clear;
+  procedure clear
+    (sock_address : aliased in out socket_address)
+  is
+  begin
+    sock_address.stor  :=  null;
+  end clear;
 
-  --  procedure clear  -- remove all stored socket_address's
-  --    (sock_address : aliased in out socket_addresses)
-  --  is
-  --  begin
-  --    if not Is_Empty (sock_address.mi_list) then
-  --      Clear (sock_address.mi_list);
-  --    end if;
-  --    sock_address.mi_next_cursor := Socket_Addresses_Lists.No_Element;
-  --    sock_address.mi_initialized := False;
-  --  end clear;
+  procedure clear  -- remove all stored socket_address's
+    (sock_address : aliased in out socket_addresses)
+  is
+  begin
+    sock_address.stor :=  null;
+    sock_address.next_cursor := 0;
+    sock_address.initialized := False;
+  end clear;
 
-  --  procedure clear
-  --    (buffer : aliased in out socket_buffer)
-  --  is
-  --  begin
-  --    buffer.head_first := 0;
-  --    buffer.tail_end := 0;
-  --    buffer.data := null;
-  --  end clear;
+  procedure clear
+    (buffer : aliased in out socket_buffer)
+  is
+  begin
+    buffer.head_first := 0;
+    buffer.tail_end := 0;
+    buffer.data := null;
+  end clear;
 
   function get_address
     (sock : aliased in socket) return socket_address
@@ -445,10 +523,6 @@ is
   is
   begin
 
-    if is_empty (sock_address) then
-      return False;
-    end if;
-
     if not sock_address.initialized then
       sock_address.next_cursor := sock_address.stor.all'First + size_t (sizint);
       sock_address.initialized := True;
@@ -458,8 +532,8 @@ is
       b0 :
       declare
         pos_first : constant size_t := sock_address.stor.all'First;
-        pos_last  : constant size_t := pos_address  (sock_address.next_cursor) +
-          size_t (a_uint16.To_Pointer (sock_address.stor.all (pos_addrlen (sock_address.next_cursor))'Address).all);
+        pos_last  : constant size_t := sock_address.next_cursor + size_t (sizint) + size_t (sizuint16) +
+          size_t (a_uint16.To_Pointer (sock_address.stor.all (sock_address.next_cursor + size_t (sizint) + size_t (sizuint16))'Address).all);
       begin
         result.stor := new char_array'(
           sock_address.stor.all (pos_first .. (pos_first + size_t (sizint)) - 1) &
@@ -490,13 +564,10 @@ is
     a_start     : constant size_t   :=  sock_address.stor.all'First;
     a_family_addr : constant Address  :=
       sock_address.stor.all (a_start  + size_t (sizint) + size_t (sizint) + size_t (sizuint16))'Address;
-    a_family_label  : constant Address_family_label := family_label (Address_family (a_uint16.To_Pointer (a_family_addr).all));
+    a_family_label2  : constant Address_family_label := a_family_label (Address_family (a_uint16.To_Pointer (a_family_addr).all));
   begin
-    if is_empty (sock_address) then
-      return 0;
-    end if;
 
-    if a_family_label = ipv4 then
+    if a_family_label2 = ipv4 then
       b4 :
       declare
         tmp_addr  : constant sockaddr_in  := a_sockaddr_in4.To_Pointer (a_family_addr).all;
@@ -505,7 +576,7 @@ is
       end b4;
     end if;
 
-    if a_family_label = ipv6 then
+    if a_family_label2 = ipv6 then
       b6 :
       declare
         tmp_addr  : constant sockaddr_in6  := a_sockaddr_in6.To_Pointer (a_family_addr).all;
@@ -531,11 +602,11 @@ is
     a_start       : constant size_t   :=  sock_address.stor.all'First;
     a_family_addr : constant Address  :=  sock_address.stor.all (a_start  + size_t (sizint) +
       size_t (sizint) + size_t (sizuint16))'Address;
-    a_family_label  : constant Address_family_label := family_label (Address_family
+    a_family_label2  : constant Address_family_label := a_family_label (Address_family
       (a_uint16.To_Pointer (a_family_addr).all));
 
     dest : char_array :=
-      (1 .. size_t (if a_family_label = ipv4  then ipv4_length elsif a_family_label = ipv6  then ipv6_length else 0) => char'Val (0));
+      (1 .. size_t (if a_family_label2 = ipv4  then ipv4_length elsif a_family_label2 = ipv6  then ipv6_length else 0) => char'Val (0));
 
     dest_length : size_t := dest'Length;
 
@@ -543,11 +614,11 @@ is
       with Unreferenced;
 
   begin
-    if is_empty (sock_address) or else dest'Length < 1 then
+    if dest'Length < 1 then
       return "Unknown";
     end if;
 
-    if a_family_label = ipv4 then
+    if a_family_label2 = ipv4 then
       b4 :
       declare
         tmp_addr  : constant sockaddr_in  := a_sockaddr_in4.To_Pointer (a_family_addr).all;
@@ -557,7 +628,7 @@ is
       end b4;
     end if;
 
-    if a_family_label = ipv6 then
+    if a_family_label2 = ipv6 then
       b6 :
       declare
         tmp_addr  : constant sockaddr_in6  := a_sockaddr_in6.To_Pointer (a_family_addr).all;
@@ -588,8 +659,7 @@ is
     socket_fd : constant int := inner_close (sock.sock)
       with unreferenced;
   begin
-    --  sock := null_socket;
-    null;
+    sock := (others => <>);
   end close;
 
   overriding

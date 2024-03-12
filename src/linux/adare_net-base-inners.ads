@@ -12,8 +12,14 @@ is
   function inner_bind
     (sockfd_i           : socket_type;
     addr_i              : Address;
-    address_length_i    : socklen_t) return int
+    address_length_i    : in int) return int
     with Import => True, Convention => C, External_Name => "bind";
+
+  --  function inner_bind
+  --    (sockfd_i           : socket_type;
+  --    addr_i              : Address;
+  --    address_length_i    : socklen_t) return int
+  --    with Import => True, Convention => C, External_Name => "bind";
 
   function inner_close
     (sock_i : socket_type) return int
@@ -81,9 +87,19 @@ is
      len_i  : size_t;
      flags_i  : int;
      to_i     : Address;
-     to_len_i : socklen_t
+     to_len_i : int
      ) return ssize_t
      with Import => True, Convention => C, External_Name => "sendto";
+
+  --  function inner_sendto
+  --    (sock_i : socket_type;
+  --     buf_i  : Address;
+  --     len_i  : size_t;
+  --     flags_i  : int;
+  --     to_i     : Address;
+  --     to_len_i : socklen_t
+  --     ) return ssize_t
+  --     with Import => True, Convention => C, External_Name => "sendto";
 
   function inner_inet_ntop
     (af : int;
