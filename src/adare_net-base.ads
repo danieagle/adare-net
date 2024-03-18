@@ -61,6 +61,10 @@ is
   type socket_buffer  is new Root_Stream_Type with private;
   type socket_buffer_access is access all socket_buffer;
 
+
+  sizint : constant Integer_8 with Import => True, Convention => C, External_Name => "c_size_int";
+  sizuint16 : constant Integer_8 with Import => True, Convention => C, External_Name => "c_size_uint16";
+
   overriding
   procedure Read
     (Stream : in out socket_buffer;
@@ -121,24 +125,24 @@ is
     ) return Boolean
     with Pre => is_initialized (sock);
 
-  --  function send_stream
-  --    (sock : aliased socket;
-  --     data_to_send : aliased Stream_Element_Array;
-  --     send_count   : aliased out ssize_t;
-  --     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
-  --     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
-  --    ) return Boolean
-  --    with Pre => is_initialized (sock);
+  function send_stream
+    (sock : aliased socket;
+     data_to_send : aliased Stream_Element_Array;
+     send_count   : aliased out ssize_t;
+     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
+     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
+    ) return Boolean
+    with Pre => is_initialized (sock);
 
-  --  function receive_buffer
-  --    (sock : aliased socket;
-  --     data_to_receive  : aliased in out socket_buffer;
-  --     received_address : aliased out socket_address;
-  --     receive_count    : aliased out ssize_t;
-  --     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
-  --     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
-  --    ) return Boolean
-  --    with Pre => is_initialized (sock);
+  function receive_buffer
+    (sock : aliased socket;
+     data_to_receive  : aliased in out socket_buffer;
+     received_address : aliased out socket_address;
+     receive_count    : aliased out ssize_t;
+     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
+     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
+    ) return Boolean
+    with Pre => is_initialized (sock);
 
   --  function receive_stream
   --    (sock : aliased socket;
@@ -208,6 +212,124 @@ is
 
   function get_socket
     (sock : aliased in socket) return socket_type;
+
+  function get_raw_length
+    (from : aliased in socket_addresses) return size_t
+    with Pre => not is_empty (from);
+
+  function get_address_type
+    (from : not null char_array_access) return Address_type_label
+    with Pre => from.all'Length >= size_t (sizint);
+
+  function get_address_type
+    (from : aliased in char_array) return Address_type_label
+    with Pre => from'Length >= size_t (sizint);
+
+  function get_address_type
+    (from : aliased in socket) return Address_type_label
+    with Pre => is_initialized (from);
+
+  function get_address_type
+    (from : aliased in socket_address) return Address_type_label
+    with Pre => not is_empty (from);
+
+  function get_address_type
+    (from : aliased in socket_addresses) return Address_type_label
+    with Pre => not is_empty (from) and then get_raw_length (from) >= size_t (sizint);
+
+
+  function get_address_protocol
+    (from : not null char_array_access) return int
+    with Pre => from.all'Length >= 2 * size_t (sizint);
+
+  function get_address_protocol
+    (from : aliased in char_array) return int
+    with Pre => from'Length >= 2 * size_t (sizint);
+
+  function get_address_protocol
+    (from : aliased in socket) return int
+    with Pre => is_initialized (from);
+
+  function get_address_protocol
+    (from : aliased in socket_address) return int
+    with Pre => not is_empty (from);
+
+  function get_address_protocol
+    (from : aliased in socket_addresses;
+     address_start_at : size_t) return int
+    with Pre => not is_empty (from) and then get_raw_length (from) >= address_start_at + (2 * size_t (sizint));
+
+
+  function get_address_length
+    (from : not null char_array_access) return Unsigned_16
+    with Pre => from.all'Length >= (2 * size_t (sizint)) + size_t (sizuint16);
+
+  function get_address_length
+    (from : aliased in char_array) return Unsigned_16
+    with Pre => from'Length >= (2 * size_t (sizint)) + size_t (sizuint16);
+
+  function get_address_length
+    (from : aliased in socket) return Unsigned_16
+    with Pre => is_initialized (from);
+
+  function get_address_length
+    (from : aliased in socket_address) return Unsigned_16
+    with Pre => not is_empty (from);
+
+  function get_address_length
+    (from : aliased in socket_addresses;
+     address_start_at : size_t) return Unsigned_16
+    with Pre => not is_empty (from) and then get_raw_length (from) >= address_start_at + size_t (sizuint16) + (2 * size_t (sizint));
+
+
+  function get_address_and_family
+    (from : not null char_array_access) return Address
+    with Pre => from.all'Length >= (2 * size_t (sizint)) + size_t (sizuint16);
+
+  function get_address_and_family
+    (from : aliased in char_array) return Address
+    with Pre => from'Length >= (2 * size_t (sizint)) + size_t (sizuint16);
+
+  function get_address_and_family
+    (from : aliased in socket) return Address
+    with Pre => is_initialized (from);
+
+  function get_address_and_family
+    (from : aliased in socket_address) return Address
+    with Pre => not is_empty (from);
+
+  function get_address_and_family
+    (from : aliased in socket_addresses;
+     address_start_at : size_t) return Address
+    with Pre => not is_empty (from) and then get_raw_length (from) >= address_start_at + size_t (sizuint16) + (2 * size_t (sizint));
+
+
+  procedure set_address_length
+    (from : not null char_array_access;
+     length : Unsigned_16)
+    with Pre => from.all'Length >= (2 * size_t (sizint)) + size_t (sizuint16);
+
+  procedure set_address_length
+    (from : aliased in char_array;
+     length : Unsigned_16)
+    with Pre => from'Length >= (2 * size_t (sizint)) + size_t (sizuint16);
+
+  procedure set_address_length
+    (from : aliased in socket;
+     length : Unsigned_16)
+    with Pre => is_initialized (from);
+
+  procedure set_address_length
+    (from : aliased in socket_address;
+     length : Unsigned_16)
+    with Pre => not is_empty (from);
+
+  procedure set_address_length
+    (from : aliased in socket_addresses;
+     address_start_at : size_t;
+     length : Unsigned_16)
+    with Pre => not is_empty (from) and then get_raw_length (from) >= address_start_at + size_t (sizuint16) + (2 * size_t (sizint));
+
 
 private
 
@@ -286,20 +408,5 @@ private
 
   package a_sockaddr_in6 is new System.Address_To_Access_Conversions (sockaddr_in6);
   package a_sockaddr_in4 is new System.Address_To_Access_Conversions (sockaddr_in);
-
-
-  sizint : constant Integer_8 with Import => True, Convention => C, External_Name => "c_size_int";
-  sizuint16 : constant Integer_8 with Import => True, Convention => C, External_Name => "c_size_uint16";
-
-  --  function pos_protocol (pos_actual : size_t) return size_t
-  --  is (pos_actual) with Inline;
-
-  --  function pos_addrlen (pos_actual : size_t) return size_t
-  --  is (pos_actual + size_t (sizint)) with Inline;
-
-  --  function pos_family (pos_actual : size_t) return size_t
-  --  is (pos_actual + size_t (sizint) + size_t (sizuint16)) with Inline;
-
-  --  function pos_address (pos_actual : size_t) return size_t renames pos_family;
 
 end adare_net.base;
