@@ -39,8 +39,8 @@ begin
   b0 :
   declare
     host_socket_addresses : aliased socket_addresses;
-    tmp_socket_address    : aliased socket_address := null_socket_address;
-    host_socket           : aliased socket := null_socket;
+    tmp_socket_address    : aliased socket_address;
+    host_socket           : aliased socket;
   begin
 
     if not create_addresses
@@ -62,7 +62,8 @@ begin
     Text_IO.Put_Line (" Addresses Discovered in this host:");
 
     while get_address (host_socket_addresses, tmp_socket_address) loop
-      Text_IO.Put_Line (" address => " & get_address (tmp_socket_address) & " and port => " & get_address_port (tmp_socket_address));
+      Text_IO.Put_Line ("type => " & get_address_type (tmp_socket_address) & " address => " &
+        get_address (tmp_socket_address) & " and port => " & get_address_port (tmp_socket_address));
       Text_IO.New_Line;
     end loop;
 
@@ -72,7 +73,7 @@ begin
       goto end_app_label1;
     end if;
 
-    tmp_socket_address  :=  get_address (host_socket);
+    get_address (host_socket, tmp_socket_address);
 
     Text_IO.New_Line;
 
@@ -88,9 +89,8 @@ begin
 
       task body recv_send_task
       is
-        task_socket     : aliased socket := connected_sock.all;
 
-        remote_address  : aliased constant socket_address  := get_address (task_socket);
+        remote_address  : aliased constant socket_address  := get_address (connected_sock.all);
 
         use Task_Identification;
 
@@ -99,7 +99,7 @@ begin
         recv_send_buffer  : aliased socket_buffer;
         recv_send_buffer2 : aliased socket_buffer;
 
-        tmp_tmp_socket_address  : aliased socket_address := null_socket_address;
+        tmp_tmp_socket_address  : aliased socket_address;
 
         size_tmp  : aliased ssize_t  := 0;
 
@@ -117,12 +117,13 @@ begin
         Text_IO.New_Line (2);
 
         Text_IO.Put_Line (" " & this_task_id_str & " remote host connected from [" &
-          get_address (remote_address) & "]:" & get_address_port (remote_address));
+          get_address (remote_address) & "]:" & get_address_port (remote_address) & " and type => " &
+          get_address_type (remote_address));
 
         Text_IO.Put_Line (" " & this_task_id_str & " will wait 2 seconds to start receive data.");
         Text_IO.Put_Line (" " & this_task_id_str & " will wait 0.5 seconds between continuous receive.");
 
-        if not receive_buffer (sock => task_socket,
+        if not receive_buffer (sock => connected_sock.all,
           data_to_receive =>  recv_send_buffer,
           received_address  =>  tmp_tmp_socket_address,
           receive_count =>  size_tmp,
@@ -169,7 +170,7 @@ begin
         Text_IO.Put_Line (" " & this_task_id_str & " waiting 2 seconds to start send data to remote host");
         Text_IO.Put_Line (" " & this_task_id_str & " will wait 0.5 seconds between continuous send.");
 
-        if not send_buffer  (sock => task_socket,
+        if not send_buffer  (sock => connected_sock.all,
           data_to_send  =>  recv_send_buffer2,
           send_count  =>  size_tmp,
           miliseconds_start_timeout =>  2000,
@@ -187,9 +188,9 @@ begin
 
         <<finish1_task_label>>
 
-        if is_initialized (task_socket) then
+        if connected_sock /= null and then is_initialized (connected_sock.all) then
 
-          close (task_socket);
+          close (connected_sock.all);
         end if;
 
       end recv_send_task;
@@ -201,7 +202,8 @@ begin
 
       msg_seaa  : aliased stream_element_array_access := null;
 
-      tmp_received_socket : aliased socket := null_socket;
+      tmp_received_socket : aliased socket;
+      tmp_received_socket_access : aliased socket_access := null;
 
     begin
 
@@ -217,9 +219,12 @@ begin
           data_received =>  msg_seaa, miliseconds_start_timeout => 20000)
         then
 
+          get_socket (tmp_received_socket, tmp_received_socket_access); -- a new copy and access
+
           -- For the curious: We believe the task(s) will not leak.
           -- Reason: ARM-2012 7.6 (9.2/2) :-)
-          working_task  :=  new recv_send_task (new socket'(tmp_received_socket),
+
+          working_task  :=  new recv_send_task (tmp_received_socket_access,
             (if msg_seaa = null then null else new Stream_Element_Array'(msg_seaa.all)));
 
         else

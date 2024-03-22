@@ -57,9 +57,9 @@ begin
     b1 :
     declare
       remote_addr   : aliased socket_addresses;
-      choosed_addr  : aliased socket_address  :=  null_socket_address;
-      rcv_addr      : aliased socket_address  :=  null_socket_address;
-      host_sock     : aliased socket          :=  null_socket;
+      choosed_addr  : aliased socket_address;
+      rcv_addr      : aliased socket_address;
+      host_sock     : aliased socket;
 
       bytes_tmp     : aliased ssize_t :=  0;
 
@@ -81,7 +81,8 @@ begin
       Text_IO.Put_Line (" Remote host addresses discovered:");
 
       while get_address (remote_addr, choosed_addr) loop
-        Text_IO.Put_Line (" address => " & get_address (choosed_addr) & " and port => " & get_address_port (choosed_addr));
+        Text_IO.Put_Line ("type => " & get_address_type (choosed_addr) &
+          " address => " & get_address (choosed_addr) & " and port => " & get_address_port (choosed_addr));
         Text_IO.New_Line;
       end loop;
 
@@ -97,10 +98,11 @@ begin
 
       -- connect() is optional when the connection is in udp
 
-      choosed_addr := get_address (host_sock);
+      get_address (host_sock, choosed_addr);
 
       Text_IO.Put_Line (" Connected at address :=  "  & get_address (choosed_addr) &
-        " and at port := " & get_address_port (choosed_addr));
+        " and at port := " & get_address_port (choosed_addr) & " and type := " &
+        get_address_type (choosed_addr));
 
       Text_IO.New_Line;
 

@@ -16,9 +16,6 @@ with adare_net_exceptions;  use adare_net_exceptions;
 with socket_types;
 use socket_types;
 
---  with Interfaces.C;
---  use Interfaces.C;
-
 procedure tcp_client_new
 is
 begin
@@ -60,9 +57,9 @@ begin
     b1 :
     declare
       remote_addr   : aliased socket_addresses;
-      choosed_addr  : aliased socket_address  :=  null_socket_address;
-      rcv_addr      : aliased socket_address  :=  null_socket_address;
-      host_sock     : aliased socket          :=  null_socket;
+      choosed_addr  : aliased socket_address;
+      rcv_addr      : aliased socket_address;
+      host_sock     : aliased socket;
 
       bytes_tmp     : aliased ssize_t :=  0;
 
@@ -84,7 +81,8 @@ begin
       Text_IO.Put_Line (" Remote host addresses discovered:");
 
       while get_address (remote_addr, choosed_addr) loop
-        Text_IO.Put_Line (" address => " & get_address (choosed_addr) & " and port => " & get_address_port (choosed_addr));
+        Text_IO.Put_Line ("type => " & get_address_type (choosed_addr) & " address => " &
+          get_address (choosed_addr) & " and port => " & get_address_port (choosed_addr));
         Text_IO.New_Line;
       end loop;
 
@@ -108,9 +106,10 @@ begin
         goto end_app_label1;
       end if;
 
-      choosed_addr := get_address (host_sock);
+      get_address (host_sock, choosed_addr);
 
-      Text_IO.Put_Line (" Connected at address :=  "  & get_address (choosed_addr) &
+      Text_IO.Put_Line ("type => " & get_address_type (choosed_addr) &
+        " Connected at address :=  "  & get_address (choosed_addr) &
         " and at port := " & get_address_port (choosed_addr));
 
       Text_IO.New_Line;
@@ -155,7 +154,7 @@ begin
       end if;
 
       Text_IO.Put_Line (" Received message(s) from " & get_address (choosed_addr) &
-        " and at port := " & get_address_port (choosed_addr));
+        " and at port := " & get_address_port (choosed_addr) & "type => " & get_address_type (choosed_addr));
 
       Text_IO.Put_Line (" Messages length " & bytes_tmp'Image & " bytes.");
 
@@ -178,7 +177,7 @@ begin
 
           Text_IO.New_Line;
           Text_IO.Put_Line (" All messages received from " & get_address (choosed_addr) &
-        " and at port := " & get_address_port (choosed_addr) & " showed.");
+        " and at port := " & get_address_port (choosed_addr) & " and type => " & get_address_type (choosed_addr) & " showed.");
       end b2;
 
       ok := True;

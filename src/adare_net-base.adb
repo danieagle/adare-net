@@ -51,6 +51,66 @@ is
     (sock : aliased in socket) return socket_type
   is (sock.sock);
 
+  function get_socket
+    (sock : aliased in socket) return socket
+  is
+    tmp_sock : aliased socket := sock;
+
+  begin
+    tmp_sock.storage.stor :=  new char_array'(sock.storage.stor.all);
+    return tmp_sock;
+  end get_socket;
+
+  function get_socket
+    (sock : socket_access) return socket
+  is
+    tmp_sock : aliased socket := sock.all;
+
+  begin
+    tmp_sock.storage.stor :=  new char_array'(sock.storage.stor.all);
+    return tmp_sock;
+  end get_socket;
+
+  procedure get_socket
+    (sock : socket_access;
+     result : aliased out socket_access)
+  is
+    tmp_sock : aliased socket := sock.all;
+  begin
+    tmp_sock.storage.stor :=  new char_array'(sock.storage.stor.all);
+    result := new socket'(tmp_sock);
+  end get_socket;
+
+  procedure get_socket
+    (sock : socket_access;
+     result : aliased out socket)
+  is
+    tmp_sock : aliased socket := sock.all;
+  begin
+    tmp_sock.storage.stor :=  new char_array'(sock.storage.stor.all);
+    result := tmp_sock;
+  end get_socket;
+
+  procedure get_socket
+    (sock : aliased in socket;
+     result : aliased out socket_access)
+  is
+    tmp_sock : aliased socket := sock;
+  begin
+    tmp_sock.storage.stor :=  new char_array'(sock.storage.stor.all);
+    result := new socket'(tmp_sock);
+  end get_socket;
+
+  procedure get_socket
+    (sock : aliased in socket;
+     result : aliased out socket)
+  is
+    tmp_sock : aliased socket := sock;
+  begin
+    tmp_sock.storage.stor :=  new char_array'(sock.storage.stor.all);
+    result := tmp_sock;
+  end get_socket;
+
   function get_raw_length
     (from : aliased in socket_addresses) return size_t
   is (from.stor.all'Length);
@@ -125,6 +185,27 @@ is
   is (get_address_type (from.stor));
 
 
+  function get_address_type
+    (from : not null char_array_access) return String
+  is (Address_type_label'(a_type_label (Address_type (a_int.To_Pointer (from.all'Address).all)))'Image);
+
+  function get_address_type
+    (from : aliased in char_array) return String
+  is (Address_type_label'(a_type_label (Address_type (a_int.To_Pointer (from'Address).all)))'Image);
+
+  function get_address_type
+    (from : aliased in socket) return String
+  is (get_address_type (from.storage.stor));
+
+  function get_address_type
+    (from : aliased in socket_address) return String
+  is (get_address_type (from.stor));
+
+  function get_address_type
+    (from : aliased in socket_addresses) return String
+  is (get_address_type (from.stor));
+
+
   function get_address_protocol
     (from : not null char_array_access) return int
   is (a_int.To_Pointer (from.all (from.all'First + size_t (sizint))'Address).all);
@@ -166,7 +247,7 @@ is
   function get_address_length
     (from : aliased in socket_addresses;
      address_start_at : size_t) return Unsigned_16
-  is (a_uint16.To_Pointer (from.stor.all (address_start_at + (2 * size_t (sizint)))'Address).all);
+  is (a_uint16.To_Pointer (from.stor.all (address_start_at +  size_t (sizint))'Address).all); -- start_at at 'protocol'
 
 
   function get_address_and_family
@@ -675,14 +756,12 @@ is
     received_length : ssize_t := 0;
     total_received  : ssize_t := 0;
 
-    storage           : aliased char_array  := (1 .. 270 => char'Val (0));
-    storage_addr_len  : constant Address    := storage (1 + size_t (sizint) + size_t (sizint))'Address;
-    storage_addr  : constant Address  := storage (storage'First + size_t (sizint) + size_t (sizint) + size_t (sizuint16))'Address;
-    storage_len   : aliased size_t    := storage'Length - (size_t (sizint) + size_t (sizint) + size_t (sizuint16));
-    stor_len      : aliased constant size_t :=  storage_len;
+    proto     : constant Address_type_label := get_address_type (sock);
 
-    proto         : constant Address_type_label :=
-      a_type_label (Address_type (a_int.To_Pointer (sock.storage.stor.all (sock.storage.stor.all'First)'Address).all));
+    storage       : aliased char_array  := (1 .. 270 => char'Val (0));
+    storage_len   : aliased size_t      := storage'Length - (size_t (sizint) + size_t (sizint) + size_t (sizuint16));
+    storage_addr  : aliased constant Address  := get_address_and_family (storage);
+    stor_len      : aliased constant size_t   :=  storage_len;
 
     receive_data         : Stream_Element_Array := (1 .. (2**16 + 5) * 3 => 0);
     receive_data_address : constant Address     := receive_data (1)'Address;
@@ -724,9 +803,9 @@ is
           received_length :=  inner_recvfrom (sock.sock, receive_data_address, receive_data_length, 0,
             storage_addr, storage_len'Address);
 
-          tmp_received_address.addr_length := socket_address_length;
+          set_address_length (storage, Unsigned_16 (storage_len));
 
-          socket_address_length := storage_size;
+          storage_len :=  stor_len;
 
       end case;
 
@@ -749,7 +828,8 @@ is
     end loop loop1;
 
     if proto = udp then
-      received_address := tmp_received_address;
+      received_address := (stor => new char_array'(storage (1 .. size_t (sizint) + size_t (sizint) + size_t (sizuint16) +
+        size_t (get_address_length (storage)))));
     end if;
 
     receive_count := total_received;
@@ -762,16 +842,116 @@ is
   end receive_buffer;
 
 
+  function receive_stream
+    (sock : aliased socket;
+     data_to_receive  : aliased out stream_element_array_access;
+     received_address : aliased out socket_address;
+     receive_count    : aliased out ssize_t;
+     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
+     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
+    ) return Boolean
+  is
+    use adare_net.base.waits;
 
-  --  function receive_stream
-  --    (sock : aliased socket;
-  --     data_to_receive  : aliased out stream_element_array_access;
-  --     received_address : aliased out socket_address;
-  --     receive_count    : aliased out ssize_t;
-  --     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
-  --     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
-  --    ) return Boolean
-  --  is separate;
+    received_length : ssize_t := 0;
+    total_received  : ssize_t := 0;
+
+    proto     : constant Address_type_label := get_address_type (sock);
+
+    storage       : aliased char_array  := (1 .. 270 => char'Val (0));
+    storage_len   : aliased size_t      := storage'Length - (size_t (sizint) + size_t (sizint) + size_t (sizuint16));
+    storage_addr  : aliased constant Address  := get_address_and_family (storage);
+    stor_len      : aliased constant size_t   :=  storage_len;
+
+    poll : aliased poll_of_events;
+
+    receive_data    : stream_element_array_access :=  new Stream_Element_Array'(1 .. (2**16 + 5) * 3 => 0);
+    pos             : Stream_Element_Offset       := receive_data.all'First;
+
+  begin
+
+    receive_count     :=  0;
+    received_address  :=  (others => <>);
+    data_to_receive   :=  null;
+
+    if proto = udp then
+      storage (1 .. size_t (sizint) + size_t (sizint)) :=
+        sock.storage.stor.all (sock.storage.stor.all'First .. (sock.storage.stor.all'First + size_t (sizint) + size_t (sizint)) - 1);
+    end if;
+
+    if miliseconds_start_timeout > 0  or else miliseconds_next_timeouts > 0 then
+      if not set_receive (poll, sock) then
+        return False;
+      end if;
+
+      if miliseconds_start_timeout > 0  then
+        if not (poll_wait (poll, int (miliseconds_start_timeout)) and then is_receive (poll, sock)) then
+          return False;
+        end if;
+      end if;
+    end if;
+
+    loop1 :
+    loop
+
+      case proto is
+        when tcp =>
+
+          received_length := inner_recv (sock.sock, receive_data.all (pos)'Address,
+            receive_data.all'Length - size_t (pos), 0);
+
+        when udp =>
+
+          received_length := inner_recvfrom (sock.sock, receive_data.all (pos)'Address,
+            receive_data.all'Length - size_t (pos), 0, storage_addr, storage_len'Address);
+
+          set_address_length (storage, Unsigned_16 (storage_len));
+
+          storage_len :=  stor_len;
+
+      end case;
+
+      exit loop1 when received_length < 1 or else received_length = socket_error;
+
+      total_received  :=  total_received  + received_length;
+
+      pos :=  pos + Stream_Element_Offset (received_length);
+
+      if pos + ((2**16 + 5) * 2) > receive_data.all'Length then
+        b1 :
+        declare
+          receive_data_old  : constant Stream_Element_Array := receive_data.all (1 .. pos - 1);
+        begin
+
+          receive_data :=  new Stream_Element_Array'(1 .. receive_data_old'Length + ((2**16 + 5) * 3) => 0);
+          receive_data.all (receive_data_old'Range) := receive_data_old;
+        end b1;
+      end if;
+
+      if miliseconds_next_timeouts > 0 then
+        reset_results (poll);
+
+        if not (poll_wait (poll, int (miliseconds_next_timeouts)) and then is_receive (poll, sock)) then
+          exit loop1;
+        end if;
+      end if;
+    end loop loop1;
+
+    if proto = udp then
+      received_address := (stor => new char_array'(storage (1 .. size_t (sizint) + size_t (sizint) + size_t (sizuint16) +
+        size_t (get_address_length (storage)))));
+    end if;
+
+    data_to_receive := new Stream_Element_Array'(receive_data.all (1 .. Stream_Element_Offset (total_received)));
+    receive_count := total_received;
+
+    if miliseconds_start_timeout > 0  or else miliseconds_next_timeouts > 0 then
+      close (poll);
+    end if;
+
+    return True;
+  end receive_stream;
+
 
   procedure clear
     (sock_address : aliased in out socket_address)
@@ -803,36 +983,47 @@ is
   is (socket_address'(stor => new char_array'(sock.storage.stor.all)));
 
   function get_address
+    (sock : not null socket_access) return socket_address
+  is (socket_address'(stor => new char_array'(sock.storage.stor.all)));
+
+  procedure get_address
+    (sock   : aliased in socket;
+    result  : aliased out socket_address)
+  is
+  begin
+    result.stor := new char_array'(sock.storage.stor.all);
+  end get_address;
+
+  function get_address
     (sock_address : aliased in out socket_addresses;
      result : aliased out socket_address) return Boolean
   is
+    addr_len : size_t := 0;
   begin
 
     if not sock_address.initialized then
-      sock_address.next_cursor := sock_address.stor.all'First + size_t (sizint);
+      sock_address.next_cursor := sock_address.stor.all'First + size_t (sizint); -- start at 'protocol'
       sock_address.initialized := True;
     end if;
 
-    if (sock_address.next_cursor + size_t (sizint) + (2 * size_t (sizuint16))) < sock_address.stor.all'Last then
-      b0 :
-      declare
-        pos_first : constant size_t := sock_address.stor.all'First;
-        pos_last  : constant size_t := sock_address.next_cursor + size_t (sizint) + size_t (sizuint16) +
-          size_t (a_uint16.To_Pointer (sock_address.stor.all (sock_address.next_cursor + size_t (sizint) + size_t (sizuint16))'Address).all);
-      begin
-        result.stor := new char_array'(
-          sock_address.stor.all (pos_first .. (pos_first + size_t (sizint)) - 1) &
-          sock_address.stor.all (sock_address.next_cursor .. pos_last - 1));
+    if sock_address.next_cursor >= sock_address.stor.all'Last then -- less one?
+      sock_address.initialized := False;
 
-        sock_address.next_cursor  :=  sock_address.next_cursor + pos_last;
-
-        return True;
-      end b0;
+      return False;
     end if;
 
-    sock_address.initialized := False;
+    addr_len    := size_t (get_address_length (sock_address, sock_address.next_cursor)); -- ? correct ? or no?
 
-    return False;
+    result.stor := new char_array '(1 .. ((2 * size_t (sizint)) + size_t (sizuint16) + addr_len + 1)  => char'Val (0));
+    result.stor.all (1 .. size_t (sizint)) := sock_address.stor.all (sock_address.stor.all'First .. sock_address.stor.all'First + size_t (sizint) - 1);
+
+    result.stor.all (1 + size_t (sizint) .. size_t (sizint)  + size_t (sizint) + size_t (sizuint16) + addr_len) -- Last ?
+      := sock_address.stor.all (sock_address.next_cursor .. -- less one ?
+        (sock_address.next_cursor + size_t (sizint) + size_t (sizuint16) + addr_len) - 1);
+
+    sock_address.next_cursor  := sock_address.next_cursor + size_t (sizint) + size_t (sizuint16) + addr_len + 1;
+
+    return True;
   end get_address;
 
   procedure rewind  -- rewind to the first socket_address in socket_addresses

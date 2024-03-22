@@ -144,15 +144,15 @@ is
     ) return Boolean
     with Pre => is_initialized (sock);
 
-  --  function receive_stream
-  --    (sock : aliased socket;
-  --     data_to_receive  : aliased out stream_element_array_access;
-  --     received_address : aliased out socket_address;
-  --     receive_count    : aliased out ssize_t;
-  --     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
-  --     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
-  --    ) return Boolean
-  --    with Pre => is_initialized (sock);
+  function receive_stream
+    (sock : aliased socket;
+     data_to_receive  : aliased out stream_element_array_access;
+     received_address : aliased out socket_address;
+     receive_count    : aliased out ssize_t;
+     miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
+     miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
+    ) return Boolean
+    with Pre => is_initialized (sock);
 
   procedure clear
     (sock_address : aliased in out socket_address);
@@ -170,6 +170,14 @@ is
   function get_address
     (sock : aliased in socket) return socket_address
       with Pre => not is_initialized (sock);
+
+  function get_address
+    (sock : not null socket_access) return socket_address
+      with Pre => not is_initialized (sock.all);
+
+  procedure get_address
+    (sock   : aliased in socket;
+    result  : aliased out socket_address);
 
   function get_address
     (sock_address : aliased in out socket_addresses;
@@ -213,6 +221,30 @@ is
   function get_socket
     (sock : aliased in socket) return socket_type;
 
+  function get_socket
+    (sock : aliased in socket) return socket;
+
+  function get_socket
+    (sock : socket_access) return socket;
+
+  procedure get_socket
+    (sock : socket_access;
+     result : aliased out socket_access);
+
+  procedure get_socket
+    (sock : socket_access;
+     result : aliased out socket);
+
+  procedure get_socket
+    (sock : aliased in socket;
+     result : aliased out socket_access);
+
+  procedure get_socket
+    (sock : aliased in socket;
+     result : aliased out socket);
+
+
+
   function get_raw_length
     (from : aliased in socket_addresses) return size_t
     with Pre => not is_empty (from);
@@ -235,6 +267,27 @@ is
 
   function get_address_type
     (from : aliased in socket_addresses) return Address_type_label
+    with Pre => not is_empty (from) and then get_raw_length (from) >= size_t (sizint);
+
+
+  function get_address_type
+    (from : not null char_array_access) return String
+    with Pre => from.all'Length >= size_t (sizint);
+
+  function get_address_type
+    (from : aliased in char_array) return String
+    with Pre => from'Length >= size_t (sizint);
+
+  function get_address_type
+    (from : aliased in socket) return String
+    with Pre => is_initialized (from);
+
+  function get_address_type
+    (from : aliased in socket_address) return String
+    with Pre => not is_empty (from);
+
+  function get_address_type
+    (from : aliased in socket_addresses) return String
     with Pre => not is_empty (from) and then get_raw_length (from) >= size_t (sizint);
 
 
