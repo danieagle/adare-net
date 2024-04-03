@@ -45,23 +45,23 @@ begin
 
   b0 :
   declare
-    buffer  : aliased socket_buffer;
+    buffer  : constant socket_buffer_access  := new socket_buffer;
     ok      : Boolean := False;
   begin
     clear (buffer); -- optional
 
     for qtd in 3 .. Argument_Count loop
-      String'Output (buffer'Access, Argument (qtd)); -- automatic conversion
+      String'Output (buffer, Argument (qtd)); -- automatic conversion
     end loop;
 
     b1 :
     declare
-      remote_addr   : aliased socket_addresses;
-      choosed_addr  : aliased socket_address;
-      rcv_addr      : aliased socket_address;
-      host_sock     : aliased socket;
+      remote_addr   : socket_addresses_access;
+      choosed_addr  : socket_address_access;
+      rcv_addr      : socket_address_access;
+      host_sock     : socket_access;
 
-      bytes_tmp     : aliased ssize_t :=  0;
+      bytes_tmp     : ssize_t :=  0;
 
       tmp_msg : stream_element_array_access := null;
     begin
@@ -81,8 +81,11 @@ begin
       Text_IO.Put_Line (" Remote host addresses discovered:");
 
       while get_address (remote_addr, choosed_addr) loop
+
         Text_IO.Put_Line ("type => " & get_address_type (choosed_addr) &
+          " family type => " & get_family_label (choosed_addr) &
           " address => " & get_address (choosed_addr) & " and port => " & get_address_port (choosed_addr));
+
         Text_IO.New_Line;
       end loop;
 
@@ -100,9 +103,10 @@ begin
 
       get_address (host_sock, choosed_addr);
 
-      Text_IO.Put_Line (" Connected at address :=  "  & get_address (choosed_addr) &
-        " and at port := " & get_address_port (choosed_addr) & " and type := " &
-        get_address_type (choosed_addr));
+      Text_IO.Put_Line (" Connected at: address :=  "  & get_address (choosed_addr) &
+        " port := " & get_address_port (choosed_addr) & " type := " &
+        get_address_type (choosed_addr) &
+        " family type => " & get_family_label (choosed_addr));
 
       Text_IO.New_Line;
 
@@ -114,10 +118,11 @@ begin
         miliseconds_start_timeout =>  2000,
         miliseconds_next_timeouts =>  500) or else bytes_tmp < 1
       then
-        Text_IO.Put_Line (" there are a error while sending data to remote host server.");
-        Text_IO.Put_Line (" nothing to do.");
-        Text_IO.Put_Line (" last error message => " & string_error);
-        Text_IO.Put_Line (" finishing.");
+
+        Text_IO.Put_Line (" An error occurred while sending data to remote server.");
+        Text_IO.Put_Line (" Nothing to do.");
+        Text_IO.Put_Line (" Last error message => " & string_error);
+        Text_IO.Put_Line (" Finishing.");
 
         goto end_app_label1;
       end if;
@@ -127,8 +132,9 @@ begin
 
       Text_IO.New_Line;
 
+
       Text_IO.Put_Line (" Waiting until 5 seconds to receive message(s). ");
-      Text_IO.Put_Line (" with 0,5 seconds after started receiving. ");
+      Text_IO.Put_Line (" with until 0,5 seconds between receiving remaining messages. ");
 
       if not receive_buffer (sock => host_sock,
         data_to_receive =>  buffer,
@@ -137,16 +143,18 @@ begin
         miliseconds_start_timeout =>  5000,
         miliseconds_next_timeouts =>  500) or else bytes_tmp < 1
       then
-        Text_IO.Put_Line (" there are a error while receiving or received zero length message.");
-        Text_IO.Put_Line (" nothing to do.");
-        Text_IO.Put_Line (" last error message => " & string_error);
-        Text_IO.Put_Line (" finishing.");
+        Text_IO.Put_Line (" An error occurred while receiving or the length of message received is zero.");
+        Text_IO.Put_Line (" Nothing to do.");
+        Text_IO.Put_Line (" Last error message => " & string_error);
+        Text_IO.Put_Line (" Finishing.");
 
         goto end_app_label1;
       end if;
 
-      Text_IO.Put_Line (" Received message(s) from " & get_address (choosed_addr) &
-        " and at port := " & get_address_port (choosed_addr));
+      Text_IO.Put_Line (" Received message(s) from: type => " & get_address_type (rcv_addr) &
+          " family type => " & get_family_label (rcv_addr) &
+          " address => " & get_address (rcv_addr) &
+          " and port => " & get_address_port (rcv_addr));
 
       Text_IO.Put_Line (" Messages length " & bytes_tmp'Image & " bytes.");
 
@@ -160,7 +168,7 @@ begin
         loop3 :
         loop
 
-          Text_IO.Put_Line (" |" & String'Input (buffer'Access) & "|");
+          Text_IO.Put_Line (" |" & String'Input (buffer) & "|");
 
         end loop loop3;
 
@@ -168,8 +176,12 @@ begin
         when buffer_insufficient_space_error =>
 
           Text_IO.New_Line;
-          Text_IO.Put_Line (" All messages received from " & get_address (choosed_addr) &
-        " and at port := " & get_address_port (choosed_addr) & " showed.");
+
+          Text_IO.Put_Line (" All messages received from: type => " & get_address_type (rcv_addr) &
+            " family type => " & get_family_label (rcv_addr) &
+            " address => " & get_address (rcv_addr) &
+            " and port => " & get_address_port (rcv_addr) & " showed.");
+
       end b2;
 
       ok := True;

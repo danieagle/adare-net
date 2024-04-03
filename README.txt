@@ -2,7 +2,7 @@
 Adare_Net
 =====================
 
-Version: "Revisited" (1.2.3-dev)
+Version: "Revisited" (2.9.3-dev)
 
 Adare_Net is a small, powerfull, portable and easy to use Ada network lib.
 It supports ipv4 ipv6 udp tcp raw level 2 and raw level 3,
@@ -66,7 +66,7 @@ How a Bonus Almost all packages in this lib is "Ada Preelaborate"! :-)
 USAGE
 -----
 
-   Building before publishing in Public Alire Arquive:
+  Building before publishing in Public Alire Arquive:
 
     1) enter in your alire project:
     2) alr with adare_net --use https://github.com/danieagle/adare-net.git
@@ -77,7 +77,7 @@ USAGE
       or
     3.3) mybe use: alr build --validation
 
-   And Be Happy :-D
+  And Be Happy :-D
 
   Main repository => https://github.com/danieagle/adare-net.git
 
@@ -91,6 +91,7 @@ For documentation, see Doc/adare_net.pdf
 
 For examples and how compile in your own projects, see:
   src/*.ad{s,b}
+  adare_net_examples/tests1/*.adb
   adare_net_examples/tcp_new/*.adb
   adare_net_examples/udp_new/*.adb
 

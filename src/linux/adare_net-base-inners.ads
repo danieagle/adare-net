@@ -15,12 +15,6 @@ is
     address_length_i    : in int) return int
     with Import => True, Convention => C, External_Name => "bind";
 
-  --  function inner_bind
-  --    (sockfd_i           : socket_type;
-  --    addr_i              : Address;
-  --    address_length_i    : socklen_t) return int
-  --    with Import => True, Convention => C, External_Name => "bind";
-
   function inner_close
     (sock_i : socket_type) return int
     with Import => True, Convention => C, External_Name => "close";
@@ -30,12 +24,6 @@ is
     addr_i    : Address;
     leng_i    : int) return int
     with Import => True, Convention => C, External_Name => "connect";
-
-  --  function inner_connect
-  --    (sockfd_i : socket_type;
-  --    addr_i    : Address;
-  --    leng_i    : socklen_t) return int
-  --    with Import => True, Convention => C, External_Name => "connect";
 
   function inner_socket
     (domain_i   : in int;
@@ -105,7 +93,7 @@ is
     (af : int;
      src  : Address;
      dst  : Address;
-     size : socklen_t) return Address
+     size : size_t) return Address
      with Import => True, Convention => C, External_Name => "inet_ntop";
 
   function inner_ntohs
@@ -139,20 +127,6 @@ is
      timeout_i    : int
     ) return int
     with Import => True, Convention => C, External_Name => "epoll_wait";
-
-  function inner_memset
-    (dest_i : Address;
-     c_i    : int;
-     count_i  : size_t
-    ) return Address
-    with Import => True, Convention => C, External_Name => "memset";
-
-  function inner_memcpy
-    (dest_i   : Address;
-     src_i    : Address;
-     count_i  : size_t
-    ) return Address
-    with Import => True, Convention => C, External_Name => "memcpy";
 
   procedure inner_create_addresses
     (host_i    : Address;

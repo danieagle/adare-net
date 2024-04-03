@@ -9,14 +9,14 @@ extern "C" {
   const uint16_t c_af_inet = AF_INET;
   const uint16_t c_af_inet6 = AF_INET6;
 
-  const int c_v4_addrstrlen = INET_ADDRSTRLEN;
-  const int c_v6_str_length = INET6_ADDRSTRLEN;
+  const size_t c_v4_addrstrlen = INET_ADDRSTRLEN;
+  const size_t c_v6_str_length = INET6_ADDRSTRLEN;
 
   const int c_sock_dgram = SOCK_DGRAM;
   const int c_sock_stream = SOCK_STREAM;
 
-  const int8_t c_size_int = (int8_t) sizeof (int);
-  const int8_t c_size_uint16 = (int8_t) sizeof (uint16_t);
+  const size_t c_size_int = sizeof (int);
+  const size_t c_size_uint16 = sizeof (uint16_t);
 
 void create_addresses (
   const void* host,

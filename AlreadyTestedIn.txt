@@ -1,5 +1,5 @@
 v.latest =>
 
-1) Ubuntu 24.04-dev Linux AMD64 + gnat 13.2 (external) +
-    gcc 13.2 (external) + gprbuild 2023 (external)
+1) Ubuntu 23.10 Linux AMD64 + gnat 13.2.0-4 (external) +
+    gcc 13.2.0-4 (external) + gprbuild 2023.0.0-3 (external)
 

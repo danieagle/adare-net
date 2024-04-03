@@ -28,9 +28,12 @@ begin
       Text_IO.New_Line;
 
       while get_address (mi_addresses, mi_address) loop
-        Text_IO.Put_Line ("type => " & get_address_type (mi_address) & " address => " &
-        --  Text_IO.Put_Line (" address => " &
-          get_address (mi_address) & " and port => " & get_address_port (mi_address));
+
+        Text_IO.Put_Line ("type => " & get_address_type (mi_address) &
+          " , family_type => " & get_family_label (mi_address) &
+          " , address => " & get_address (mi_address) &
+          " , and port => " & get_address_port (mi_address));
+
         Text_IO.New_Line;
       end loop;
 

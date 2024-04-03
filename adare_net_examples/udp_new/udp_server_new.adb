@@ -26,7 +26,7 @@ with socket_types; use socket_types;
 
 with Ada.Text_IO; use Ada;
 with Ada.Command_Line;
-with Ada.Task_Identification;
+with Ada.Task_Identification; use Ada.Task_Identification;
 with Ada.Strings.Unbounded;
 with Ada.Streams; use Ada.Streams;
 
@@ -38,9 +38,9 @@ begin
 
   b0 :
   declare
-    host_socket_addresses : aliased socket_addresses;
-    tmp_socket_address    : aliased socket_address;
-    host_socket           : aliased socket;
+    host_socket_addresses : socket_addresses_access;
+    tmp_socket_address    : socket_address_access;
+    host_socket           : socket_access;
   begin
 
     if not create_addresses
@@ -52,7 +52,7 @@ begin
     then
       Text_IO.Put_Line ("Failed to discover host addresses.");
       Text_IO.New_Line;
-      Text_IO.Put_Line ("last error message => " & string_error);
+      Text_IO.Put_Line ("Last error message => " & string_error);
 
       goto end_app_label1;
     end if;
@@ -62,8 +62,12 @@ begin
     Text_IO.Put_Line (" Addresses Discovered in this host:");
 
     while get_address (host_socket_addresses, tmp_socket_address) loop
-      Text_IO.Put_Line ("type => " & get_address_type (tmp_socket_address) & " address => " &
-        get_address (tmp_socket_address) & " and port => " & get_address_port (tmp_socket_address));
+
+      Text_IO.Put_Line ("type => " & get_address_type (tmp_socket_address) &
+        " family type => " & get_family_label (tmp_socket_address) &
+        " address => " & get_address (tmp_socket_address) &
+        " port => " & get_address_port (tmp_socket_address));
+
       Text_IO.New_Line;
     end loop;
 
@@ -77,31 +81,33 @@ begin
 
     Text_IO.New_Line;
 
-    Text_IO.Put_Line (" choosed host address => " & get_address (tmp_socket_address) & " and choosed host port => " &
-      get_address_port (tmp_socket_address));
+    Text_IO.Put_Line (" Choosed: type => " & get_address_type (tmp_socket_address) &
+      " family type => " & get_family_label (tmp_socket_address) &
+      " address => " & get_address (tmp_socket_address) &
+      " and port => " & get_address_port (tmp_socket_address));
 
     b1 :
     declare
 
-      task type recv_send_task (connected_sock  : not null socket_access; pre_message : stream_element_array_access)
-        with Dynamic_Predicate => is_initialized (connected_sock.all)
-          or else is_connected (connected_sock.all);
+      task type recv_send_task (connected_sock  : not null socket_access;
+        pre_message : stream_element_array_access)
+          with Dynamic_Predicate => is_initialized (connected_sock)
+            and then is_connected (connected_sock);
 
       task body recv_send_task
       is
 
-        remote_address  : aliased constant socket_address  := get_address (connected_sock.all);
-
-        use Task_Identification;
+        task_socket     : constant socket_access  := connected_sock;
+        remote_address  : constant socket_address := get_address (task_socket);
 
         this_task_id_str  : constant String := Image (Current_Task);
 
-        recv_send_buffer  : aliased socket_buffer;
-        recv_send_buffer2 : aliased socket_buffer;
+        recv_send_buffer  : constant socket_buffer_access := new socket_buffer;
+        recv_send_buffer2 : constant socket_buffer_access := new socket_buffer;
 
-        tmp_tmp_socket_address  : aliased socket_address;
+        tmp_tmp_socket_address  : socket_address_access := null;
 
-        size_tmp  : aliased ssize_t  := 0;
+        size_tmp  : ssize_t  := 0;
 
         use  Ada.Strings.Unbounded;
 
@@ -111,19 +117,19 @@ begin
         clear (recv_send_buffer2);  -- optional, reset all data in buffer
 
         if pre_message /= null then
-          Stream_Element_Array'Write (recv_send_buffer'Access, pre_message.all);
+          Stream_Element_Array'Write (recv_send_buffer, pre_message.all);
         end if;
 
         Text_IO.New_Line (2);
 
         Text_IO.Put_Line (" " & this_task_id_str & " remote host connected from [" &
           get_address (remote_address) & "]:" & get_address_port (remote_address) & " and type => " &
-          get_address_type (remote_address));
+          get_address_type (remote_address) & " , and family type => " & get_family_label (tmp_socket_address));
 
-        Text_IO.Put_Line (" " & this_task_id_str & " will wait 2 seconds to start receive data.");
-        Text_IO.Put_Line (" " & this_task_id_str & " will wait 0.5 seconds between continuous receive.");
+        Text_IO.Put_Line (" " & this_task_id_str & " will wait until 2 seconds to start receive data.");
+        Text_IO.Put_Line (" " & this_task_id_str & " will wait until 0.5 seconds between continuous receive.");
 
-        if not receive_buffer (sock => connected_sock.all,
+        if not receive_buffer (sock => task_socket,
           data_to_receive =>  recv_send_buffer,
           received_address  =>  tmp_tmp_socket_address,
           receive_count =>  size_tmp,
@@ -131,10 +137,11 @@ begin
           miliseconds_next_timeouts =>  500) or else size_tmp < 1
         then
           if pre_message = null or else pre_message.all'Length < 1 then
-            Text_IO.Put_Line (" " & this_task_id_str & " there are a error while receiving or received zero length message.");
-            Text_IO.Put_Line (" " & this_task_id_str & " nothing to do.");
-            Text_IO.Put_Line (" " & this_task_id_str & " last error message => " & string_error);
-            Text_IO.Put_Line (" " & this_task_id_str & " finishing.");
+
+            Text_IO.Put_Line (" " & this_task_id_str & " An error occurred while receiving or the length of message received is zero.");
+            Text_IO.Put_Line (" " & this_task_id_str & " Nothing to do.");
+            Text_IO.Put_Line (" " & this_task_id_str & " Last error message => " & string_error);
+            Text_IO.Put_Line (" " & this_task_id_str & " Finishing...");
 
             goto finish1_task_label;
           end if;
@@ -148,13 +155,13 @@ begin
 
         bt1 :
         begin
-          String'Output (recv_send_buffer2'Access, "Thank you for send ");
+          String'Output (recv_send_buffer2, "Thank you for send ");
 
           loop1 :
           loop
-            message := To_Unbounded_String (String'Input (recv_send_buffer'Access));
+            message := To_Unbounded_String (String'Input (recv_send_buffer));
 
-            String'Output (recv_send_buffer2'Access, To_String (message));
+            String'Output (recv_send_buffer2, To_String (message));
 
             Text_IO.Put_Line (" " & this_task_id_str & " message |" & To_String (message) & "|");
           end loop loop1;
@@ -167,19 +174,20 @@ begin
 
         end bt1;
 
-        Text_IO.Put_Line (" " & this_task_id_str & " waiting 2 seconds to start send data to remote host");
-        Text_IO.Put_Line (" " & this_task_id_str & " will wait 0.5 seconds between continuous send.");
+        Text_IO.Put_Line (" " & this_task_id_str & " waiting until 2 seconds to start send data to remote host");
+        Text_IO.Put_Line (" " & this_task_id_str & " will wait until 0.5 seconds between continuous send.");
 
-        if not send_buffer  (sock => connected_sock.all,
+        if not send_buffer  (sock => task_socket,
           data_to_send  =>  recv_send_buffer2,
           send_count  =>  size_tmp,
           miliseconds_start_timeout =>  2000,
           miliseconds_next_timeouts =>  500) or else size_tmp < 1
         then
-          Text_IO.Put_Line (" " & this_task_id_str & " there are a error while sending data to remote host.");
-          Text_IO.Put_Line (" " & this_task_id_str & " nothing to do.");
-          Text_IO.Put_Line (" " & this_task_id_str & " last error message => " & string_error);
-          Text_IO.Put_Line (" " & this_task_id_str & " finishing.");
+
+          Text_IO.Put_Line (" " & this_task_id_str & " An error occurred while sending data to remote host.");
+          Text_IO.Put_Line (" " & this_task_id_str & " Nothing to do.");
+          Text_IO.Put_Line (" " & this_task_id_str & " Last error message => " & string_error);
+          Text_IO.Put_Line (" " & this_task_id_str & " Finishing...");
 
           goto finish1_task_label;
         end if;
@@ -188,9 +196,9 @@ begin
 
         <<finish1_task_label>>
 
-        if connected_sock /= null and then is_initialized (connected_sock.all) then
+        if is_initialized (task_socket) then
 
-          close (connected_sock.all);
+          close (task_socket);
         end if;
 
       end recv_send_task;
@@ -200,34 +208,23 @@ begin
       working_task  : recv_send_access
         with Unreferenced;
 
-      msg_seaa  : aliased stream_element_array_access := null;
+      msg_seaa  : stream_element_array_access := null;
 
-      tmp_received_socket : aliased socket;
-      tmp_received_socket_access : aliased socket_access := null;
+      tmp_received_socket : socket_access := null;
 
     begin
 
       Text_IO.New_Line;
 
       Text_IO.Put_Line (" Start Accepting connect in Main Server.");
-      Text_IO.Put_Line (" 20 seconds max timeout between clients.");
+      Text_IO.Put_Line (" Until 20 seconds max timeout between clients.");
       Text_IO.New_Line (2);
 
       loop2 :
       loop
-        if wait_connection  (sock =>  host_socket,  response  => tmp_received_socket,
+        if not wait_connection  (sock =>  host_socket,  response  => tmp_received_socket,
           data_received =>  msg_seaa, miliseconds_start_timeout => 20000)
         then
-
-          get_socket (tmp_received_socket, tmp_received_socket_access); -- a new copy and access
-
-          -- For the curious: We believe the task(s) will not leak.
-          -- Reason: ARM-2012 7.6 (9.2/2) :-)
-
-          working_task  :=  new recv_send_task (tmp_received_socket_access,
-            (if msg_seaa = null then null else new Stream_Element_Array'(msg_seaa.all)));
-
-        else
           close (host_socket); -- to disable 'listen' too.
 
           Text_IO.New_Line (2);
@@ -244,6 +241,11 @@ begin
 
           exit loop2;
         end if;
+
+        -- For the curious: We believe the task(s) will not leak.
+        -- Reason: ARM-2012 7.6 (9.2/2) :-)
+
+        working_task  :=  new recv_send_task (tmp_received_socket, msg_seaa);
 
         Text_IO.New_Line (2);
 

@@ -15,7 +15,7 @@ is
 
   function is_in
    (poll  : aliased in poll_of_events;
-    sock  : aliased in socket
+    sock  : socket
    ) return Boolean
   is
   begin
@@ -45,7 +45,7 @@ is
 
   function set_receive
     (poll  : aliased in out poll_of_events;
-     sock  : aliased in socket) return Boolean
+     sock  : socket) return Boolean
   is
     ok  : Boolean := True;
 
@@ -69,7 +69,7 @@ is
 
   function set_send
     (poll  : aliased in out poll_of_events;
-     sock  : aliased in socket) return Boolean
+     sock  : socket) return Boolean
   is
     ok  : Boolean := True;
 
@@ -94,7 +94,7 @@ is
 
   function update
    (poll  : aliased in out poll_of_events;
-    sock  : aliased in socket;
+    sock  : socket;
     event_bitmap  : unsigned_long) return Boolean
   is
     tmp_sock  : constant socket_type := get_socket (sock);
@@ -114,7 +114,7 @@ is
 
   function remove
     (poll  : aliased in out poll_of_events;
-     sock  : aliased in socket) return Boolean
+     sock  : socket) return Boolean
   is
     tmp_sock  : constant socket_type  := get_socket (sock);
     ok        : constant Boolean      :=
@@ -141,7 +141,7 @@ is
 
   function add
    (poll  : aliased in out poll_of_events;
-    sock  : aliased in socket;
+    sock  : socket;
     event_bitmap  : unsigned_long) return Boolean
   is
     index : int := 0;
@@ -219,7 +219,7 @@ is
 
   function is_send
     (poll  : aliased in poll_of_events;
-     sock  : aliased in socket) return Boolean
+     sock  : socket) return Boolean
   is
   begin
     if poll.last_wait_returned <= 0 then
@@ -257,7 +257,7 @@ is
 
   function is_receive
     (poll  : aliased in poll_of_events;
-     sock  : aliased in socket) return Boolean
+     sock  : socket) return Boolean
   is
   begin
     if poll.last_wait_returned <= 0 then

@@ -1,6 +1,6 @@
 name = "adare_net"
 description = "It is a small, powerfull, portable and easy to use Ada network lib."
-version = "1.2.3-dev"
+version = "2.9.3-dev"
 long-description = """
    Adare_Net is a small, powerfull, portable and easy to use Ada network lib.
 
@@ -25,7 +25,7 @@ long-description = """
 
                   """
 authors = ["Daniel Norte de Moraes"]
-maintainers = ["Daniel Norte de Moraes <danieagle@tutanota.com>"]
+maintainers = ["Daniel Norte de Moraes <danieagle@zohomail.com>"]
 maintainers-logins = ["danieagle"]
 
 [build-switches]

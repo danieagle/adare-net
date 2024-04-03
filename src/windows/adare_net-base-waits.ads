@@ -14,29 +14,29 @@ is
 
   function set_receive
     (poll  : aliased in out poll_of_events;
-     sock  : aliased in socket) return Boolean
+     sock  : socket) return Boolean
     with Pre => is_initialized (sock);
 
   function set_send
     (poll  : aliased in out poll_of_events;
-     sock  : aliased in socket) return Boolean
+     sock  : socket) return Boolean
     with Pre => is_initialized (sock);
 
   function remove
     (poll  : aliased in out poll_of_events;
-     sock  : aliased in socket) return Boolean
+     sock  : socket) return Boolean
     with Pre => is_initialized (poll)
                 and then is_initialized  (sock)
                 and then is_in (poll, sock);
 
   function is_receive
     (poll  : aliased in poll_of_events;
-     sock  : aliased in socket) return Boolean
+     sock  : socket) return Boolean
     with Pre => is_initialized (sock) and then is_initialized (poll);
 
   function is_send
     (poll  : aliased in poll_of_events;
-     sock  : aliased in socket) return Boolean
+     sock  : socket) return Boolean
     with Pre => is_initialized (sock) and then is_initialized (poll);
 
   procedure reset_results
@@ -59,7 +59,7 @@ is
 
   function is_in
     (poll  : aliased in poll_of_events;
-     sock  : aliased in socket
+     sock  : socket
     ) return Boolean
     with Pre => is_initialized (poll) and then is_initialized (sock);
 
@@ -67,7 +67,7 @@ private
 
   function update
     (poll  : aliased in out poll_of_events;
-     sock  : aliased in socket;
+     sock  : socket;
      event_bitmap  : unsigned_long) return Boolean
     with Pre => is_initialized (poll)
                 and then is_initialized  (sock)
@@ -75,7 +75,7 @@ private
 
   function add
     (poll  : aliased in out poll_of_events;
-     sock  : aliased in socket;
+     sock  : socket;
      event_bitmap  : unsigned_long) return Boolean
     with Pre => is_initialized (poll)
                 and then is_initialized  (sock)
