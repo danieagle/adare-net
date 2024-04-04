@@ -56,10 +56,10 @@ begin
 
     b1 :
     declare
-      remote_addr   : socket_addresses_access;
-      choosed_addr  : socket_address_access;
-      rcv_addr      : socket_address_access;
-      host_sock     : socket_access;
+      remote_addr   : socket_addresses_access := null;
+      choosed_addr  : socket_address_access := null;
+      rcv_addr      : socket_address_access := null;
+      host_sock     : socket_access := null;
 
       bytes_tmp     : ssize_t :=  0;
 

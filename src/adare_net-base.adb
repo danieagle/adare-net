@@ -1069,7 +1069,7 @@ is
         len       : ssize_t;
       begin
 
-        len :=  inner_recvfrom (sock.sock, data_tmp'Address, data_tmp'Length, 0,
+        len := inner_recvfrom (sock.sock, data_tmp'Address, data_tmp'Length, 0,
           get_address_and_family_address (storage), storage_len'Address);
 
         if len = socket_error or else len < 1 then
@@ -2220,9 +2220,15 @@ is
 
       total_received := total_received + received_length;
 
-      Stream_Element_Array'Write
-      (data_to_receive'Access,
-        receive_data (1 .. Stream_Element_Offset (received_length)));
+      bme :
+      begin
+        Stream_Element_Array'Write
+        (data_to_receive'Access,
+          receive_data (1 .. Stream_Element_Offset (received_length)));
+      exception
+        when Constraint_Error => exit loop1;
+      end bme;
+
 
       if miliseconds_next_timeouts > 0 then
         reset_results (poll);
@@ -2321,8 +2327,15 @@ is
 
       total_received := total_received + received_length;
 
-      Stream_Element_Array'Write
-      (data_to_receive, receive_data (1 .. Stream_Element_Offset (received_length)));
+      bme :
+      begin
+        Stream_Element_Array'Write
+        (data_to_receive,
+          receive_data (1 .. Stream_Element_Offset (received_length)));
+      exception
+        when Constraint_Error => exit loop1;
+      end bme;
+
 
       if miliseconds_next_timeouts > 0 then
         reset_results (poll);
@@ -2534,9 +2547,15 @@ is
 
       total_received := total_received + received_length;
 
-      Stream_Element_Array'Write
-      (data_to_receive'Access,
-        receive_data (1 .. Stream_Element_Offset (received_length)));
+      bme :
+      begin
+        Stream_Element_Array'Write
+        (data_to_receive'Access,
+          receive_data (1 .. Stream_Element_Offset (received_length)));
+      exception
+        when Constraint_Error => exit loop1;
+      end bme;
+
 
       if miliseconds_next_timeouts > 0 then
         reset_results (poll);
@@ -2635,8 +2654,15 @@ is
 
       total_received := total_received + received_length;
 
-      Stream_Element_Array'Write
-      (data_to_receive, receive_data (1 .. Stream_Element_Offset (received_length)));
+      bme :
+      begin
+        Stream_Element_Array'Write
+        (data_to_receive,
+          receive_data (1 .. Stream_Element_Offset (received_length)));
+      exception
+        when Constraint_Error => exit loop1;
+      end bme;
+
 
       if miliseconds_next_timeouts > 0 then
         reset_results (poll);
@@ -2848,9 +2874,15 @@ is
 
       total_received := total_received + received_length;
 
-      Stream_Element_Array'Write
-      (data_to_receive'Access,
-        receive_data (1 .. Stream_Element_Offset (received_length)));
+      bme :
+      begin
+        Stream_Element_Array'Write
+        (data_to_receive'Access,
+          receive_data (1 .. Stream_Element_Offset (received_length)));
+      exception
+        when Constraint_Error => exit loop1;
+      end bme;
+
 
       if miliseconds_next_timeouts > 0 then
         reset_results (poll);
@@ -2949,8 +2981,15 @@ is
 
       total_received := total_received + received_length;
 
-      Stream_Element_Array'Write
-      (data_to_receive, receive_data (1 .. Stream_Element_Offset (received_length)));
+      bme :
+      begin
+        Stream_Element_Array'Write
+        (data_to_receive,
+          receive_data (1 .. Stream_Element_Offset (received_length)));
+      exception
+        when Constraint_Error => exit loop1;
+      end bme;
+
 
       if miliseconds_next_timeouts > 0 then
         reset_results (poll);
@@ -3161,9 +3200,15 @@ is
 
       total_received := total_received + received_length;
 
-      Stream_Element_Array'Write
-      (data_to_receive'Access,
-        receive_data (1 .. Stream_Element_Offset (received_length)));
+      bme :
+      begin
+        Stream_Element_Array'Write
+        (data_to_receive'Access,
+          receive_data (1 .. Stream_Element_Offset (received_length)));
+      exception
+        when Constraint_Error => exit loop1;
+      end bme;
+
 
       if miliseconds_next_timeouts > 0 then
         reset_results (poll);
@@ -3210,8 +3255,8 @@ is
     storage_addr  : aliased constant Address  := get_address_and_family_address (storage);
     stor_len      : aliased constant size_t   :=  storage_len;
 
-    receive_data         : Stream_Element_Array := (1 .. (2**16 + 5) * 3 => 0);
-    receive_data_address : constant Address     := receive_data (1)'Address;
+    receive_data         : Stream_Element_Array := (1 .. ((2**16) + 5) * 3 => 0);
+    receive_data_address : constant Address     := receive_data'Address;
     receive_data_length  : constant size_t      := receive_data'Length;
 
     poll : aliased poll_of_events;
@@ -3262,8 +3307,15 @@ is
 
       total_received := total_received + received_length;
 
-      Stream_Element_Array'Write
-      (data_to_receive, receive_data (1 .. Stream_Element_Offset (received_length)));
+      bme :
+      begin
+        Stream_Element_Array'Write
+        (data_to_receive,
+          receive_data (1 .. Stream_Element_Offset (received_length)));
+      exception
+        when Constraint_Error => exit loop1;
+      end bme;
+
 
       if miliseconds_next_timeouts > 0 then
         reset_results (poll);

@@ -39,38 +39,20 @@ is
   function inner_recvfrom
     (sock_i : socket_type;
      buf_i  : Address;
-     len_i  : size_t;
+     len_i  : int;
      flags_i  : int;
      from_i   : Address;
-     from_len_i : Address
-    ) return ssize_t
+     from_len_i : Address -- *int
+    ) return int
     with Import => True, Convention => StdCall, External_Name => "recvfrom";
-
-  --  function inner_recvfrom
-  --    (sock_i : socket_type;
-  --     buf_i  : Address;
-  --     len_i  : int;
-  --     flags_i  : int;
-  --     from_i   : Address;
-  --     from_len_i : Address
-  --    ) return int
-  --    with Import => True, Convention => StdCall, External_Name => "recvfrom";
 
   function inner_recv
     (sock_i : socket_type;
      buf_i  : Address;
-     len_i  : size_t;
+     len_i  : int;
      flags_i  : int
-     ) return ssize_t
+     ) return int
      with Import => True, Convention => StdCall, External_Name => "recv";
-
-  --  function inner_recv
-  --    (sock_i : socket_type;
-  --     buf_i  : Address;
-  --     len_i  : int;
-  --     flags_i  : int
-  --     ) return int
-  --     with Import => True, Convention => StdCall, External_Name => "recv";
 
   procedure inner_reset_errno
     with Import => True, Convention => StdCall, External_Name => "c_reset_errno";
@@ -82,39 +64,20 @@ is
   function inner_send
     (sock_i : socket_type;
      buf_i  : Address;
-     len_i  : size_t;
+     len_i  : int;
      flags_i  : int
-    ) return ssize_t
+    ) return int
     with Import => True, Convention => StdCall, External_Name => "send";
-
-
-  --  function inner_send
-  --    (sock_i : socket_type;
-  --     buf_i  : Address;
-  --     len_i  : int;
-  --     flags_i  : int
-  --    ) return int
-  --    with Import => True, Convention => StdCall, External_Name => "send";
 
   function inner_sendto
     (sock_i : socket_type;
      buf_i  : Address;
-     len_i  : size_t;
+     len_i  : int;
      flags_i  : int;
      to_i     : Address;
      to_len_i : int
-     ) return ssize_t
+     ) return int
      with Import => True, Convention => StdCall, External_Name => "sendto";
-
-  --  function inner_sendto
-  --    (sock_i : socket_type;
-  --     buf_i  : Address;
-  --     len_i  : int;
-  --     flags_i  : int;
-  --     to_i     : Address;
-  --     to_len_i : int
-  --     ) return int
-  --     with Import => True, Convention => StdCall, External_Name => "sendto";
 
   function inner_inet_ntop
     (af : int;

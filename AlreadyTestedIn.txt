@@ -1,5 +1,8 @@
 v.latest =>
 
-1) Ubuntu 23.10 Linux AMD64 + gnat 13.2.0-4 (external) +
+1) Ubuntu 23.10 Linux AMD64 + alire 1.2.0 gnat 13.2.0-4 (external) +
     gcc 13.2.0-4 (external) + gprbuild 2023.0.0-3 (external)
+
+2) MSWin10-home msys2 AMD64 + alire 2.1.0-dev (from sources) gnat 13.2.0-4 (external) +
+    gcc 13.2.0-4 (external) + gprbuild 2024.0.0 (external)
 
