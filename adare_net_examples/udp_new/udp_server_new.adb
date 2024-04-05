@@ -22,16 +22,17 @@
 with adare_net.base;  use adare_net.base;
 with adare_net_init;  use adare_net_init;
 with adare_net_exceptions;  use adare_net_exceptions;
-with socket_types; use socket_types;
 
 with Ada.Text_IO; use Ada;
 with Ada.Command_Line;
 with Ada.Task_Identification; use Ada.Task_Identification;
 with Ada.Strings.Unbounded;
 with Ada.Streams; use Ada.Streams;
+with Interfaces.C; use Interfaces.C;
 
 procedure udp_server_new
 is
+  pragma Unsuppress (All_Checks);
 begin
 
   start_adare_net;
@@ -107,7 +108,7 @@ begin
 
         tmp_tmp_socket_address  : socket_address_access := null;
 
-        size_tmp  : ssize_t  := 0;
+        size_tmp  : int  := 0;
 
         use  Ada.Strings.Unbounded;
 

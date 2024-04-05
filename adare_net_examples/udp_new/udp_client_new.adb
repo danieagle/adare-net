@@ -13,11 +13,11 @@ with adare_net.base;  use adare_net.base;
 with adare_net_init;  use adare_net_init;
 with adare_net_exceptions;  use adare_net_exceptions;
 
-with socket_types;
-use socket_types;
+with Interfaces.C; use Interfaces.C;
 
 procedure udp_client_new
 is
+  pragma Unsuppress (All_Checks);
 begin
 
   start_adare_net;
@@ -61,7 +61,7 @@ begin
       rcv_addr      : socket_address_access := null;
       host_sock     : socket_access := null;
 
-      bytes_tmp     : ssize_t :=  0;
+      bytes_tmp     : int :=  0;
 
       tmp_msg : stream_element_array_access := null;
     begin

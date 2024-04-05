@@ -10,9 +10,7 @@ is
 
   invalid_socket  : constant socket_type := -1;
 
-  type ssize_t is range -(2**(size_t'Size - 1)) .. +(2**(size_t'Size - 1) - 1);
-
-  socket_error  : constant ssize_t  := -1;
+  socket_error    : constant int  := -1;
 
   subtype handle_type is socket_type;
 

@@ -228,7 +228,7 @@ is
   function send_buffer
     (sock : socket;
      data_to_send : aliased in out socket_buffer;
-     send_count   : out ssize_t;
+     send_count   : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -237,7 +237,7 @@ is
   function send_buffer
     (sock : socket;
      data_to_send : not null socket_buffer_access;
-     send_count   : out ssize_t;
+     send_count   : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -246,7 +246,7 @@ is
   function send_stream
     (sock : socket;
      data_to_send : aliased Stream_Element_Array;
-     send_count   : out ssize_t;
+     send_count   : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -255,7 +255,7 @@ is
   function send_stream
     (sock : socket;
      data_to_send : not null stream_element_array_access;
-     send_count   : out ssize_t;
+     send_count   : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -265,7 +265,7 @@ is
   function send_buffer
     (sock : not null socket_access;
      data_to_send : aliased in out socket_buffer;
-     send_count   : out ssize_t;
+     send_count   : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -274,7 +274,7 @@ is
   function send_buffer
     (sock : not null socket_access;
      data_to_send : not null socket_buffer_access;
-     send_count   : out ssize_t;
+     send_count   : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -283,7 +283,7 @@ is
   function send_stream
     (sock : not null socket_access;
      data_to_send : aliased Stream_Element_Array;
-     send_count   : out ssize_t;
+     send_count   : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -292,7 +292,7 @@ is
   function send_stream
     (sock : not null socket_access;
      data_to_send : not null stream_element_array_access;
-     send_count   : out ssize_t;
+     send_count   : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -303,7 +303,7 @@ is
     (sock : socket;
      data_to_receive  : in out socket_buffer;
      received_address : out socket_address;
-     receive_count    : out ssize_t;
+     receive_count    : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -313,7 +313,7 @@ is
     (sock : socket;
      data_to_receive  : not null socket_buffer_access;
      received_address : out socket_address;
-     receive_count    : out ssize_t;
+     receive_count    : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -323,7 +323,7 @@ is
     (sock : socket;
      data_to_receive  : out stream_element_array_access;
      received_address : out socket_address;
-     receive_count    : out ssize_t;
+     receive_count    : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -334,7 +334,7 @@ is
     (sock : not null socket_access;
      data_to_receive  : in out socket_buffer;
      received_address : out socket_address;
-     receive_count    : out ssize_t;
+     receive_count    : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -344,7 +344,7 @@ is
     (sock : not null socket_access;
      data_to_receive  : not null socket_buffer_access;
      received_address : out socket_address;
-     receive_count    : out ssize_t;
+     receive_count    : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -354,7 +354,7 @@ is
     (sock : not null socket_access;
      data_to_receive  : out stream_element_array_access;
      received_address : out socket_address;
-     receive_count    : out ssize_t;
+     receive_count    : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -365,7 +365,7 @@ is
     (sock : socket;
      data_to_receive  : in out socket_buffer;
      received_address : out socket_address_access;
-     receive_count    : out ssize_t;
+     receive_count    : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -375,7 +375,7 @@ is
     (sock : socket;
      data_to_receive  : not null socket_buffer_access;
      received_address : out socket_address_access;
-     receive_count    : out ssize_t;
+     receive_count    : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -385,7 +385,7 @@ is
     (sock : socket;
      data_to_receive  : out stream_element_array_access;
      received_address : out socket_address_access;
-     receive_count    : out ssize_t;
+     receive_count    : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -396,7 +396,7 @@ is
     (sock : not null socket_access;
      data_to_receive  : in out socket_buffer;
      received_address : out socket_address_access;
-     receive_count    : out ssize_t;
+     receive_count    : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -406,7 +406,7 @@ is
     (sock : not null socket_access;
      data_to_receive  : not null socket_buffer_access;
      received_address : out socket_address_access;
-     receive_count    : out ssize_t;
+     receive_count    : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -416,7 +416,7 @@ is
     (sock : not null socket_access;
      data_to_receive  : out stream_element_array_access;
      received_address : out socket_address_access;
-     receive_count    : out ssize_t;
+     receive_count    : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean

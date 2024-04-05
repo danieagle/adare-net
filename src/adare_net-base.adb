@@ -838,10 +838,8 @@ is
   is
 
     mi_response : socket  := socket'(storage => (stor => null), sock => 0, connected => False, binded => False, listened => False);
-    --  mi_response : socket_access  := null; -- TBD
 
     mi_address  : socket_address  := socket_address'(stor => null);
-    --  mi_address  : socket_address_access  := null; -- TBD
   begin
 
     rewind (sock_address);
@@ -1065,8 +1063,8 @@ is
     if proto = udp then
       b0 :
       declare
-        data_tmp  : Stream_Element_Array := (1 .. (2**16 + 5) * 3 => 0);
-        len       : ssize_t;
+        data_tmp  : Stream_Element_Array := (1 .. ((2**16) + 5) * 3 => 0);
+        len       : int;
       begin
 
         len := inner_recvfrom (sock.sock, data_tmp'Address, data_tmp'Length, 0,
@@ -1170,8 +1168,8 @@ is
     if proto = udp then
       b0 :
       declare
-        data_tmp  : Stream_Element_Array := (1 .. (2**16 + 5) * 3 => 0);
-        len       : ssize_t;
+        data_tmp  : Stream_Element_Array := (1 .. ((2**16) + 5) * 3 => 0);
+        len       : int;
       begin
 
         len :=  inner_recvfrom (sock.sock, data_tmp'Address, data_tmp'Length, 0,
@@ -1276,8 +1274,8 @@ is
     if proto = udp then
       b0 :
       declare
-        data_tmp  : Stream_Element_Array := (1 .. (2**16 + 5) * 3 => 0);
-        len       : ssize_t;
+        data_tmp  : Stream_Element_Array := (1 .. ((2**16) + 5) * 3 => 0);
+        len       : int;
       begin
 
         len :=  inner_recvfrom (sock.sock, data_tmp'Address, data_tmp'Length, 0,
@@ -1381,8 +1379,8 @@ is
     if proto = udp then
       b0 :
       declare
-        data_tmp  : Stream_Element_Array := (1 .. (2**16 + 5) * 3 => 0);
-        len       : ssize_t;
+        data_tmp  : Stream_Element_Array := (1 .. ((2**16) + 5) * 3 => 0);
+        len       : int;
       begin
 
         len :=  inner_recvfrom (sock.sock, data_tmp'Address, data_tmp'Length, 0,
@@ -1426,16 +1424,16 @@ is
   function send_buffer
     (sock : socket;
      data_to_send : aliased in out socket_buffer;
-     send_count   : out ssize_t;
+     send_count   : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
   is
     use adare_net.base.waits;
     pos           : Stream_Element_Offset :=  data_to_send.head_first;
-    remaining     : ssize_t :=  ssize_t (actual_data_size (data_to_send));
-    sended_length : ssize_t :=  0;
-    total_sended  : ssize_t :=  0;
+    remaining     : int :=  int (actual_data_size (data_to_send));
+    sended_length : int :=  0;
+    total_sended  : int :=  0;
 
     proto     : constant Address_type_label := get_address_type (sock);
 
@@ -1515,7 +1513,7 @@ is
   function send_buffer
     (sock : socket;
      data_to_send : not null socket_buffer_access;
-     send_count   : out ssize_t;
+     send_count   : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -1526,10 +1524,10 @@ is
 
     pos           : Stream_Element_Offset :=  mi_data_to_send.head_first;
 
-    remaining     : ssize_t :=  ssize_t (actual_data_size (mi_data_to_send));
+    remaining     : int :=  int (actual_data_size (mi_data_to_send));
 
-    sended_length : ssize_t :=  0;
-    total_sended  : ssize_t :=  0;
+    sended_length : int :=  0;
+    total_sended  : int :=  0;
 
     proto     : constant Address_type_label := get_address_type (sock);
 
@@ -1609,16 +1607,16 @@ is
   function send_stream
     (sock : socket;
      data_to_send : aliased Stream_Element_Array;
-     send_count   : out ssize_t;
+     send_count   : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
   is
     use adare_net.base.waits;
     pos           : Stream_Element_Offset :=  data_to_send'First;
-    remaining     : ssize_t :=  data_to_send'Length;
-    sended_length : ssize_t :=  0;
-    total_sended  : ssize_t :=  0;
+    remaining     : int :=  data_to_send'Length;
+    sended_length : int :=  0;
+    total_sended  : int :=  0;
 
     proto     : constant Address_type_label := get_address_type (sock);
 
@@ -1696,7 +1694,7 @@ is
   function send_stream
     (sock : socket;
      data_to_send : not null stream_element_array_access;
-     send_count   : out ssize_t;
+     send_count   : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -1707,9 +1705,9 @@ is
 
     pos           : Stream_Element_Offset :=  mi_data_to_send.all'First;
 
-    remaining     : ssize_t :=  mi_data_to_send.all'Length;
-    sended_length : ssize_t :=  0;
-    total_sended  : ssize_t :=  0;
+    remaining     : int :=  mi_data_to_send.all'Length;
+    sended_length : int :=  0;
+    total_sended  : int :=  0;
 
     proto     : constant Address_type_label := get_address_type (sock);
 
@@ -1788,16 +1786,16 @@ is
   function send_buffer
     (sock : not null socket_access;
      data_to_send : aliased in out socket_buffer;
-     send_count   : out ssize_t;
+     send_count   : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
   is
     use adare_net.base.waits;
     pos           : Stream_Element_Offset :=  data_to_send.head_first;
-    remaining     : ssize_t :=  ssize_t (actual_data_size (data_to_send));
-    sended_length : ssize_t :=  0;
-    total_sended  : ssize_t :=  0;
+    remaining     : int :=  int (actual_data_size (data_to_send));
+    sended_length : int :=  0;
+    total_sended  : int :=  0;
 
     proto     : constant Address_type_label := get_address_type (sock);
 
@@ -1877,7 +1875,7 @@ is
   function send_buffer
     (sock : not null socket_access;
      data_to_send : not null socket_buffer_access;
-     send_count   : out ssize_t;
+     send_count   : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -1888,10 +1886,10 @@ is
 
     pos           : Stream_Element_Offset :=  mi_data_to_send.head_first;
 
-    remaining     : ssize_t :=  ssize_t (actual_data_size (mi_data_to_send));
+    remaining     : int :=  int (actual_data_size (mi_data_to_send));
 
-    sended_length : ssize_t :=  0;
-    total_sended  : ssize_t :=  0;
+    sended_length : int :=  0;
+    total_sended  : int :=  0;
 
     proto     : constant Address_type_label := get_address_type (sock);
 
@@ -1971,16 +1969,16 @@ is
   function send_stream
     (sock : not null socket_access;
      data_to_send : aliased Stream_Element_Array;
-     send_count   : out ssize_t;
+     send_count   : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
   is
     use adare_net.base.waits;
     pos           : Stream_Element_Offset :=  data_to_send'First;
-    remaining     : ssize_t :=  data_to_send'Length;
-    sended_length : ssize_t :=  0;
-    total_sended  : ssize_t :=  0;
+    remaining     : int :=  data_to_send'Length;
+    sended_length : int :=  0;
+    total_sended  : int :=  0;
 
     proto     : constant Address_type_label := get_address_type (sock);
 
@@ -2058,7 +2056,7 @@ is
   function send_stream
     (sock : not null socket_access;
      data_to_send : not null stream_element_array_access;
-     send_count   : out ssize_t;
+     send_count   : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
@@ -2069,9 +2067,9 @@ is
 
     pos           : Stream_Element_Offset :=  mi_data_to_send.all'First;
 
-    remaining     : ssize_t :=  mi_data_to_send.all'Length;
-    sended_length : ssize_t :=  0;
-    total_sended  : ssize_t :=  0;
+    remaining     : int :=  mi_data_to_send.all'Length;
+    sended_length : int :=  0;
+    total_sended  : int :=  0;
 
     proto     : constant Address_type_label := get_address_type (sock);
 
@@ -2151,15 +2149,15 @@ is
     (sock  : socket;
      data_to_receive   : in out socket_buffer;
      received_address  : out socket_address;
-     receive_count     : out ssize_t;
+     receive_count     : out int;
      miliseconds_start_timeout : Unsigned_32 :=  0;
      miliseconds_next_timeouts : Unsigned_32 :=  0
     ) return Boolean
   is
     use adare_net.base.waits;
 
-    received_length : ssize_t := 0;
-    total_received  : ssize_t := 0;
+    received_length : int := 0;
+    total_received  : int := 0;
 
     proto : constant Address_type_label := get_address_type (sock);
 
@@ -2220,14 +2218,14 @@ is
 
       total_received := total_received + received_length;
 
-      bme :
-      begin
+      --  bme :
+      --  begin
         Stream_Element_Array'Write
         (data_to_receive'Access,
           receive_data (1 .. Stream_Element_Offset (received_length)));
-      exception
-        when Constraint_Error => exit loop1;
-      end bme;
+      --  exception
+      --    when Constraint_Error => exit loop1;
+      --  end bme;
 
 
       if miliseconds_next_timeouts > 0 then
@@ -2258,15 +2256,15 @@ is
     (sock  : socket;
      data_to_receive   : not null socket_buffer_access;
      received_address  : out socket_address;
-     receive_count     : out ssize_t;
+     receive_count     : out int;
      miliseconds_start_timeout : Unsigned_32 :=  0;
      miliseconds_next_timeouts : Unsigned_32 :=  0
     ) return Boolean
   is
     use adare_net.base.waits;
 
-    received_length : ssize_t := 0;
-    total_received  : ssize_t := 0;
+    received_length : int := 0;
+    total_received  : int := 0;
 
     proto : constant Address_type_label := get_address_type (sock);
 
@@ -2327,14 +2325,14 @@ is
 
       total_received := total_received + received_length;
 
-      bme :
-      begin
+      --  bme :
+      --  begin
         Stream_Element_Array'Write
         (data_to_receive,
           receive_data (1 .. Stream_Element_Offset (received_length)));
-      exception
-        when Constraint_Error => exit loop1;
-      end bme;
+      --  exception
+        --  when Constraint_Error => exit loop1;
+      --  end bme;
 
 
       if miliseconds_next_timeouts > 0 then
@@ -2365,15 +2363,15 @@ is
     (sock : socket;
      data_to_receive  : out stream_element_array_access;
      received_address : out socket_address;
-     receive_count    : out ssize_t;
+     receive_count    : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
   is
     use adare_net.base.waits;
 
-    received_length : ssize_t := 0;
-    total_received  : ssize_t := 0;
+    received_length : int := 0;
+    total_received  : int := 0;
 
     proto     : constant Address_type_label := get_address_type (sock);
 
@@ -2384,7 +2382,7 @@ is
 
     poll : aliased poll_of_events;
 
-    receive_data    : stream_element_array_access :=  new Stream_Element_Array'(1 .. (2**16 + 5) * 3 => 0);
+    receive_data    : stream_element_array_access :=  new Stream_Element_Array'(1 .. ((2**16) + 5) * 3 => 0);
     pos             : Stream_Element_Offset       := receive_data.all'First;
 
   begin
@@ -2438,13 +2436,13 @@ is
 
       pos :=  pos + Stream_Element_Offset (received_length);
 
-      if pos + ((2**16 + 5) * 2) > receive_data.all'Length then
+      if pos + (((2**16) + 5) * 2) > receive_data.all'Length then
         b1 :
         declare
           receive_data_old  : constant Stream_Element_Array := receive_data.all (1 .. pos - 1);
         begin
 
-          receive_data :=  new Stream_Element_Array'(1 .. receive_data_old'Length + ((2**16 + 5) * 3) => 0);
+          receive_data :=  new Stream_Element_Array'(1 .. receive_data_old'Length + (((2**16) + 5) * 3) => 0);
           receive_data.all (receive_data_old'Range) := receive_data_old;
         end b1;
       end if;
@@ -2478,15 +2476,15 @@ is
     (sock  : not null socket_access;
      data_to_receive   : in out socket_buffer;
      received_address  : out socket_address;
-     receive_count     : out ssize_t;
+     receive_count     : out int;
      miliseconds_start_timeout : Unsigned_32 :=  0;
      miliseconds_next_timeouts : Unsigned_32 :=  0
     ) return Boolean
   is
     use adare_net.base.waits;
 
-    received_length : ssize_t := 0;
-    total_received  : ssize_t := 0;
+    received_length : int := 0;
+    total_received  : int := 0;
 
     proto : constant Address_type_label := get_address_type (sock);
 
@@ -2495,7 +2493,7 @@ is
     storage_addr  : aliased constant Address  := get_address_and_family_address (storage);
     stor_len      : aliased constant size_t   :=  storage_len;
 
-    receive_data         : Stream_Element_Array := (1 .. (2**16 + 5) * 3 => 0);
+    receive_data         : Stream_Element_Array := (1 .. ((2**16) + 5) * 3 => 0);
     receive_data_address : constant Address     := receive_data (1)'Address;
     receive_data_length  : constant size_t      := receive_data'Length;
 
@@ -2547,14 +2545,14 @@ is
 
       total_received := total_received + received_length;
 
-      bme :
-      begin
-        Stream_Element_Array'Write
-        (data_to_receive'Access,
-          receive_data (1 .. Stream_Element_Offset (received_length)));
-      exception
-        when Constraint_Error => exit loop1;
-      end bme;
+      --  bme :
+      --  begin
+      Stream_Element_Array'Write
+      (data_to_receive'Access,
+        receive_data (1 .. Stream_Element_Offset (received_length)));
+      --  exception
+      --    when Constraint_Error => exit loop1;
+      --  end bme;
 
 
       if miliseconds_next_timeouts > 0 then
@@ -2585,15 +2583,15 @@ is
     (sock  : not null socket_access;
      data_to_receive   : not null socket_buffer_access;
      received_address  : out socket_address;
-     receive_count     : out ssize_t;
+     receive_count     : out int;
      miliseconds_start_timeout : Unsigned_32 :=  0;
      miliseconds_next_timeouts : Unsigned_32 :=  0
     ) return Boolean
   is
     use adare_net.base.waits;
 
-    received_length : ssize_t := 0;
-    total_received  : ssize_t := 0;
+    received_length : int := 0;
+    total_received  : int := 0;
 
     proto : constant Address_type_label := get_address_type (sock);
 
@@ -2654,14 +2652,14 @@ is
 
       total_received := total_received + received_length;
 
-      bme :
-      begin
-        Stream_Element_Array'Write
-        (data_to_receive,
-          receive_data (1 .. Stream_Element_Offset (received_length)));
-      exception
-        when Constraint_Error => exit loop1;
-      end bme;
+      --  bme :
+      --  begin
+      Stream_Element_Array'Write
+      (data_to_receive,
+        receive_data (1 .. Stream_Element_Offset (received_length)));
+      --  exception
+      --    when Constraint_Error => exit loop1;
+      --  end bme;
 
 
       if miliseconds_next_timeouts > 0 then
@@ -2692,15 +2690,15 @@ is
     (sock : not null socket_access;
      data_to_receive  : out stream_element_array_access;
      received_address : out socket_address;
-     receive_count    : out ssize_t;
+     receive_count    : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
   is
     use adare_net.base.waits;
 
-    received_length : ssize_t := 0;
-    total_received  : ssize_t := 0;
+    received_length : int := 0;
+    total_received  : int := 0;
 
     proto     : constant Address_type_label := get_address_type (sock);
 
@@ -2711,7 +2709,7 @@ is
 
     poll : aliased poll_of_events;
 
-    receive_data    : stream_element_array_access :=  new Stream_Element_Array'(1 .. (2**16 + 5) * 3 => 0);
+    receive_data    : stream_element_array_access :=  new Stream_Element_Array'(1 .. ((2**16) + 5) * 3 => 0);
     pos             : Stream_Element_Offset       := receive_data.all'First;
 
   begin
@@ -2805,15 +2803,15 @@ is
     (sock  : socket;
      data_to_receive   : in out socket_buffer;
      received_address  : out socket_address_access;
-     receive_count     : out ssize_t;
+     receive_count     : out int;
      miliseconds_start_timeout : Unsigned_32 :=  0;
      miliseconds_next_timeouts : Unsigned_32 :=  0
     ) return Boolean
   is
     use adare_net.base.waits;
 
-    received_length : ssize_t := 0;
-    total_received  : ssize_t := 0;
+    received_length : int := 0;
+    total_received  : int := 0;
 
     proto : constant Address_type_label := get_address_type (sock);
 
@@ -2874,14 +2872,14 @@ is
 
       total_received := total_received + received_length;
 
-      bme :
-      begin
-        Stream_Element_Array'Write
-        (data_to_receive'Access,
-          receive_data (1 .. Stream_Element_Offset (received_length)));
-      exception
-        when Constraint_Error => exit loop1;
-      end bme;
+      --  bme :
+      --  begin
+      Stream_Element_Array'Write
+      (data_to_receive'Access,
+        receive_data (1 .. Stream_Element_Offset (received_length)));
+      --  exception
+      --    when Constraint_Error => exit loop1;
+      --  end bme;
 
 
       if miliseconds_next_timeouts > 0 then
@@ -2912,15 +2910,15 @@ is
     (sock  : socket;
      data_to_receive   : not null socket_buffer_access;
      received_address  : out socket_address_access;
-     receive_count     : out ssize_t;
+     receive_count     : out int;
      miliseconds_start_timeout : Unsigned_32 :=  0;
      miliseconds_next_timeouts : Unsigned_32 :=  0
     ) return Boolean
   is
     use adare_net.base.waits;
 
-    received_length : ssize_t := 0;
-    total_received  : ssize_t := 0;
+    received_length : int := 0;
+    total_received  : int := 0;
 
     proto : constant Address_type_label := get_address_type (sock);
 
@@ -2981,14 +2979,14 @@ is
 
       total_received := total_received + received_length;
 
-      bme :
-      begin
-        Stream_Element_Array'Write
-        (data_to_receive,
-          receive_data (1 .. Stream_Element_Offset (received_length)));
-      exception
-        when Constraint_Error => exit loop1;
-      end bme;
+      --  bme :
+      --  begin
+      Stream_Element_Array'Write
+      (data_to_receive,
+        receive_data (1 .. Stream_Element_Offset (received_length)));
+      --  exception
+      --    when Constraint_Error => exit loop1;
+      --  end bme;
 
 
       if miliseconds_next_timeouts > 0 then
@@ -3019,15 +3017,15 @@ is
     (sock : socket;
      data_to_receive  : out stream_element_array_access;
      received_address : out socket_address_access;
-     receive_count    : out ssize_t;
+     receive_count    : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
   is
     use adare_net.base.waits;
 
-    received_length : ssize_t := 0;
-    total_received  : ssize_t := 0;
+    received_length : int := 0;
+    total_received  : int := 0;
 
     proto     : constant Address_type_label := get_address_type (sock);
 
@@ -3038,7 +3036,7 @@ is
 
     poll : aliased poll_of_events;
 
-    receive_data    : stream_element_array_access :=  new Stream_Element_Array'(1 .. (2**16 + 5) * 3 => 0);
+    receive_data    : stream_element_array_access :=  new Stream_Element_Array'(1 .. ((2**16) + 5) * 3 => 0);
     pos             : Stream_Element_Offset       := receive_data.all'First;
 
   begin
@@ -3092,7 +3090,7 @@ is
 
       pos :=  pos + Stream_Element_Offset (received_length);
 
-      if pos + ((2**16 + 5) * 2) > receive_data.all'Length then
+      if pos + (((2**16) + 5) * 2) > receive_data.all'Length then
         b1 :
         declare
           receive_data_old  : constant Stream_Element_Array := receive_data.all (1 .. pos - 1);
@@ -3131,15 +3129,15 @@ is
     (sock  : not null socket_access;
      data_to_receive   : in out socket_buffer;
      received_address  : out socket_address_access;
-     receive_count     : out ssize_t;
+     receive_count     : out int;
      miliseconds_start_timeout : Unsigned_32 :=  0;
      miliseconds_next_timeouts : Unsigned_32 :=  0
     ) return Boolean
   is
     use adare_net.base.waits;
 
-    received_length : ssize_t := 0;
-    total_received  : ssize_t := 0;
+    received_length : int := 0;
+    total_received  : int := 0;
 
     proto : constant Address_type_label := get_address_type (sock);
 
@@ -3148,7 +3146,7 @@ is
     storage_addr  : aliased constant Address  := get_address_and_family_address (storage);
     stor_len      : aliased constant size_t   :=  storage_len;
 
-    receive_data         : Stream_Element_Array := (1 .. (2**16 + 5) * 3 => 0);
+    receive_data         : Stream_Element_Array := (1 .. ((2**16) + 5) * 3 => 0);
     receive_data_address : constant Address     := receive_data (1)'Address;
     receive_data_length  : constant size_t      := receive_data'Length;
 
@@ -3238,15 +3236,15 @@ is
     (sock  : not null socket_access;
      data_to_receive   : not null socket_buffer_access;
      received_address  : out socket_address_access;
-     receive_count     : out ssize_t;
+     receive_count     : out int;
      miliseconds_start_timeout : Unsigned_32 :=  0;
      miliseconds_next_timeouts : Unsigned_32 :=  0
     ) return Boolean
   is
     use adare_net.base.waits;
 
-    received_length : ssize_t := 0;
-    total_received  : ssize_t := 0;
+    received_length : int := 0;
+    total_received  : int := 0;
 
     proto : constant Address_type_label := get_address_type (sock);
 
@@ -3307,14 +3305,14 @@ is
 
       total_received := total_received + received_length;
 
-      bme :
-      begin
-        Stream_Element_Array'Write
-        (data_to_receive,
-          receive_data (1 .. Stream_Element_Offset (received_length)));
-      exception
-        when Constraint_Error => exit loop1;
-      end bme;
+      --  bme :
+      --  begin
+      Stream_Element_Array'Write
+      (data_to_receive,
+        receive_data (1 .. Stream_Element_Offset (received_length)));
+      --  exception
+      --    when Constraint_Error => exit loop1;
+      --  end bme;
 
 
       if miliseconds_next_timeouts > 0 then
@@ -3345,15 +3343,15 @@ is
     (sock : not null socket_access;
      data_to_receive  : out stream_element_array_access;
      received_address : out socket_address_access;
-     receive_count    : out ssize_t;
+     receive_count    : out int;
      miliseconds_start_timeout  : Unsigned_32 := 0; -- default is wait forever.
      miliseconds_next_timeouts  : Unsigned_32 := 0 -- default is wait forever.
     ) return Boolean
   is
     use adare_net.base.waits;
 
-    received_length : ssize_t := 0;
-    total_received  : ssize_t := 0;
+    received_length : int := 0;
+    total_received  : int := 0;
 
     proto     : constant Address_type_label := get_address_type (sock);
 
@@ -3364,7 +3362,7 @@ is
 
     poll : aliased poll_of_events;
 
-    receive_data    : stream_element_array_access :=  new Stream_Element_Array'(1 .. (2**16 + 5) * 3 => 0);
+    receive_data    : stream_element_array_access :=  new Stream_Element_Array'(1 .. ((2**16) + 5) * 3 => 0);
     pos             : Stream_Element_Offset       := receive_data.all'First;
 
   begin
@@ -3418,13 +3416,13 @@ is
 
       pos :=  pos + Stream_Element_Offset (received_length);
 
-      if pos + ((2**16 + 5) * 2) > receive_data.all'Length then
+      if pos + (((2**16) + 5) * 2) > receive_data.all'Length then
         b1 :
         declare
           receive_data_old  : constant Stream_Element_Array := receive_data.all (1 .. pos - 1);
         begin
 
-          receive_data :=  new Stream_Element_Array'(1 .. receive_data_old'Length + ((2**16 + 5) * 3) => 0);
+          receive_data :=  new Stream_Element_Array'(1 .. receive_data_old'Length + (((2**16) + 5) * 3) => 0);
           receive_data.all (receive_data_old'Range) := receive_data_old;
         end b1;
       end if;

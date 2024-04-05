@@ -43,7 +43,7 @@ is
      flags_i  : int;
      from_i   : Address;
      from_len_i : Address
-    ) return ssize_t
+    ) return int
     with Import => True, Convention => C, External_Name => "recvfrom";
 
   function inner_recv
@@ -51,7 +51,7 @@ is
      buf_i  : Address;
      len_i  : size_t;
      flags_i  : int
-     ) return ssize_t
+     ) return int
      with Import => True, Convention => C, External_Name => "recv";
 
   procedure inner_reset_errno
@@ -66,7 +66,7 @@ is
      buf_i  : Address;
      len_i  : size_t;
      flags_i  : int
-    ) return ssize_t
+    ) return int
     with Import => True, Convention => C, External_Name => "send";
 
   function inner_sendto
@@ -76,18 +76,8 @@ is
      flags_i  : int;
      to_i     : Address;
      to_len_i : int
-     ) return ssize_t
+     ) return int
      with Import => True, Convention => C, External_Name => "sendto";
-
-  --  function inner_sendto
-  --    (sock_i : socket_type;
-  --     buf_i  : Address;
-  --     len_i  : size_t;
-  --     flags_i  : int;
-  --     to_i     : Address;
-  --     to_len_i : socklen_t
-  --     ) return ssize_t
-  --     with Import => True, Convention => C, External_Name => "sendto";
 
   function inner_inet_ntop
     (af : int;
