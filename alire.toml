@@ -1,6 +1,6 @@
 name = "adare_net"
 description = "It is a small, powerfull, portable and easy to use Ada network lib."
-version = "2.9.3-dev"
+version = "2.9.5-dev"
 long-description = """
    Adare_Net is a small, powerfull, portable and easy to use Ada network lib.
 
