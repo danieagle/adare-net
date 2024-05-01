@@ -109,8 +109,19 @@ is
    ) return int
     with Import => True, Convention => C, External_Name => "kevent";
 
-   function inner_msec_to_timespec
-     (msec_i : int) return Address
-    with Import => True, Convention => C, External_Name => "msec_to_timespec";
+  function inner_msec_to_timespec
+    (msec_i : int) return Address
+      with Import => True, Convention => C, External_Name => "msec_to_timespec";
+
+
+  procedure inner_create_addresses
+    (host_i    : Address;
+     service_i : Address;
+     data_i    : Address;
+     data_length_i : Address;
+     addr_family_i : Address_family_label;
+     addr_type_i   : Address_type_label
+    )
+    with Import => True, Convention => C,  External_Name => "create_addresses";
 
 end adare_net.base.inners;

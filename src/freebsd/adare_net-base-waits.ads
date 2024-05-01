@@ -101,11 +101,10 @@ private
     External_Name   =>  "adare_kpoll_filter_write";
 
 
-  type ext_e  is array (unsigned_8 range <>) of Unsigned_64
+  type ext_e  is array (Unsigned_8 range <>) of Unsigned_64
     with Convention => C, default_component_value => 0,
     preelaborable_initialization;
 
-  -- type kevent_cache_array
 
     type kernel_event is
       record
@@ -113,7 +112,7 @@ private
         filter  : short   := 0;
         flags   : unsigned_short := 0;
         fflags  : unsigned    := 0;
-        data    : integer_64  := 0;
+        data    : Integer_64  := 0;
         udate   : Address     := Null_Address;
         ext     : ext_e (1 .. 4)  := (others => 0);
       end record
@@ -133,7 +132,7 @@ private
 
     type socket_kevent_array is array (int range <>) of socket_kevent;
 
-    type socket_kevent_array_access is access all socket_array;
+    type socket_kevent_array_access is access all socket_kevent_array;
 
     type poll_of_events is limited
       record
@@ -156,7 +155,14 @@ private
 
     kpoll_flag_del : constant unsigned_short
       with  Convention => C, Import,
-      External_Name => "adare_kpoll_flag_del";
+        External_Name => "adare_kpoll_flag_del";
+
+    kpoll_flag_error : constant unsigned_short
+      with  Convention => C, Import,
+      External_Name => "adare_kpoll_flag_error";
+
+
+    package a_socket_type is new System.Address_To_Access_Conversions (socket_type);
 
 
 end adare_net.base.waits;

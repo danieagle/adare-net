@@ -18,14 +18,16 @@ typedef uint64_t c_socket_type;
 typedef uint32_t c_socket_type;
 #endif
 
-#endif
-
-#ifndef _WIN32
+#else
 
 #include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <errno.h>
+
+// #ifdef __FreeBSD__
+#include <netinet/in.h>
+// #endif
 
 typedef int c_socket_type;
 

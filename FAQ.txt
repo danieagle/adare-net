@@ -6,6 +6,9 @@
 3.1) Pleeeaase report success or failure :-) in main git repository.
 
 
+4) minimum version for freebsd is 13.0
+
+
 Thanks!
 GrateFull, Dani.
 Enjoy!!!

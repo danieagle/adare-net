@@ -106,11 +106,14 @@ is
     loop0 :
     for E of poll.socket_poll.all loop
       tmp_indx := tmp_indx + 1;
-      exit loop0 when e.sock = tmp_sock;
+      exit loop0 when E.sock = tmp_sock;
     end loop loop0;
 
-    if poll.socket_poll.all (tmp_indx).sock = tmp_sock and then
-      poll.socket_poll.all (tmp_indx).ev = event_bitmap then
+    if poll.socket_poll.all (tmp_indx).sock /= tmp_sock then
+      return False;
+    end if;
+
+    if poll.socket_poll.all (tmp_indx).ev = event_bitmap then
       return True;
     end if;
 
@@ -126,18 +129,20 @@ is
     begin
 
       if inner_kevent (poll.handle, tmp_event'Address, 1,
-        Null_Address, 0, Null_Address) < 0 then
+                       Null_Address, 0, Null_Address) < 0
+      then
 
-        return False
+        return False;
       end if;
 
       tmp_event.filter  := event_bitmap;
-      tmp_event.flags   := kpoll_flag_add | kpoll_flag_enable;
+      tmp_event.flags   := kpoll_flag_add or kpoll_flag_enable;
       tmp_event.fflags  := 0;
       tmp_event.udate   := Null_Address;
+      tmp_event.ext     := (others => <>);
 
-      return (inner_kevent (poll.handle, tmp_event'Address, 1,
-        Null_Address, 0, Null_Address) > 0);
+      return not (inner_kevent (poll.handle, tmp_event'Address, 1,
+        Null_Address, 0, Null_Address) < 0);
 
     end b0;
   end update;
@@ -148,13 +153,13 @@ is
      sock  : socket) return Boolean
   is
     tmp_sock  : constant socket_type := get_socket (sock);
-    tmp_indx  : int := poll.socket_poll.all'First - 1;                := 0;
+    tmp_indx  : int := poll.socket_poll.all'First - 1;
   begin
 
     loop0 :
     for E of poll.socket_poll.all loop
       tmp_indx := tmp_indx + 1;
-      exit loop0 when e.sock = tmp_sock;
+      exit loop0 when E.sock = tmp_sock;
     end loop loop0;
 
     if poll.socket_poll.all (tmp_indx).sock /= tmp_sock then
@@ -173,33 +178,33 @@ is
     begin
 
       if inner_kevent (poll.handle, tmp_event'Address, 1,
-        Null_Address, 0, Null_Address) < 0 then
+                       Null_Address, 0, Null_Address) < 0
+      then
 
-        return False
+        return False;
       end if;
 
       poll.count  := poll.count - 1;
       poll.socket_poll.all (tmp_indx) := (sock => invalid_socket, ev => 0);
-      return True;
 
+      return True;
     end b0;
   end remove;
 
   function add
    (poll  : aliased in out poll_of_events;
     sock  : socket;
-    event_bitmap  : unsigned_long) return Boolean
+    event_bitmap  : short) return Boolean
   is
-    index : int := 0;
+    index     : int := 0;
     tmp_sock  : constant socket_type  := get_socket (sock);
-    event : epoll_event;
-    ok    : Boolean               := False;
 
   begin
+
     if poll.count >= poll.socket_poll.all'Length then
       loop0 :
       for E of poll.socket_poll.all loop
-        if E = invalid_socket then
+        if E.sock = invalid_socket then
           index := index + 1;
         end if;
       end loop loop0;
@@ -209,49 +214,54 @@ is
       else
         b1 :
         declare
-          tmp_epa : epoll_event_array :=
+          tmp_epa : kernel_event_array :=
            (1 .. poll.event_poll.all'Length + 15 => <>);
-          tmp_spa : socket_array      :=
-           (1 .. poll.event_poll.all'Length + 15 => invalid_socket);
+          tmp_spa : socket_kevent_array :=
+           (1 .. poll.event_poll.all'Length + 15 => (sock => invalid_socket, ev => 0));
         begin
           tmp_epa (1 .. poll.event_poll.all'Length) := poll.event_poll.all;
           tmp_spa (1 .. poll.event_poll.all'Length) := poll.socket_poll.all;
-          poll.event_poll := new epoll_event_array'(tmp_epa);
-          poll.socket_poll := new socket_array'(tmp_spa);
+          poll.event_poll := new kernel_event_array'(tmp_epa);
+          poll.socket_poll := new socket_kevent_array'(tmp_spa);
         end b1;
       end if;
     end if;
 
-    event.events := Unsigned_32 (event_bitmap);
+    b2 :
+    declare
+      tmp_event : kernel_event :=
+        (ident  => tmp_sock'Address,
+         filter => event_bitmap,
+         flags  => kpoll_flag_add or kpoll_flag_enable,
+         fflags => 0,
+         udate  => Null_Address,
+         others => <>);
+    begin
 
-    --  if Alire_Host_OS = "windows" then
-    --    event.data.sock := sock;
-    --  else
-    event.data.fd := int (tmp_sock);
-    --  end if;
+      if inner_kevent (poll.handle, tmp_event'Address, 1,
+                       Null_Address, 0, Null_Address) < 0
+      then
 
-    ok := (0 = inner_epoll_ctl (poll.handle, epoll_add, tmp_sock, event'Address));
+        return False;
+      end if;
 
-    if not ok then
-      return False;
-    end if;
+      index := poll.socket_poll.all'First - 1;
 
-    index := 0;
+      loop1 :
+      for E of poll.socket_poll.all loop
+        index := index + 1;
+        exit loop1 when E.sock = invalid_socket;
+      end loop loop1;
 
-    loop1 :
-    for E of poll.socket_poll.all loop
-      index := index + 1;
-      exit loop1 when E = invalid_socket;
-    end loop loop1;
+      if not (poll.socket_poll.all (index).sock = invalid_socket) then
+        return False;
+      end if;
 
-    if not (poll.socket_poll.all (index) = invalid_socket) then
-      return False;
-    end if;
+      poll.socket_poll.all (index) := (sock => tmp_sock, ev => event_bitmap);
+      poll.count               := poll.count + 1;
 
-    poll.socket_poll (index) := tmp_sock;
-    poll.count               := poll.count + 1;
-
-    return True;
+      return True;
+    end b2;
   end add;
 
   procedure reset_results
@@ -267,76 +277,34 @@ is
     (poll  : aliased in poll_of_events;
      sock  : socket) return Boolean
   is
+    mi_socket : constant socket_type := get_socket (sock);
   begin
     if poll.last_wait_returned <= 0 then
       return False;
     end if;
 
-    b0 :
-    declare
-      mi_socket : constant socket_type := get_socket (sock);
-      index : int := 0;
-    begin
+    return (for some E of poll.event_poll.all (1 .. poll.last_wait_returned)
+        => a_socket_type.To_Pointer (E.ident).all = mi_socket
+        and then E.filter = send_event
+        and then (E.flags and kpoll_flag_error) = 0);
 
-      loop0 :
-      for E of poll.event_poll.all (1 .. poll.last_wait_returned) loop
-        index := index + 1;
-        exit loop0 when E.data.fd = int (mi_socket);
-        --  exit loop0 when (if Alire_Host_OS /= "windows" then E.data.fd = int (mi_socket) else E.data.sock = mi_socket);
-      end loop loop0;
-
-      --  if Alire_Host_OS /= "windows" then
-      if poll.event_poll.all (index).data.fd /= int (mi_socket) then
-        return False;
-      end if;
-
-      return ((poll.event_poll.all (index).events and Unsigned_32 (send_event)) > 0);
-      --  end if;
-
-      --  if where_poll.event_poll.all (index).data.sock /= mi_socket then
-      --    return False;
-      --  end if;
-
-      --  return ((where_poll.event_poll.all (index).events and Unsigned_32 (send_event)) > 0);
-    end b0;
   end is_send;
 
   function is_receive
     (poll  : aliased in poll_of_events;
      sock  : socket) return Boolean
   is
+    mi_socket : constant socket_type := get_socket (sock);
   begin
     if poll.last_wait_returned <= 0 then
       return False;
     end if;
 
-    b0 :
-    declare
-      --  use Adare_Net_Config;
-      mi_socket : constant socket_type := get_socket (sock);
-      index : int := 0;
-    begin
-      loop0 :
-      for E of poll.event_poll.all (1 .. poll.last_wait_returned) loop
-        index := index + 1;
-        exit loop0 when E.data.fd = int (mi_socket);
-        --  exit loop0 when (if Alire_Host_OS /= "windows" then E.data.fd = int (mi_socket) else E.data.sock = mi_socket);
-      end loop loop0;
+    return (for some E of poll.event_poll.all (1 .. poll.last_wait_returned)
+        => a_socket_type.To_Pointer (E.ident).all = mi_socket
+        and then E.filter = receive_event
+        and then (E.flags and kpoll_flag_error) = 0);
 
-      --  if Alire_Host_OS /= "windows" then
-      if poll.event_poll.all (index).data.fd /= int (mi_socket) then
-        return False;
-      end if;
-
-      return ((poll.event_poll.all (index).events and Unsigned_32 (receive_event)) > 0);
-      --  end if;
-
-      --  if where_poll.event_poll.all (index).data.sock /= mi_socket then
-      --    return False;
-      --  end if;
-
-      --  return ((where_poll.event_poll.all (index).events and Unsigned_32 (receive_event)) > 0);
-    end b0;
   end is_receive;
 
   function init
@@ -344,15 +312,15 @@ is
      min_qtie : int := 2
     ) return Boolean
   is
-    tmp_epoll_handle : constant handle_type := inner_epoll_create1 (0);
+    tmp_epoll_handle : constant handle_type := inner_kqueue;
   begin
     if tmp_epoll_handle = failed_handle then
       return False;
     end if;
 
     poll.handle       :=  tmp_epoll_handle;
-    poll.event_poll   :=  new epoll_event_array'(1 .. min_qtie => <>);
-    poll.socket_poll  :=  new socket_array'(1 .. min_qtie => invalid_socket);
+    poll.event_poll   :=  new kernel_event_array'(1 .. min_qtie => <>);
+    poll.socket_poll  :=  new socket_kevent_array'(1 .. min_qtie => (sock => invalid_socket, ev => 0));
     poll.initialized  :=  True;
     poll.count        :=  0;
     poll.last_wait_returned :=  0;
@@ -363,11 +331,18 @@ is
   procedure close
     (poll     : aliased in out poll_of_events)
   is
-    tmp_spa : constant socket_array := poll.socket_poll.all;
+    tmp_spa : constant socket_kevent_array := poll.socket_poll.all;
     handle  : constant handle_type :=  poll.handle;
     tmp_res : int := 0
       with Unreferenced;
 
+    tmp_event : kernel_event :=
+        (ident  => Null_Address,
+         filter => 0,
+         flags  => kpoll_flag_del,
+         fflags => 0,
+         udate  => Null_Address,
+         others => <>);
   begin
 
     poll.initialized  :=  False;
@@ -379,12 +354,16 @@ is
 
     loop0 :
     for E of tmp_spa loop
-      if E /= invalid_socket then
-        tmp_res := inner_epoll_ctl (handle, epoll_del, E, Null_Address);
+      if E.sock /= invalid_socket then
+        tmp_event.ident   := E.sock'Address;
+        tmp_event.filter  := E.ev;
+
+        tmp_res :=  inner_kevent (poll.handle, tmp_event'Address, 1,
+          Null_Address, 0, Null_Address);
       end if;
     end loop loop0;
 
-    tmp_res := inner_epoll_close (handle);
+    tmp_res := inner_close (handle);
   end close;
 
 end adare_net.base.waits;

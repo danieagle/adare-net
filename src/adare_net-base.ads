@@ -949,7 +949,7 @@ private
 
   type sockaddr_in is
     record
-      sin_family  : Unsigned_16 := 0;
+      sin_family  : Unsigned_16 := 0; -- bsd unsigned_8 ?
       sin_port    : Unsigned_16 := 0;
       sin_addr    : in_addr := (others => <>);
       sin_zero    : char_array (1 .. 8) := (others => char'Val (0));
@@ -958,7 +958,7 @@ private
 
   type sockaddr_in6 is
     record
-      sin6_family   : Unsigned_16 := 0;
+      sin6_family   : Unsigned_16 := 0; -- bsd unsigned_8 ?
       sin6_port     : Unsigned_16 := 0;
       sin6_flowinfo : Unsigned_32 := 0;
       sin6_addr     : in6_addr    := (others => <>);

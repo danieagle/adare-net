@@ -63,7 +63,6 @@ begin
 
       bytes_tmp     : int :=  0;
 
-      tmp_msg : stream_element_array_access := null;
     begin
       if not create_addresses
         (host_or_ip   =>  Argument (1), network_port_or_service  =>  Argument (2),
