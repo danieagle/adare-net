@@ -70,15 +70,15 @@ void create_addresses (
 
   i += sizeof (int);
 
-  for (p = servinfo; p != NULL && i + d + (int)p->ai_addrlen < e; p = p->ai_next, ++i)
+  for (p = servinfo; p != NULL && (i + d + (int)p->ai_addrlen) < e; p = p->ai_next, ++i)
   {
-    a_int = p->ai_protocol;
+    a_int = (int)p->ai_protocol;
 
     memcpy(&dt[i], &a_int, sizeof(int));
 
     i += sizeof(int);
 
-    a_u16 = (uint16_t) p->ai_addrlen;
+    a_u16 = (uint16_t)p->ai_addrlen;
 
     memcpy(&dt[i], &a_u16, sizeof (uint16_t));
 

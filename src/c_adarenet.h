@@ -20,17 +20,27 @@ typedef uint32_t c_socket_type;
 
 #else
 
-#include <netdb.h>
+#ifdef __FreeBSD__
+
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <errno.h>
-
-// #ifdef __FreeBSD__
 #include <netinet/in.h>
-// #endif
+#include <netdb.h>
+#include <errno.h>
 
 typedef int c_socket_type;
 
+#else
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <errno.h>
+
+typedef int c_socket_type;
+
+#endif
 #endif
 
 
