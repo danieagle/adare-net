@@ -966,6 +966,27 @@ private
     end record
       with Convention => C;
 
+  type sockaddr_in_bsd is
+    record
+      sin_len     : Unsigned_8  := 0;
+      sin_family  : Unsigned_8  := 0;
+      sin_port    : Unsigned_16 := 0;
+      sin_addr    : in_addr := (others => <>);
+      sin_zero    : char_array (1 .. 8) := (others => char'Val (0));
+    end record
+      with Convention => C;
+
+  type sockaddr_in6_bsd is
+    record
+      sin6_len      : Unsigned_8  := 0;
+      sin6_family   : Unsigned_8  := 0;
+      sin6_port     : Unsigned_16 := 0;
+      sin6_flowinfo : Unsigned_32 := 0;
+      sin6_addr     : in6_addr    := (others => <>);
+      sin6_scope_id : Unsigned_32 := 0;
+    end record
+      with Convention => C;
+
   type socket_address  is
     record
       stor  : char_array_access := null;
@@ -999,5 +1020,7 @@ private
 
   package a_sockaddr_in6 is new System.Address_To_Access_Conversions (sockaddr_in6);
   package a_sockaddr_in4 is new System.Address_To_Access_Conversions (sockaddr_in);
+  package a_sockaddr_in6_bsd is new System.Address_To_Access_Conversions (sockaddr_in6_bsd);
+  package a_sockaddr_in4_bsd is new System.Address_To_Access_Conversions (sockaddr_in_bsd);
 
 end adare_net.base;
