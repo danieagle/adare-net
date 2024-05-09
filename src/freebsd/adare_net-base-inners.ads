@@ -109,9 +109,9 @@ is
    ) return int
     with Import => True, Convention => C, External_Name => "kevent";
 
-  function inner_msec_to_timespec
+  function inner_misec_to_timespec
     (msec_i : int) return Address
-      with Import => True, Convention => C, External_Name => "msec_to_timespec";
+      with Import => True, Convention => C, External_Name => "misec_to_timespec";
 
 
   procedure inner_create_addresses

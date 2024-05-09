@@ -40,7 +40,7 @@ is
     poll.last_wait_returned := inner_kevent
       (poll.handle, Null_Address, 0,
         poll.event_poll.all (1)'Address, poll.count,
-        inner_msec_to_timespec (miliseconds_timeout)
+        inner_misec_to_timespec (miliseconds_timeout)
       );
 
     return poll.last_wait_returned > 0;
@@ -120,29 +120,30 @@ is
     b0 :
     declare
       tmp_event : kernel_event :=
-        (ident  => tmp_sock'Address,
+        (ident  => tmp_sock,
          filter => poll.socket_poll.all (tmp_indx).ev,
          flags  => kpoll_flag_del,
          fflags => 0,
-         udate  => Null_Address,
-         others => <>);
+         data   => 0,
+         udata  => Null_Address);
     begin
 
       if inner_kevent (poll.handle, tmp_event'Address, 1,
-                       Null_Address, 0, Null_Address) < 0
+                       Null_Address, 0, Null_Address) = -1
       then
 
         return False;
       end if;
 
-      tmp_event.filter  := event_bitmap;
-      tmp_event.flags   := kpoll_flag_add or kpoll_flag_enable;
-      tmp_event.fflags  := 0;
-      tmp_event.udate   := Null_Address;
-      tmp_event.ext     := (others => <>);
+      tmp_event := (ident => tmp_sock, filter => event_bitmap,
+                    flags => kpoll_flag_add or kpoll_flag_clear,
+                    fflags => 0, data => 0, udata => Null_Address
+                   );
+
+      -- tmp_event.flags   := kpoll_flag_add or kpoll_flag_enable;
 
       return not (inner_kevent (poll.handle, tmp_event'Address, 1,
-        Null_Address, 0, Null_Address) < 0);
+        Null_Address, 0, Null_Address) = -1);
 
     end b0;
   end update;
@@ -169,16 +170,16 @@ is
     b0 :
     declare
       tmp_event : kernel_event :=
-        (ident  => tmp_sock'Address,
+        (ident  => tmp_sock,
          filter => poll.socket_poll.all (tmp_indx).ev,
          flags  => kpoll_flag_del,
          fflags => 0,
-         udate  => Null_Address,
-         others => <>);
+         data   => 0,
+         udata  => Null_Address);
     begin
 
       if inner_kevent (poll.handle, tmp_event'Address, 1,
-                       Null_Address, 0, Null_Address) < 0
+                       Null_Address, 0, Null_Address) = -1
       then
 
         return False;
@@ -230,16 +231,16 @@ is
     b2 :
     declare
       tmp_event : kernel_event :=
-        (ident  => tmp_sock'Address,
+        (ident  => tmp_sock,
          filter => event_bitmap,
-         flags  => kpoll_flag_add or kpoll_flag_enable,
+         flags  => kpoll_flag_add or kpoll_flag_clear,
          fflags => 0,
-         udate  => Null_Address,
-         others => <>);
+         data   => 0,
+         udata  => Null_Address);
     begin
 
       if inner_kevent (poll.handle, tmp_event'Address, 1,
-                       Null_Address, 0, Null_Address) < 0
+                       Null_Address, 0, Null_Address) = -1
       then
 
         return False;
@@ -279,12 +280,12 @@ is
   is
     mi_socket : constant socket_type := get_socket (sock);
   begin
-    if poll.last_wait_returned <= 0 then
+    if poll.last_wait_returned <= 0 then -- poll.count ?
       return False;
     end if;
 
     return (for some E of poll.event_poll.all (1 .. poll.last_wait_returned)
-        => a_socket_type.To_Pointer (E.ident).all = mi_socket
+        => E.ident = mi_socket
         and then E.filter = send_event
         and then (E.flags and kpoll_flag_error) = 0);
 
@@ -301,7 +302,7 @@ is
     end if;
 
     return (for some E of poll.event_poll.all (1 .. poll.last_wait_returned)
-        => a_socket_type.To_Pointer (E.ident).all = mi_socket
+        => E.ident = mi_socket
         and then E.filter = receive_event
         and then (E.flags and kpoll_flag_error) = 0);
 
@@ -331,39 +332,59 @@ is
   procedure close
     (poll     : aliased in out poll_of_events)
   is
-    tmp_spa : constant socket_kevent_array := poll.socket_poll.all;
-    handle  : constant handle_type :=  poll.handle;
     tmp_res : int := 0
       with Unreferenced;
 
-    tmp_event : kernel_event :=
-        (ident  => Null_Address,
-         filter => 0,
-         flags  => kpoll_flag_del,
-         fflags => 0,
-         udate  => Null_Address,
-         others => <>);
   begin
 
-    poll.initialized  :=  False;
-    poll.count        :=  0;
-    poll.socket_poll  :=  null;
-    poll.event_poll   :=  null;
-    poll.handle       :=  failed_handle;
-    poll.last_wait_returned :=  0;
+    if poll.count < 1 then
+      tmp_res := inner_close (poll.handle);
 
-    loop0 :
-    for E of tmp_spa loop
-      if E.sock /= invalid_socket then
-        tmp_event.ident   := E.sock'Address;
-        tmp_event.filter  := E.ev;
+      poll.initialized  :=  False;
+      poll.count        :=  0;
+      poll.socket_poll  :=  null;
+      poll.event_poll   :=  null;
+      poll.handle       :=  failed_handle;
+      poll.last_wait_returned :=  0;
 
-        tmp_res :=  inner_kevent (poll.handle, tmp_event'Address, 1,
-          Null_Address, 0, Null_Address);
+      return;
+    end if;
+
+    b1 :
+    declare
+      tmp_kevent  : kernel_event_array  := (1 .. poll.count => (ident  => invalid_socket,
+         filter => 0, flags  => kpoll_flag_del, fflags => 0,  data   => 0,  udata  => Null_Address));
+      tmp_indx    : int := tmp_kevent'First - 1;
+      tmp_indx2   : int := 0;
+
+    begin
+      loop0 :
+      for E of poll.socket_poll.all loop
+        if E.sock /= invalid_socket then
+          tmp_indx := tmp_indx + 1;
+          tmp_kevent (tmp_indx).ident   := E.sock;
+          tmp_kevent (tmp_indx).filter  := E.ev;
+          tmp_indx2 := tmp_indx2 + 1;
+        end if;
+      end loop loop0;
+
+      if tmp_indx2 > 0 then
+        tmp_res :=  inner_kevent
+          (poll.handle, tmp_kevent'Address, tmp_indx2,
+          Null_Address, 0,  Null_Address);
       end if;
-    end loop loop0;
 
-    tmp_res := inner_close (handle);
+      tmp_res := inner_close (poll.handle);
+
+      poll.initialized  :=  False;
+      poll.count        :=  0;
+      poll.socket_poll  :=  null;
+      poll.event_poll   :=  null;
+      poll.handle       :=  failed_handle;
+      poll.last_wait_returned :=  0;
+
+      return;
+    end b1;
   end close;
 
 end adare_net.base.waits;

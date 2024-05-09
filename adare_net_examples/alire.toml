@@ -6,7 +6,7 @@ authors = ["Daniel Norte de Moraes"]
 maintainers = ["Daniel Norte de Moraes <danieagle@zohomail.com>"]
 maintainers-logins = ["danieagle"]
 
-executables = ["test_get_multi_addresses",
+executables = ["test_get_multi_addresses", "test_get_multi_addresses_v2",
   "tcp_server_new", "tcp_client_new",
   "udp_server_new", "udp_client_new"]
 

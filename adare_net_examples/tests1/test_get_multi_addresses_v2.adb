@@ -4,7 +4,7 @@ with adare_net.base;  use adare_net.base;
 
 with Ada.Text_IO; use Ada;
 
-procedure test_get_multi_addresses is
+procedure test_get_multi_addresses_v2 is
 begin
 
   start_adare_net;
@@ -12,7 +12,7 @@ begin
   b0 :
   declare
     mi_addresses  : aliased socket_addresses;
-    mi_address    : aliased socket_address;
+    mi_address    : aliased socket_address_access;
   begin
 
     Text_IO.Put_Line (" addresses from google.com ");
@@ -44,4 +44,4 @@ begin
 
   stop_adare_net;
 
-end test_get_multi_addresses;
+end test_get_multi_addresses_v2;

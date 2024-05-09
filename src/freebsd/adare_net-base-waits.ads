@@ -100,21 +100,14 @@ private
     with Convention => C, import,
     External_Name   =>  "adare_kpoll_filter_write";
 
-
-  type ext_e  is array (Unsigned_8 range <>) of Unsigned_64
-    with Convention => C, default_component_value => 0,
-    preelaborable_initialization;
-
-
     type kernel_event is
       record
-        ident   : Address := Null_Address;
-        filter  : short   := 0;
+        ident   : socket_type := -1;
+        filter  : short       := 0;
         flags   : unsigned_short := 0;
         fflags  : unsigned    := 0;
         data    : Integer_64  := 0;
-        udate   : Address     := Null_Address;
-        ext     : ext_e (1 .. 4)  := (others => 0);
+        udata   : Address     := Null_Address;
       end record
     with Convention => C, preelaborable_initialization;
 
@@ -128,13 +121,13 @@ private
         sock  : socket_type := -1;
         ev    : short := 0;
       end record
-    with preelaborable_initialization;
+    with Convention => C, preelaborable_initialization;
 
     type socket_kevent_array is array (int range <>) of socket_kevent;
 
     type socket_kevent_array_access is access all socket_kevent_array;
 
-    type poll_of_events is limited
+    type poll_of_events is
       record
         initialized : Boolean     := False;
         handle      : handle_type := failed_handle;
@@ -143,7 +136,7 @@ private
         count       : int := 0;
         last_wait_returned  : int := 0;
       end record
-      with preelaborable_initialization;
+      with Convention => C, preelaborable_initialization;
 
     kpoll_flag_add : constant unsigned_short
       with  Convention => C, Import,
@@ -153,6 +146,10 @@ private
       with  Convention => C, Import,
             External_Name => "adare_kpoll_flag_enable";
 
+    kpoll_flag_clear : constant unsigned_short
+      with  Convention => C, Import,
+            External_Name => "adare_kpoll_flag_clear";
+
     kpoll_flag_del : constant unsigned_short
       with  Convention => C, Import,
         External_Name => "adare_kpoll_flag_del";
@@ -160,9 +157,6 @@ private
     kpoll_flag_error : constant unsigned_short
       with  Convention => C, Import,
       External_Name => "adare_kpoll_flag_error";
-
-
-    package a_socket_type is new System.Address_To_Access_Conversions (socket_type);
 
 
 end adare_net.base.waits;

@@ -1017,6 +1017,7 @@ private
 
   package a_int is new System.Address_To_Access_Conversions (int);
   package a_uint16 is new System.Address_To_Access_Conversions (Unsigned_16);
+  package a_uint8 is new System.Address_To_Access_Conversions (Unsigned_8);
 
   package a_sockaddr_in6 is new System.Address_To_Access_Conversions (sockaddr_in6);
   package a_sockaddr_in4 is new System.Address_To_Access_Conversions (sockaddr_in);

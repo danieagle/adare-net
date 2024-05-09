@@ -218,7 +218,7 @@ begin
       loop2 :
       loop
         if not wait_connection  (sock =>  host_socket,  response  => tmp_received_socket_access,
-          data_received =>  msg_seaa, miliseconds_start_timeout => 20000)
+          data_received =>  msg_seaa, miliseconds_start_timeout => 0)
         then
           close (host_socket); -- to disable 'listen' too.
 

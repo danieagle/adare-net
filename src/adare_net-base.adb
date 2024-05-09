@@ -3,7 +3,11 @@ with adare_net_exceptions;  use adare_net_exceptions;
 
 with adare_net.base.inners; use adare_net.base.inners;
 
+with Adare_Net_Config; use Adare_Net_Config;
+
 with adare_net.base.waits;
+
+with System.Storage_Elements; use System.Storage_Elements;
 
 package body adare_net.base
   with Preelaborate
@@ -184,10 +188,22 @@ is
   end get_family_label;
 
   function get_family_label (a_family : aliased char_array) return Address_family_label
-  is (get_family_label (Address_family (a_uint16.To_Pointer (get_address_and_family_address (a_family)).all)));
+  is
+    tmp_addr  : constant Address      := get_address_and_family_address (a_family);
+    tmp_u168  : constant Unsigned_16  := (if Alire_Host_OS /= "freebsd" then a_uint16.To_Pointer (tmp_addr).all
+      else Unsigned_16 (a_uint8.To_Pointer (tmp_addr + 1).all));
+  begin
+    return get_family_label (Address_family (tmp_u168));
+  end get_family_label;
 
   function get_family_label (a_family : not null char_array_access) return Address_family_label
-  is (get_family_label (Address_family (a_uint16.To_Pointer (get_address_and_family_address (a_family)).all)));
+  is
+    tmp_addr  : constant Address      := get_address_and_family_address (a_family);
+    tmp_u168  : constant Unsigned_16  := (if Alire_Host_OS /= "freebsd" then a_uint16.To_Pointer (tmp_addr).all
+      else Unsigned_16 (a_uint8.To_Pointer (tmp_addr + 1).all));
+  begin
+    return get_family_label (Address_family (tmp_u168));
+  end get_family_label;
 
 
   function get_family_label (from : socket) return Address_family_label
@@ -203,11 +219,22 @@ is
   is (get_family_label (from.stor));
 
   function get_family_label (from : socket_addresses) return Address_family_label
-  is (get_family_label (Address_family (a_uint16.To_Pointer (get_address_and_family_address (from)).all)));
+  is
+    tmp_addr  : constant Address      := get_address_and_family_address (from);
+    tmp_u168  : constant Unsigned_16  := (if Alire_Host_OS /= "freebsd" then a_uint16.To_Pointer (tmp_addr).all
+      else Unsigned_16 (a_uint8.To_Pointer (tmp_addr + 1).all));
+  begin
+    return get_family_label (Address_family (tmp_u168));
+  end get_family_label;
 
   function get_family_label (from : not null socket_addresses_access) return Address_family_label
-  is (get_family_label (Address_family (a_uint16.To_Pointer (get_address_and_family_address (from)).all)));
-
+  is
+    tmp_addr  : constant Address      := get_address_and_family_address (from);
+    tmp_u168  : constant Unsigned_16  := (if Alire_Host_OS /= "freebsd" then a_uint16.To_Pointer (tmp_addr).all
+      else Unsigned_16 (a_uint8.To_Pointer (tmp_addr + 1).all));
+  begin
+    return get_family_label (Address_family (tmp_u168));
+  end get_family_label;
 
   function get_family_label (from : socket) return String
   is (Address_family_label'(get_family_label (from))'Image);
@@ -533,7 +560,7 @@ is
     response.next_cursor  :=  response.stor.all'First + sizint;
 
     return True;
-  end create_addresses;
+  end create_addresses; -- ok
 
   function create_socket
     (sock_address : socket_address;
@@ -545,6 +572,8 @@ is
     proto   : Address_type_label;
     acc     : int := 0
       with Unreferenced;
+
+    tmp_addr  : Address := Null_Address;
 
     mi_socket_typ : socket_type := 0;
   begin
@@ -559,9 +588,11 @@ is
       connected => False, binded => False, listened => False);
 
     proto := get_address_type (response.storage.stor);
+    tmp_addr  := get_address_and_family_address (response.storage.stor);
 
     mi_socket_typ :=
-      inner_socket (int (a_uint16.To_Pointer (get_address_and_family_address (response.storage.stor)).all), -- family
+      inner_socket (int (if Alire_Host_OS /= "freebsd" then a_uint16.To_Pointer (tmp_addr).all
+                        else Unsigned_16 (a_uint8.To_Pointer (tmp_addr + 1).all)), -- family
         int (if proto = tcp then tmp_tcp else tmp_udp), -- type
         get_address_protocol (response.storage.stor) -- protocol
       );
@@ -620,6 +651,7 @@ is
     acc     : int := 0
       with Unreferenced;
 
+    tmp_addr : Address := Null_Address;
     mi_socket_typ : socket_type := 0;
   begin
 
@@ -634,8 +666,11 @@ is
 
     proto := get_address_type (response.storage.stor);
 
+    tmp_addr := get_address_and_family_address (response.storage.stor);
+
     mi_socket_typ :=
-      inner_socket (int (a_uint16.To_Pointer (get_address_and_family_address (response.storage.stor)).all), -- family
+      inner_socket (int (if Alire_Host_OS /= "freebsd" then a_uint16.To_Pointer (tmp_addr).all
+                        else Unsigned_16 (a_uint8.To_Pointer (tmp_addr + 1).all)), -- family
         int (if proto = tcp then tmp_tcp else tmp_udp), -- type
         get_address_protocol (response.storage.stor) -- protocol
       );
@@ -692,6 +727,7 @@ is
     acc     : int := 0
       with Unreferenced;
 
+    tmp_addr : Address := Null_Address;
     mi_socket_typ : socket_type := 0;
   begin
 
@@ -707,8 +743,11 @@ is
 
     proto := get_address_type (response.storage.stor);
 
+    tmp_addr := get_address_and_family_address (response.storage.stor);
+
     mi_socket_typ :=
-      inner_socket (int (a_uint16.To_Pointer (get_address_and_family_address (response.storage.stor)).all), -- family
+      inner_socket (int (if Alire_Host_OS /= "freebsd" then a_uint16.To_Pointer (tmp_addr).all
+                        else Unsigned_16 (a_uint8.To_Pointer (tmp_addr + 1).all)), -- family
         int (if proto = tcp then tmp_tcp else tmp_udp), -- type
         get_address_protocol (response.storage.stor) -- protocol
       );
@@ -768,6 +807,7 @@ is
     acc     : int := 0
       with Unreferenced;
 
+    tmp_addr  : Address := Null_Address;
     mi_socket_typ : socket_type := 0;
   begin
 
@@ -782,8 +822,10 @@ is
 
     proto := get_address_type (response.storage.stor);
 
+    tmp_addr := get_address_and_family_address (response.storage.stor);
     mi_socket_typ :=
-      inner_socket (int (a_uint16.To_Pointer (get_address_and_family_address (response.storage.stor)).all), -- family
+      inner_socket (int (if Alire_Host_OS /= "freebsd" then a_uint16.To_Pointer (tmp_addr).all
+                        else Unsigned_16 (a_uint8.To_Pointer (tmp_addr + 1).all)), -- family
         int (if proto = tcp then tmp_tcp else tmp_udp), -- type
         get_address_protocol (response.storage.stor) -- protocol
       );
@@ -796,7 +838,7 @@ is
     if bind_socket then
       reuse_address (mi_socket_typ);
 
-      if inner_bind (mi_socket_typ, get_address_and_family_address (response.storage.stor),
+      if inner_bind (mi_socket_typ, get_address_and_family_address (response.storage.stor), -- + 1 for freebsd?
         int (get_address_length (response.storage.stor))) /= 0
       then
         acc := inner_close (mi_socket_typ);
@@ -1415,8 +1457,8 @@ is
       end b0;
     end if;
 
-    --  response      := null;
-    --  data_received := null;
+     response      := null;
+     data_received := null;
 
     return False;
   end wait_connection;
@@ -3734,23 +3776,43 @@ is
     end if;
 
     if mi_family_label = ipv4 then
-      b4 :
-      declare
-        tmp_addr  : constant sockaddr_in  := a_sockaddr_in4.To_Pointer (get_address_and_family_address (sock_address.stor)).all;
-      begin
-        acc := inner_inet_ntop (int (tmp_addr.sin_family), tmp_addr.sin_addr'Address, dest'Address,
+      if Alire_Host_OS /= "freebsd" then
+        b4 :
+        declare
+          tmp_addr  : constant sockaddr_in  := a_sockaddr_in4.To_Pointer (get_address_and_family_address (sock_address.stor)).all;
+        begin
+          acc := inner_inet_ntop (int (tmp_addr.sin_family), tmp_addr.sin_addr'Address, dest'Address,
           dest'Length);
-      end b4;
+        end b4;
+      else
+        b4_2 :
+        declare
+          tmp_addr  : constant sockaddr_in_bsd  := a_sockaddr_in4_bsd.To_Pointer (get_address_and_family_address (sock_address.stor)).all;
+        begin
+          acc := inner_inet_ntop (int (tmp_addr.sin_family), tmp_addr.sin_addr'Address, dest'Address,
+          dest'Length);
+        end b4_2;
+      end if;
     end if;
 
     if mi_family_label = ipv6 then
-      b6 :
-      declare
-        tmp_addr  : constant sockaddr_in6  := a_sockaddr_in6.To_Pointer (get_address_and_family_address (sock_address.stor)).all;
-      begin
-        acc := inner_inet_ntop (int (tmp_addr.sin6_family), tmp_addr.sin6_addr'Address, dest'Address,
-          dest'Length);
-      end b6;
+      if Alire_Host_OS /= "freebsd" then
+        b6 :
+        declare
+          tmp_addr  : constant sockaddr_in6  := a_sockaddr_in6.To_Pointer (get_address_and_family_address (sock_address.stor)).all;
+        begin
+          acc := inner_inet_ntop (int (tmp_addr.sin6_family), tmp_addr.sin6_addr'Address, dest'Address,
+            dest'Length);
+        end b6;
+      else
+        b6_2 :
+        declare
+          tmp_addr  : constant sockaddr_in6_bsd  := a_sockaddr_in6_bsd.To_Pointer (get_address_and_family_address (sock_address.stor)).all;
+        begin
+          acc := inner_inet_ntop (int (tmp_addr.sin6_family), tmp_addr.sin6_addr'Address, dest'Address,
+            dest'Length);
+        end b6_2;
+      end if;
     end if;
 
     loop1 :
@@ -3785,23 +3847,43 @@ is
     end if;
 
     if mi_family_label = ipv4 then
-      b4 :
-      declare
-        tmp_addr  : constant sockaddr_in  := a_sockaddr_in4.To_Pointer (get_address_and_family_address (sock_address.stor)).all;
-      begin
-        acc := inner_inet_ntop (int (tmp_addr.sin_family), tmp_addr.sin_addr'Address, dest'Address,
-          dest'Length);
-      end b4;
+      if Alire_Host_OS /= "freebsd" then
+        b4 :
+        declare
+          tmp_addr  : constant sockaddr_in  := a_sockaddr_in4.To_Pointer (get_address_and_family_address (sock_address.stor)).all;
+        begin
+          acc := inner_inet_ntop (int (tmp_addr.sin_family), tmp_addr.sin_addr'Address, dest'Address,
+            dest'Length);
+        end b4;
+      else
+        b4_2 :
+        declare
+          tmp_addr  : constant sockaddr_in_bsd  := a_sockaddr_in4_bsd.To_Pointer (get_address_and_family_address (sock_address.stor)).all;
+        begin
+          acc := inner_inet_ntop (int (tmp_addr.sin_family), tmp_addr.sin_addr'Address, dest'Address,
+            dest'Length);
+        end b4_2;
+      end if;
     end if;
 
     if mi_family_label = ipv6 then
-      b6 :
-      declare
-        tmp_addr  : constant sockaddr_in6  := a_sockaddr_in6.To_Pointer (get_address_and_family_address (sock_address.stor)).all;
-      begin
-        acc := inner_inet_ntop (int (tmp_addr.sin6_family), tmp_addr.sin6_addr'Address, dest'Address,
-          dest'Length);
-      end b6;
+      if Alire_Host_OS /= "freebsd" then
+        b6 :
+        declare
+          tmp_addr  : constant sockaddr_in6  := a_sockaddr_in6.To_Pointer (get_address_and_family_address (sock_address.stor)).all;
+        begin
+          acc := inner_inet_ntop (int (tmp_addr.sin6_family), tmp_addr.sin6_addr'Address, dest'Address,
+            dest'Length);
+        end b6;
+      else
+        b6_2 :
+        declare
+          tmp_addr  : constant sockaddr_in6_bsd  := a_sockaddr_in6_bsd.To_Pointer (get_address_and_family_address (sock_address.stor)).all;
+        begin
+          acc := inner_inet_ntop (int (tmp_addr.sin6_family), tmp_addr.sin6_addr'Address, dest'Address,
+            dest'Length);
+        end b6_2;
+      end if;
     end if;
 
     loop1 :
