@@ -102,9 +102,9 @@ private
 
     type kernel_event is
       record
-        ident   : socket_type := -1;
-        filter  : short       := 0;
-        flags   : unsigned_short := 0;
+        ident   : adr_uintptr_t   := 0
+        filter  : short           := 0;
+        flags   : unsigned_short  := 0;
         fflags  : unsigned    := 0;
         data    : Integer_64  := 0;
         udata   : Address     := Null_Address;
@@ -116,23 +116,12 @@ private
 
     type kernel_event_array_access is access all kernel_event_array;
 
-    type socket_kevent is
-      record
-        sock  : socket_type := -1;
-        ev    : short := 0;
-      end record
-    with Convention => C, preelaborable_initialization;
-
-    type socket_kevent_array is array (int range <>) of socket_kevent;
-
-    type socket_kevent_array_access is access all socket_kevent_array;
-
     type poll_of_events is
       record
         initialized : Boolean     := False;
         handle      : handle_type := failed_handle;
         event_poll  : kernel_event_array_access   := null;
-        socket_poll : socket_kevent_array_access  := null;
+        result_poll : kernel_event_array_access   := null;
         count       : int := 0;
         last_wait_returned  : int := 0;
       end record
@@ -142,17 +131,19 @@ private
       with  Convention => C, Import,
             External_Name => "adare_kpoll_flag_add";
 
+    kpoll_flag_delete : constant unsigned_short
+      with  Convention => C, Import,
+            External_Name => "adare_kpoll_flag_delete";
+
+
     kpoll_flag_enable : constant unsigned_short
       with  Convention => C, Import,
             External_Name => "adare_kpoll_flag_enable";
 
-    kpoll_flag_clear : constant unsigned_short
+    kpoll_flag_disable : constant unsigned_short
       with  Convention => C, Import,
-            External_Name => "adare_kpoll_flag_clear";
+      External_Name => "adare_kpoll_flag_disable";
 
-    kpoll_flag_del : constant unsigned_short
-      with  Convention => C, Import,
-        External_Name => "adare_kpoll_flag_del";
 
     kpoll_flag_error : constant unsigned_short
       with  Convention => C, Import,

@@ -16,4 +16,6 @@ is
 
   failed_handle : constant handle_type  := -1;
 
+  type adr_uintptr_t is mod 2**(Address'Size);
+
 end socket_types;

@@ -99,19 +99,20 @@ is
   function inner_kqueue return handle_type
     with Import => True, Convention => C, External_Name => "kqueue";
 
-  function inner_kevent
+  function inner_mi_set_kevent
    (kq_i : handle_type;
     change_list_i : Address;
-    nchanges_i    : int;
+    nchanges_i    : int
+   ) return int
+    with Import => True, Convention => C, External_Name => "mi_set_kevent";
+
+  function inner_mi_get_kevent
+   (kq_i : handle_type;
     event_list_i  : Address;
     nevents_i     : int;
-    time_spec     : Address
+    milisec       : int
    ) return int
-    with Import => True, Convention => C, External_Name => "kevent";
-
-  function inner_misec_to_timespec
-    (msec_i : int) return Address
-      with Import => True, Convention => C, External_Name => "misec_to_timespec";
+    with Import => True, Convention => C, External_Name => "mi_get_kevent";
 
 
   procedure inner_create_addresses
