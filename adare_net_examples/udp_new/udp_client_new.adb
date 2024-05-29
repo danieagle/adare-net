@@ -109,7 +109,7 @@ begin
 
       Text_IO.New_Line;
 
-      Text_IO.Put_Line (" Waiting until 2 seconds to send messages. ");
+      Text_IO.Put_Line (" Waiting until 2 seconds to send messages");
 
       if not send_buffer  (sock => host_sock,
         data_to_send  =>  buffer,
@@ -128,6 +128,7 @@ begin
 
 
       Text_IO.Put_Line (" Successfull sended " & bytes_tmp'Image & " bytes.");
+      Text_IO.Put_Line (" But remember, this client app _is_ a _udp_ client ^_^ ");
 
       Text_IO.New_Line;
 

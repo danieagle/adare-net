@@ -19,15 +19,15 @@ is
    ) return Boolean
   is
   begin
-    if poll.event_info_poll = null then
+    if poll.event_poll = null then
       return False;
     end if;
 
     b1 :
     declare
-      tmp_sock : constant adr_uintptr_t := adr_uintptr_t (socket_type'(get_socket (sock)));
+      tmp_sock : constant socket_type := get_socket (sock);
     begin
-      return (for some E of poll.event_info_poll.all => E.ident = tmp_sock);
+      return (for some E of poll.event_poll.all => E.fd = tmp_sock);
     end b1;
   end is_in;
 
@@ -37,8 +37,12 @@ is
     ) return Boolean
   is
   begin
+    if poll.count < 1 then
+      return False;
+    end if;
+
     poll.last_wait_returned :=
-      inner_mi_get_kevent (poll.handle, poll.result_poll.all(poll.result_poll.all'First)'Address, poll.count, miliseconds_timeout);
+      inner_poll (poll.event_poll.all'Address, Unsigned_16 (poll.count), miliseconds_timeout);
 
     return poll.last_wait_returned > 0;
   end poll_wait;
@@ -96,95 +100,53 @@ is
     sock  : socket;
     event_bitmap  : short) return Boolean
   is
-    tmp_sock  : constant adr_uintptr_t := adr_uintptr_t (socket_type'(get_socket (sock)));
-    tmp_indx  : int := poll.event_info_poll.all'First - 1;
+    tmp_sock  : constant socket_type := get_socket (sock);
+    tmp_indx  : int := poll.event_poll.all'First - 1;
   begin
 
     loop0 :
-    for E of poll.event_info_poll.all loop
+    for E of poll.event_poll.all loop
       tmp_indx := tmp_indx + 1;
-      exit loop0 when E.ident = tmp_sock;
+      exit loop0 when E.fd = tmp_sock;
     end loop loop0;
 
-    if poll.event_info_poll.all (tmp_indx).ident /= tmp_sock then
+    if poll.event_poll.all (tmp_indx).fd /= tmp_sock then
       return False;
     end if;
 
-    if poll.event_info_poll.all (tmp_indx).filter = event_bitmap and then
-      poll.event_info_poll.all (tmp_indx).failed = False
-    then
-      return True;
-    end if;
+    poll.event_poll.all (tmp_indx).events   := event_bitmap;
+    poll.event_poll.all (tmp_indx).revents  := 0;
 
-    b1 :
-    declare
-      mi_kevent : kernel_event :=
-        (ident  => poll.event_info_poll.all (tmp_indx).ident,
-         filter => poll.event_info_poll.all (tmp_indx).filter,
-         flags  => kpoll_flag_delete,
-         fflags => 0, data  => 0, udata => Null_Address, ext => (others => 0));
-
-    begin
-      if inner_mi_set_kevent (poll.handle, mi_kevent'Address, 1) = -1 then
-        return False;
-      end if;
-
-      poll.event_info_poll.all (tmp_indx).filter := event_bitmap;
-
-      mi_kevent.filter := event_bitmap;
-      mi_kevent.flags  := kpoll_flag_add;
-
-      if inner_mi_set_kevent (poll.handle, mi_kevent'Address, 1) = -1 then
-
-        poll.event_info_poll.all (tmp_indx).failed := True;
-
-        return False;
-      end if;
-
-      poll.event_info_poll.all (tmp_indx).failed := False;
-
-      return True;
-    end b1;
+    return True;
   end update;
-
 
   function remove
     (poll  : aliased in out poll_of_events;
      sock  : socket) return Boolean
   is
-    tmp_sock  : constant adr_uintptr_t := adr_uintptr_t (socket_type'(get_socket (sock)));
-    tmp_indx  : int := poll.event_info_poll.all'First - 1;
-    tmp_res   : int := 0;
+    tmp_sock  : constant socket_type := get_socket (sock);
+    tmp_indx  : int := poll.event_poll.all'First - 1;
   begin
-
-    loop0 :
-    for E of poll.event_info_poll.all loop
-      tmp_indx := tmp_indx + 1;
-      exit loop0 when E.ident = tmp_sock;
-    end loop loop0;
-
-    if poll.event_info_poll.all (tmp_indx).ident /= tmp_sock then
+    if poll.count < 1 then
       return False;
     end if;
 
-    b1 :
-    declare
-      mi_kevent : kernel_event :=
-        (ident  => poll.event_info_poll.all (tmp_indx).ident,
-         filter => poll.event_info_poll.all (tmp_indx).filter,
-         flags  => kpoll_flag_delete,
-         fflags => 0, data  => 0, udata => Null_Address, ext => (others => 0));
+    loop0 :
+    for E of poll.event_poll.all loop
+      tmp_indx := tmp_indx + 1;
+      exit loop0 when E.fd = tmp_sock;
+    end loop loop0;
 
-    begin
-      tmp_res :=  inner_mi_set_kevent (poll.handle, mi_kevent'Address, 1);
+    if poll.event_poll.all (tmp_indx).fd /= tmp_sock then
+      return False;
+    end if;
 
-      poll.event_info_poll.all (tmp_indx .. poll.event_info_poll.all'Last - 1) :=
-        poll.event_info_poll.all (tmp_indx + 1 .. poll.event_info_poll.all'Last);
+    poll.event_poll.all (tmp_indx .. poll.event_poll.all'Last - 1) :=
+        poll.event_poll.all (tmp_indx + 1 .. poll.event_poll.all'Last);
 
-      poll.count := poll.count - 1;
+    poll.count := poll.count - 1;
 
-      return tmp_res /= -1;
-    end b1;
+    return True;
   end remove;
 
   function add
@@ -192,45 +154,43 @@ is
     sock  : socket;
     event_bitmap  : short) return Boolean
   is
-    tmp_sock  : constant adr_uintptr_t := adr_uintptr_t (socket_type'(get_socket (sock)));
-
+    tmp_sock    : constant socket_type := get_socket (sock);
+    tmp_indx    : int     := poll.event_poll.all'First - 1;
+    tmp_poll_fd : poll_fd := (fd => tmp_sock, events => event_bitmap, revents => 0);
   begin
 
-    if poll.count >= poll.event_info_poll.all'Length then
+    if poll.count >= poll.event_poll.all'Length then
       b1 :
       declare
-        tmp_epa : kernel_event_info_array :=
-          (1 .. poll.event_info_poll.all'Length + 15 => <>);
-        tmp_spa : kernel_event_array :=
-          (1 .. poll.event_info_poll.all'Length + 15 => <>);
+        tmp_epa : poll_fd_array :=
+          (1 .. poll.event_poll.all'Length + 15 => <>);
       begin
-        tmp_epa (1 .. poll.event_info_poll.all'Length) := poll.event_info_poll.all;
-        tmp_spa (1 .. poll.event_info_poll.all'Length) := poll.result_poll.all;
-        poll.event_info_poll  := new kernel_event_info_array'(tmp_epa);
-        poll.result_poll      := new kernel_event_array'(tmp_spa);
+        tmp_epa (1 .. poll.event_poll.all'Length) := poll.event_poll.all;
+        poll.event_poll  := new poll_fd_array'(tmp_epa);
       end b1;
     end if;
 
-    b2 :
-    declare
-      mi_kevent : kernel_event :=
-        (ident  => tmp_sock,
-         filter => event_bitmap,
-         flags  => kpoll_flag_add,
-         fflags => 0, data  => 0, udata => Null_Address, ext => (others => 0));
+    if poll.count < 1 then
+      poll.event_poll.all (tmp_indx + 1) := tmp_poll_fd;
+      poll.count := 1;
+      return True;
+    end if;
 
-    begin
+    loop0 :
+    for E of poll.event_poll.all (poll.event_poll.all'First .. (poll.event_poll.all'First + poll.count) - 1) loop
+      tmp_indx := tmp_indx + 1;
+      exit loop0 when E.fd = -1;
+    end loop loop0;
 
-      if inner_mi_set_kevent (poll.handle, mi_kevent'Address, 1) /= -1 then
-        poll.event_info_poll.all (poll.count + 1) :=
-          (ident => tmp_sock, filter => event_bitmap, failed => False);
+    if poll.event_poll.all (tmp_indx).fd = -1 then
+      poll.event_poll.all (tmp_indx) := tmp_poll_fd;
+      return True;
+    end if;
 
-        poll.count := poll.count + 1;
-        return True;
-      end if;
+    poll.event_poll.all (poll.event_poll.all'First + poll.count) := tmp_poll_fd;
+    poll.count  :=  poll.count + 1;
 
-      return False;
-    end b2;
+    return True;
   end add;
 
   procedure reset_results
@@ -238,7 +198,10 @@ is
   is
   begin
     poll.last_wait_returned := 0;
-    poll.result_poll.all := (others => <>);
+
+    for E of poll.event_poll.all (poll.event_poll.all'First .. (poll.event_poll.all'First + poll.count) - 1) loop
+      E.revents := 0;
+    end loop;
   end reset_results;
 
 
@@ -246,15 +209,15 @@ is
     (poll  : aliased in poll_of_events;
      sock  : socket) return Boolean
   is
-    mi_socket : constant adr_uintptr_t := adr_uintptr_t (socket_type'(get_socket (sock)));
+    mi_socket : constant socket_type := get_socket (sock);
   begin
     if poll.last_wait_returned < 1 then
       return False;
     end if;
 
     return (for some E of
-            poll.result_poll.all (poll.result_poll.all'First .. (poll.result_poll.all'First + poll.last_wait_returned) - 1)
-        => E.ident = mi_socket and then E.filter = send_event);
+            poll.event_poll.all (poll.event_poll.all'First .. (poll.event_poll.all'First + poll.last_wait_returned) - 1)
+        => E.fd = mi_socket and then inner_mi_and (E.revents, send_event) /= 0);
 
   end is_send;
 
@@ -262,15 +225,15 @@ is
     (poll  : aliased in poll_of_events;
      sock  : socket) return Boolean
   is
-    mi_socket : constant adr_uintptr_t := adr_uintptr_t (socket_type'(get_socket (sock)));
+    mi_socket : constant socket_type := get_socket (sock);
   begin
     if poll.last_wait_returned < 1 then
       return False;
     end if;
 
     return (for some E of
-            poll.result_poll.all (poll.result_poll.all'First .. (poll.result_poll.all'First + poll.last_wait_returned) - 1)
-        => E.ident = mi_socket and then E.filter = receive_event);
+            poll.event_poll.all (poll.event_poll.all'First .. (poll.event_poll.all'First + poll.last_wait_returned) - 1)
+        => E.fd = mi_socket and then inner_mi_and (E.revents, receive_event) /= 0);
 
   end is_receive;
 
@@ -279,17 +242,10 @@ is
      min_qtie : int := 2
     ) return Boolean
   is
-    tmp_kpoll_handle : constant handle_type := inner_kqueue;
   begin
-    if tmp_kpoll_handle = failed_handle then
-      return False;
-    end if;
 
-    poll := (handle => tmp_kpoll_handle,
-             event_info_poll  => new kernel_event_info_array'(1 .. min_qtie => <>),
-             result_poll  => new kernel_event_array'(1 .. min_qtie => <>),
-             initialized  => True,
-             count  => 0, last_wait_returned => 0);
+    poll := (event_poll  => new poll_fd_array'(1 .. min_qtie => <>),
+             initialized  => True, count  => 0, last_wait_returned => 0);
 
     return True;
   end init;
@@ -297,17 +253,11 @@ is
   procedure close
     (poll     : aliased in out poll_of_events)
   is
-    tmp_res : int := 0
-      with Unreferenced;
-
   begin
-      tmp_res := inner_close (poll.handle);
 
       poll.initialized  :=  False;
       poll.count        :=  0;
-      poll.event_info_poll  :=  null;
-      poll.result_poll  :=  null;
-      poll.handle       :=  failed_handle;
+      poll.event_poll   :=  null;
       poll.last_wait_returned :=  0;
 
   end close;

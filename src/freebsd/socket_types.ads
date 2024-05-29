@@ -13,11 +13,4 @@ is
 
   socket_error    : constant int  := -1;
 
-  subtype handle_type is socket_type;
-
-  failed_handle : constant handle_type  := -1;
-
-  type adr_uintptr_t is mod 2**(int'Size)
-    with size => int'Size, Convention => C;
-
 end socket_types;

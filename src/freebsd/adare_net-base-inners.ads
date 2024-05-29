@@ -95,24 +95,15 @@ is
     length_i   : in out int)
     with Import => True, Convention => C, External_Name => "c_show_error";
 
+  function inner_mi_and
+    (left_i, right_i  : short) return short
+    with Import => True, Convention => C, External_Name => "mi_and";
 
-  function inner_kqueue return handle_type
-    with Import => True, Convention => C, External_Name => "kqueue";
-
-  function inner_mi_set_kevent
-   (kq_i : handle_type;
-    change_list_i : Address;
-    nchanges_i    : int
-   ) return int
-    with Import => True, Convention => C, External_Name => "mi_set_kevent";
-
-  function inner_mi_get_kevent
-   (kq_i : handle_type;
-    event_list_i  : Address;
-    nevents_i     : int;
-    milisec       : int
-   ) return int
-    with Import => True, Convention => C, External_Name => "mi_get_kevent";
+  function inner_poll
+    (fds_i  : Address;
+     nfds_i : Unsigned_16;
+     timeout_i  : int) return int
+     with Import => True, Convention => C, External_Name => "poll";
 
 
   procedure inner_create_addresses
