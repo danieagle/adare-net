@@ -13,7 +13,7 @@ with adare_net.base;  use adare_net.base;
 with adare_net_init;  use adare_net_init;
 with adare_net_exceptions;  use adare_net_exceptions;
 
-with Interfaces.C; use Interfaces.C;
+with Interfaces.C; use Interfaces, Interfaces.C;
 
 procedure tcp_client_new
 is
@@ -120,6 +120,8 @@ begin
       Text_IO.Put_Line (" Waiting until 2 seconds to start sending messages. ");
       Text_IO.Put_Line (" with until 0,5 seconds between sending remaining messages.  ");
 
+      Text_IO.Put_Line (" buffer size  " & Integer_64'(actual_data_size (buffer))'Image);
+
       if not send_buffer  (sock => host_sock,
         data_to_send  =>  buffer,
         send_count  =>  bytes_tmp,
@@ -133,6 +135,11 @@ begin
 
         goto end_app_label1;
       end if;
+
+      -- if bytes_tmp < 1 then
+      --   Text_IO.Put_Line ("teste 0.6");
+      --   goto end_app_label1;
+      -- end if;
 
       Text_IO.Put_Line (" Successfull sended " & bytes_tmp'Image & " bytes.");
 

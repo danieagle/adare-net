@@ -92,36 +92,52 @@ private
     with Convention => C, import,
     External_Name   =>  "adare_kpoll_filter_read";
 
-  accept_socket_event : constant short
-    with Convention => C, import,
-    External_Name   =>  "adare_kpoll_filter_read";
-
   send_event : constant short
     with Convention => C, import,
     External_Name   =>  "adare_kpoll_filter_write";
 
+  type mi_unsigned_int is mod 2**(int'Size);
+  type mi_int64_array is array (int range <>) of Integer_64
+    with default_component_value => 0;
+
     type kernel_event is
       record
-        ident   : adr_uintptr_t   := 0
+        ident   : adr_uintptr_t   := 0;
         filter  : short           := 0;
         flags   : unsigned_short  := 0;
-        fflags  : unsigned    := 0;
+        fflags  : mi_unsigned_int := 0;
         data    : Integer_64  := 0;
         udata   : Address     := Null_Address;
+        ext     : mi_int64_array (1 .. 4) := (others => 0);
       end record
     with Convention => C, preelaborable_initialization;
 
     type kernel_event_array is array (int range <>) of kernel_event
-        with Convention => C, preelaborable_initialization;
+      with Convention => C, preelaborable_initialization;
 
     type kernel_event_array_access is access all kernel_event_array;
+
+
+    type kernel_event_info is
+      record
+        ident   : adr_uintptr_t   := 0;
+        filter  : short           := 0;
+        failed  : Boolean         := False;
+      end record
+    with Convention => C, preelaborable_initialization;
+
+    type kernel_event_info_array is array (int range <>) of kernel_event_info
+      with Convention => C, preelaborable_initialization;
+
+    type kernel_event_info_array_access is access all kernel_event_info_array;
+
 
     type poll_of_events is
       record
         initialized : Boolean     := False;
         handle      : handle_type := failed_handle;
-        event_poll  : kernel_event_array_access   := null;
-        result_poll : kernel_event_array_access   := null;
+        event_info_poll  : kernel_event_info_array_access  :=  null;
+        result_poll : kernel_event_array_access :=  null;
         count       : int := 0;
         last_wait_returned  : int := 0;
       end record
@@ -135,15 +151,9 @@ private
       with  Convention => C, Import,
             External_Name => "adare_kpoll_flag_delete";
 
-
-    kpoll_flag_enable : constant unsigned_short
+    kpoll_flag_clear : constant unsigned_short
       with  Convention => C, Import,
-            External_Name => "adare_kpoll_flag_enable";
-
-    kpoll_flag_disable : constant unsigned_short
-      with  Convention => C, Import,
-      External_Name => "adare_kpoll_flag_disable";
-
+      External_Name => "adare_kpoll_flag_clear";
 
     kpoll_flag_error : constant unsigned_short
       with  Convention => C, Import,

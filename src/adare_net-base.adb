@@ -1924,11 +1924,11 @@ is
   is
     use adare_net.base.waits;
 
-    mi_data_to_send : constant socket_buffer_access := data_to_send;
+    -- mi_data_to_send : constant socket_buffer_access := data_to_send;
 
-    pos           : Stream_Element_Offset :=  mi_data_to_send.head_first;
+    pos           : Stream_Element_Offset :=  data_to_send.head_first;
 
-    remaining     : int :=  int (actual_data_size (mi_data_to_send));
+    remaining     : int :=  int (actual_data_size (data_to_send));
 
     sended_length : int :=  0;
     total_sended  : int :=  0;
@@ -1966,11 +1966,11 @@ is
 
         when tcp =>
 
-          sended_length := inner_send (sock.sock, mi_data_to_send.data (pos)'Address, size_t (remaining), 0);
+          sended_length := inner_send (sock.sock, data_to_send.data (pos)'Address, size_t (remaining), 0);
 
         when udp =>
 
-          sended_length := inner_sendto (sock.sock, mi_data_to_send.data (pos)'Address, size_t (remaining), 0,
+          sended_length := inner_sendto (sock.sock, data_to_send.data (pos)'Address, size_t (remaining), 0,
             addr, addr_len);
 
       end case;
@@ -1997,7 +1997,7 @@ is
 
     end loop loop1;
 
-    mi_data_to_send.head_first := mi_data_to_send.head_first + Stream_Element_Count (total_sended);
+    data_to_send.head_first := data_to_send.head_first + Stream_Element_Count (total_sended);
 
     send_count := total_sended;
 

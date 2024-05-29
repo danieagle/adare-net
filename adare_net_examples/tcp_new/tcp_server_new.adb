@@ -115,7 +115,7 @@ begin
         message : Unbounded_String := To_Unbounded_String ("");
       begin
 
-        Text_IO.Put_Line (" " & this_task_id_str & " all messages showed.");
+        -- Text_IO.Put_Line (" " & this_task_id_str & " all messages showed.");
 
         clear (recv_send_buffer);   -- optional, reset all data in buffer
         clear (recv_send_buffer2);  -- optional, reset all data in buffer
@@ -218,7 +218,7 @@ begin
       loop2 :
       loop
         if not wait_connection  (sock =>  host_socket,  response  => tmp_received_socket_access,
-          data_received =>  msg_seaa, miliseconds_start_timeout => 0)
+          data_received =>  msg_seaa, miliseconds_start_timeout => 20000)
         then
           close (host_socket); -- to disable 'listen' too.
 

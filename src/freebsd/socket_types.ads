@@ -2,6 +2,7 @@
 with Interfaces.C;
 use Interfaces, Interfaces.C;
 
+
 package socket_types
   with  Pure
 is
@@ -16,6 +17,7 @@ is
 
   failed_handle : constant handle_type  := -1;
 
-  type adr_uintptr_t is mod 2**(Address'Size);
+  type adr_uintptr_t is mod 2**(int'Size)
+    with size => int'Size, Convention => C;
 
 end socket_types;
