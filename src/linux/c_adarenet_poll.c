@@ -1,14 +1,16 @@
 
-#ifndef ADARE_NET_EPOLL_TYPES
-#define ADARE_NET_EPOLL_TYPES
+#ifndef ADARE_NET_POLL_TYPES
+#define ADARE_NET_POLL_TYPES
 
-#include <sys/epoll.h>
+#include <poll.h>
 
-unsigned long adare_epoll_epollin = EPOLLIN;
-unsigned long adare_epoll_epollout = EPOLLOUT;
+const short adare_poll_filter_read   = POLLIN;
+const short adare_poll_filter_write  = POLLOUT;
 
-int adare_epoll_cmd_add = EPOLL_CTL_ADD;
-int adare_epoll_cmd_mod = EPOLL_CTL_MOD;
-int adare_epoll_cmd_del = EPOLL_CTL_DEL;
+const short adare_poll_filter_error  = POLLERR;
+
+short mi_and (short left, short right){
+    return (left & right);
+}
 
 #endif

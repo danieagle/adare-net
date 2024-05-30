@@ -1,6 +1,6 @@
 name = "adare_net_examples"
 description = "Adare_Net examples"
-version = "0.15.9-dev"
+version = "0.30.9-dev"
 
 authors = ["Daniel Norte de Moraes"]
 maintainers = ["Daniel Norte de Moraes <danieagle@zohomail.com>"]
@@ -14,6 +14,6 @@ executables = ["test_get_multi_addresses", "test_get_multi_addresses_v2",
 "*".Ada_Version = "Ada12"
 "*".Style_checks = ["-gnaty2abCefhiklnprstmM137"]
 [[depends-on]]
-adare_net = "~2.9.5-dev"
+adare_net = "~2.15.5-dev"
 [[pins]]
 adare_net = { path='..' }

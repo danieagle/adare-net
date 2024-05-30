@@ -68,7 +68,7 @@ private
   function update
     (poll  : aliased in out poll_of_events;
      sock  : socket;
-     event_bitmap  : short) return Boolean
+     event_bitmap  : unsigned_long) return Boolean
     with Pre => is_initialized (poll)
                 and then is_initialized  (sock)
                 and then is_in (poll, sock);
@@ -76,7 +76,7 @@ private
   function add
     (poll  : aliased in out poll_of_events;
      sock  : socket;
-     event_bitmap  : short) return Boolean
+     event_bitmap  : unsigned_long) return Boolean
     with Pre => is_initialized (poll)
                 and then is_initialized  (sock)
                 and then (not is_in (poll, sock));
@@ -88,42 +88,82 @@ private
     with Pre => (not is_initialized (poll))
                  and then min_qtie > 0;
 
-  receive_event : constant short
+  receive_event : constant unsigned_long
     with Convention => C, import,
-    External_Name   =>  "adare_poll_filter_read";
+    External_Name   =>  "adare_epoll_epollin";
 
-  send_event : constant short
+  accept_socket_event : constant unsigned_long
     with Convention => C, import,
-    External_Name   =>  "adare_poll_filter_write";
+    External_Name   =>  "adare_epoll_epollin";
 
-
-  error_flag : constant short
+  send_event : constant unsigned_long
     with Convention => C, import,
-    External_Name   =>  "adare_poll_filter_error";
+    External_Name   =>  "adare_epoll_epollout";
 
+  type who_enun is (ptr, fd, u32, u64, sock, hnd);
 
-  type poll_fd is
+  type epoll_data_t (i_want_you : who_enun := ptr) is
     record
-      fd      : socket_type     := -1;
-      events  : short           := 0;
-      revents : short           := 0;
+      case i_want_you is
+        when ptr =>
+          ptr  : Address  := Null_Address;
+
+        when fd =>
+          fd   : int  :=  -1;
+
+        when u32 =>
+          u32  : Unsigned_32  :=  0;
+
+        when u64 =>
+          u64  : Unsigned_64  :=  0;
+
+        when sock =>
+          sock : socket_type  :=  invalid_socket;
+
+        when hnd =>
+          hnd  : Address  :=  Null_Address;
+      end case;
     end record
-      with Convention => C, preelaborable_initialization;
+      with Convention => C, preelaborable_initialization, Unchecked_Union;
 
+    type epoll_event is
+      record
+        events  : Unsigned_32 := 0;
+        data    : epoll_data_t := (others => <>);
+      end record
+        with Convention => C, preelaborable_initialization;
 
-  type poll_fd_array is array (int range <>) of poll_fd
-    with Convention => C, preelaborable_initialization;
+    type epoll_event_array is array (int range <>) of epoll_event
+        with Convention => C, preelaborable_initialization;
 
-  type poll_fd_array_access is access all poll_fd_array;
+    type epoll_event_array_access is access all epoll_event_array;
 
+    type socket_array is array (int range <>) of socket_type;
 
-  type poll_of_events is
-    record
-      initialized : Boolean := False;
-      event_poll  : poll_fd_array_access  :=  null;
-      count       : int := 0;
-      last_wait_returned  : int := 0;
-    end record
-      with Convention => C, preelaborable_initialization;
+    type socket_array_access is access all socket_array;
+
+    type poll_of_events is limited
+      record
+        initialized : Boolean     := False;
+        handle      : handle_type := failed_handle;
+        event_poll  : epoll_event_array_access  := null;
+        socket_poll : socket_array_access       := null;
+        count       : int := 0;
+        last_wait_returned  : int := 0;
+      end record
+      with preelaborable_initialization;
+
+    epoll_add : constant int
+      with  Convention => C, Import,
+            External_Name => "adare_epoll_cmd_add";
+
+    epoll_mod : constant int
+      with  Convention => C, Import,
+            External_Name => "adare_epoll_cmd_mod";
+
+    epoll_del : constant int
+      with  Convention => C, Import,
+            External_Name => "adare_epoll_cmd_del";
+
 
 end adare_net.base.waits;

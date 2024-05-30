@@ -19,7 +19,7 @@ is
    ) return Boolean
   is
   begin
-    if poll.socket_poll = null then
+    if poll.event_poll = null then
       return False;
     end if;
 
@@ -27,7 +27,7 @@ is
     declare
       tmp_sock : constant socket_type := get_socket (sock);
     begin
-      return (for some E of poll.socket_poll.all => E = tmp_sock);
+      return (for some E of poll.event_poll.all => E.fd = tmp_sock);
     end b1;
   end is_in;
 
@@ -37,8 +37,12 @@ is
     ) return Boolean
   is
   begin
-    poll.last_wait_returned := inner_epoll_wait (poll.handle, poll.event_poll.all (1)'Address,
-      poll.count, miliseconds_timeout);
+    if poll.count < 1 then
+      return False;
+    end if;
+
+    poll.last_wait_returned :=
+      inner_poll (poll.event_poll.all'Address, Unsigned_16 (poll.count), miliseconds_timeout);
 
     return poll.last_wait_returned > 0;
   end poll_wait;
@@ -91,50 +95,56 @@ is
     return ok;
   end set_send;
 
-
   function update
    (poll  : aliased in out poll_of_events;
     sock  : socket;
-    event_bitmap  : unsigned_long) return Boolean
+    event_bitmap  : short) return Boolean
   is
     tmp_sock  : constant socket_type := get_socket (sock);
-    event     : epoll_event;
+    tmp_indx  : int := poll.event_poll.all'First - 1;
   begin
-    event.events := Unsigned_32 (event_bitmap);
 
-    --  if Alire_Host_OS = "windows" then
-    --    event.data.sock := sock;
-    --  else
-    event.data.fd := int (tmp_sock);
-    --  end if;
+    loop0 :
+    for E of poll.event_poll.all loop
+      tmp_indx := tmp_indx + 1;
+      exit loop0 when E.fd = tmp_sock;
+    end loop loop0;
 
-    return (0 = inner_epoll_ctl (poll.handle, epoll_mod, tmp_sock, event'Address));
+    if poll.event_poll.all (tmp_indx).fd /= tmp_sock then
+      return False;
+    end if;
+
+    poll.event_poll.all (tmp_indx).events   := event_bitmap;
+    poll.event_poll.all (tmp_indx).revents  := 0;
+
+    return True;
   end update;
-
 
   function remove
     (poll  : aliased in out poll_of_events;
      sock  : socket) return Boolean
   is
-    tmp_sock  : constant socket_type  := get_socket (sock);
-    ok        : constant Boolean      :=
-     (0 = inner_epoll_ctl (poll.handle, epoll_del, tmp_sock, Null_Address));
-    index : int                  := 0;
+    tmp_sock  : constant socket_type := get_socket (sock);
+    tmp_indx  : int := poll.event_poll.all'First - 1;
   begin
-    if not ok then
+    if poll.count < 1 then
       return False;
     end if;
 
     loop0 :
-    for E of poll.socket_poll.all loop
-      index := index + 1;
-      exit loop0 when E = tmp_sock;
+    for E of poll.event_poll.all loop
+      tmp_indx := tmp_indx + 1;
+      exit loop0 when E.fd = tmp_sock;
     end loop loop0;
 
-    if poll.socket_poll.all (index) = tmp_sock then
-      poll.count                   := poll.count - 1;
-      poll.socket_poll.all (index) := invalid_socket;
+    if poll.event_poll.all (tmp_indx).fd /= tmp_sock then
+      return False;
     end if;
+
+    poll.event_poll.all (tmp_indx .. poll.event_poll.all'Last - 1) :=
+        poll.event_poll.all (tmp_indx + 1 .. poll.event_poll.all'Last);
+
+    poll.count := poll.count - 1;
 
     return True;
   end remove;
@@ -142,68 +152,43 @@ is
   function add
    (poll  : aliased in out poll_of_events;
     sock  : socket;
-    event_bitmap  : unsigned_long) return Boolean
+    event_bitmap  : short) return Boolean
   is
-    index : int := 0;
-    tmp_sock  : constant socket_type  := get_socket (sock);
-    event : epoll_event;
-    ok    : Boolean               := False;
-
+    tmp_sock    : constant socket_type := get_socket (sock);
+    tmp_indx    : int     := poll.event_poll.all'First - 1;
+    tmp_poll_fd : poll_fd := (fd => tmp_sock, events => event_bitmap, revents => 0);
   begin
-    if poll.count >= poll.socket_poll.all'Length then
-      loop0 :
-      for E of poll.socket_poll.all loop
-        if E = invalid_socket then
-          index := index + 1;
-        end if;
-      end loop loop0;
 
-      if index /= 0 then
-        poll.count :=  poll.count - index;
-      else
-        b1 :
-        declare
-          tmp_epa : epoll_event_array :=
-           (1 .. poll.event_poll.all'Length + 15 => <>);
-          tmp_spa : socket_array      :=
-           (1 .. poll.event_poll.all'Length + 15 => invalid_socket);
-        begin
-          tmp_epa (1 .. poll.event_poll.all'Length) := poll.event_poll.all;
-          tmp_spa (1 .. poll.event_poll.all'Length) := poll.socket_poll.all;
-          poll.event_poll := new epoll_event_array'(tmp_epa);
-          poll.socket_poll := new socket_array'(tmp_spa);
-        end b1;
-      end if;
+    if poll.count >= poll.event_poll.all'Length then
+      b1 :
+      declare
+        tmp_epa : poll_fd_array :=
+          (1 .. poll.event_poll.all'Length + 15 => <>);
+      begin
+        tmp_epa (1 .. poll.event_poll.all'Length) := poll.event_poll.all;
+        poll.event_poll  := new poll_fd_array'(tmp_epa);
+      end b1;
     end if;
 
-    event.events := Unsigned_32 (event_bitmap);
-
-    --  if Alire_Host_OS = "windows" then
-    --    event.data.sock := sock;
-    --  else
-    event.data.fd := int (tmp_sock);
-    --  end if;
-
-    ok := (0 = inner_epoll_ctl (poll.handle, epoll_add, tmp_sock, event'Address));
-
-    if not ok then
-      return False;
+    if poll.count < 1 then
+      poll.event_poll.all (tmp_indx + 1) := tmp_poll_fd;
+      poll.count := 1;
+      return True;
     end if;
 
-    index := 0;
+    loop0 :
+    for E of poll.event_poll.all (poll.event_poll.all'First .. (poll.event_poll.all'First + poll.count) - 1) loop
+      tmp_indx := tmp_indx + 1;
+      exit loop0 when E.fd = -1;
+    end loop loop0;
 
-    loop1 :
-    for E of poll.socket_poll.all loop
-      index := index + 1;
-      exit loop1 when E = invalid_socket;
-    end loop loop1;
-
-    if not (poll.socket_poll.all (index) = invalid_socket) then
-      return False;
+    if poll.event_poll.all (tmp_indx).fd = -1 then
+      poll.event_poll.all (tmp_indx) := tmp_poll_fd;
+      return True;
     end if;
 
-    poll.socket_poll (index) := tmp_sock;
-    poll.count               := poll.count + 1;
+    poll.event_poll.all (poll.event_poll.all'First + poll.count) := tmp_poll_fd;
+    poll.count  :=  poll.count + 1;
 
     return True;
   end add;
@@ -213,7 +198,10 @@ is
   is
   begin
     poll.last_wait_returned := 0;
-    poll.event_poll.all := (others => <>);
+
+    for E of poll.event_poll.all (poll.event_poll.all'First .. (poll.event_poll.all'First + poll.count) - 1) loop
+      E.revents := 0;
+    end loop;
   end reset_results;
 
 
@@ -221,76 +209,32 @@ is
     (poll  : aliased in poll_of_events;
      sock  : socket) return Boolean
   is
+    mi_socket : constant socket_type := get_socket (sock);
   begin
-    if poll.last_wait_returned <= 0 then
+    if poll.last_wait_returned < 1 then
       return False;
     end if;
 
-    b0 :
-    declare
-      mi_socket : constant socket_type := get_socket (sock);
-      index : int := 0;
-    begin
+    return (for some E of
+            poll.event_poll.all (poll.event_poll.all'First .. (poll.event_poll.all'First + poll.last_wait_returned) - 1)
+        => E.fd = mi_socket and then inner_mi_and (E.revents, send_event) /= 0);
 
-      loop0 :
-      for E of poll.event_poll.all (1 .. poll.last_wait_returned) loop
-        index := index + 1;
-        exit loop0 when E.data.fd = int (mi_socket);
-        --  exit loop0 when (if Alire_Host_OS /= "windows" then E.data.fd = int (mi_socket) else E.data.sock = mi_socket);
-      end loop loop0;
-
-      --  if Alire_Host_OS /= "windows" then
-      if poll.event_poll.all (index).data.fd /= int (mi_socket) then
-        return False;
-      end if;
-
-      return ((poll.event_poll.all (index).events and Unsigned_32 (send_event)) > 0);
-      --  end if;
-
-      --  if where_poll.event_poll.all (index).data.sock /= mi_socket then
-      --    return False;
-      --  end if;
-
-      --  return ((where_poll.event_poll.all (index).events and Unsigned_32 (send_event)) > 0);
-    end b0;
   end is_send;
 
   function is_receive
     (poll  : aliased in poll_of_events;
      sock  : socket) return Boolean
   is
+    mi_socket : constant socket_type := get_socket (sock);
   begin
-    if poll.last_wait_returned <= 0 then
+    if poll.last_wait_returned < 1 then
       return False;
     end if;
 
-    b0 :
-    declare
-      --  use Adare_Net_Config;
-      mi_socket : constant socket_type := get_socket (sock);
-      index : int := 0;
-    begin
-      loop0 :
-      for E of poll.event_poll.all (1 .. poll.last_wait_returned) loop
-        index := index + 1;
-        exit loop0 when E.data.fd = int (mi_socket);
-        --  exit loop0 when (if Alire_Host_OS /= "windows" then E.data.fd = int (mi_socket) else E.data.sock = mi_socket);
-      end loop loop0;
+    return (for some E of
+            poll.event_poll.all (poll.event_poll.all'First .. (poll.event_poll.all'First + poll.last_wait_returned) - 1)
+        => E.fd = mi_socket and then inner_mi_and (E.revents, receive_event) /= 0);
 
-      --  if Alire_Host_OS /= "windows" then
-      if poll.event_poll.all (index).data.fd /= int (mi_socket) then
-        return False;
-      end if;
-
-      return ((poll.event_poll.all (index).events and Unsigned_32 (receive_event)) > 0);
-      --  end if;
-
-      --  if where_poll.event_poll.all (index).data.sock /= mi_socket then
-      --    return False;
-      --  end if;
-
-      --  return ((where_poll.event_poll.all (index).events and Unsigned_32 (receive_event)) > 0);
-    end b0;
   end is_receive;
 
   function init
@@ -298,18 +242,10 @@ is
      min_qtie : int := 2
     ) return Boolean
   is
-    tmp_epoll_handle : constant handle_type := inner_epoll_create1 (0);
   begin
-    if tmp_epoll_handle = failed_handle then
-      return False;
-    end if;
 
-    poll.handle       :=  tmp_epoll_handle;
-    poll.event_poll   :=  new epoll_event_array'(1 .. min_qtie => <>);
-    poll.socket_poll  :=  new socket_array'(1 .. min_qtie => invalid_socket);
-    poll.initialized  :=  True;
-    poll.count        :=  0;
-    poll.last_wait_returned :=  0;
+    poll := (event_poll  => new poll_fd_array'(1 .. min_qtie => <>),
+             initialized  => True, count  => 0, last_wait_returned => 0);
 
     return True;
   end init;
@@ -317,28 +253,13 @@ is
   procedure close
     (poll     : aliased in out poll_of_events)
   is
-    tmp_spa : constant socket_array := poll.socket_poll.all;
-    handle  : constant handle_type :=  poll.handle;
-    tmp_res : int := 0
-      with Unreferenced;
-
   begin
 
-    poll.initialized  :=  False;
-    poll.count        :=  0;
-    poll.socket_poll  :=  null;
-    poll.event_poll   :=  null;
-    poll.handle       :=  failed_handle;
-    poll.last_wait_returned :=  0;
+      poll.initialized  :=  False;
+      poll.count        :=  0;
+      poll.event_poll   :=  null;
+      poll.last_wait_returned :=  0;
 
-    loop0 :
-    for E of tmp_spa loop
-      if E /= invalid_socket then
-        tmp_res := inner_epoll_ctl (handle, epoll_del, E, Null_Address);
-      end if;
-    end loop loop0;
-
-    tmp_res := inner_epoll_close (handle);
   end close;
 
 end adare_net.base.waits;
