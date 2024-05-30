@@ -144,6 +144,8 @@ is
     poll.event_poll.all (tmp_indx .. poll.event_poll.all'Last - 1) :=
         poll.event_poll.all (tmp_indx + 1 .. poll.event_poll.all'Last);
 
+    poll.event_poll.all (poll.event_poll.all'Last) := (fd => -1, events => 0, revents => 0);
+
     poll.count := poll.count - 1;
 
     return True;

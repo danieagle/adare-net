@@ -96,12 +96,6 @@ private
     with Convention => C, import,
     External_Name   =>  "adare_poll_filter_write";
 
-
-  error_flag : constant short
-    with Convention => C, import,
-    External_Name   =>  "adare_poll_filter_error";
-
-
   type poll_fd is
     record
       fd      : socket_type     := -1;
