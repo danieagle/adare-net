@@ -216,8 +216,8 @@ is
     end if;
 
     return (for some E of
-            poll.event_poll.all (poll.event_poll.all'First .. (poll.event_poll.all'First + poll.last_wait_returned) - 1)
-        => E.fd = mi_socket and then inner_mi_and (E.revents, send_event) /= 0);
+            poll.event_poll.all (poll.event_poll.all'First .. (poll.event_poll.all'First + poll.count) - 1)
+        => E.revents /= 0 and then E.fd = mi_socket and then inner_mi_and (E.revents, send_event) /= 0);
 
   end is_send;
 
@@ -232,8 +232,8 @@ is
     end if;
 
     return (for some E of
-            poll.event_poll.all (poll.event_poll.all'First .. (poll.event_poll.all'First + poll.last_wait_returned) - 1)
-        => E.fd = mi_socket and then inner_mi_and (E.revents, receive_event) /= 0);
+            poll.event_poll.all (poll.event_poll.all'First .. (poll.event_poll.all'First + poll.count) - 1)
+        => E.revents /= 0 and then E.fd = mi_socket and then inner_mi_and (E.revents, receive_event) /= 0);
 
   end is_receive;
 
