@@ -1,20 +1,16 @@
 
-with System;
-
-package adare_net.sockets.inners
+package adare_net.base.inners
   with Preelaborate
 is
-  use System;
 
   function inner_accept
     (sockfd_i     : socket_type;
     addr_i        : Address;
-    addr_length_i : in out socklen_t) return socket_type
+    addr_length_i : Address) return socket_type
     with Import => True, Convention => C, External_Name => "accept";
 
-
   function inner_bind
-    (sockfd_i           : in socket_type;
+    (sockfd_i           : socket_type;
     addr_i              : Address;
     address_length_i    : in int) return int
     with Import => True, Convention => C, External_Name => "bind";
@@ -26,19 +22,8 @@ is
   function inner_connect
     (sockfd_i : socket_type;
     addr_i    : Address;
-    leng_i    : size_t) return int
+    leng_i    : int) return int
     with Import => True, Convention => C, External_Name => "connect";
-
-  subtype a_list is addresses_list (1 .. 10);
-
-  procedure inner_init_address (
-    ip_or_host_i  : Address;
-    port_i        : Address;
-    ai_socktype_i : int;
-    ai_family_i   : int;
-    length_i      : in out int;
-    list_i        : in out a_list
-  ) with Import => True, Convention => C, External_Name => "c_init_address";
 
   function inner_socket
     (domain_i   : in int;
@@ -57,8 +42,8 @@ is
      len_i  : size_t;
      flags_i  : int;
      from_i   : Address;
-     from_len_i : in out socklen_t
-    ) return ssize_t
+     from_len_i : Address
+    ) return int
     with Import => True, Convention => C, External_Name => "recvfrom";
 
   function inner_recv
@@ -66,7 +51,7 @@ is
      buf_i  : Address;
      len_i  : size_t;
      flags_i  : int
-     ) return ssize_t
+     ) return int
      with Import => True, Convention => C, External_Name => "recv";
 
   procedure inner_reset_errno
@@ -81,7 +66,7 @@ is
      buf_i  : Address;
      len_i  : size_t;
      flags_i  : int
-    ) return ssize_t
+    ) return int
     with Import => True, Convention => C, External_Name => "send";
 
   function inner_sendto
@@ -90,15 +75,15 @@ is
      len_i  : size_t;
      flags_i  : int;
      to_i     : Address;
-     to_len_i : socklen_t
-     ) return ssize_t
+     to_len_i : int
+     ) return int
      with Import => True, Convention => C, External_Name => "sendto";
 
-  procedure inner_inet_ntop
+  function inner_inet_ntop
     (af : int;
      src  : Address;
      dst  : Address;
-     size : socklen_t)
+     size : size_t) return Address
      with Import => True, Convention => C, External_Name => "inet_ntop";
 
   function inner_ntohs
@@ -110,27 +95,25 @@ is
     length_i   : in out int)
     with Import => True, Convention => C, External_Name => "c_show_error";
 
+  function inner_mi_and
+    (left_i, right_i  : short) return short
+    with Import => True, Convention => C, External_Name => "mi_and";
 
-  function inner_epoll_create1 (flags_i : int := 0) return handle_type
-    with Import => True, Convention => C, External_Name => "epoll_create1";
+  function inner_poll
+    (fds_i  : Address;
+     nfds_i : Unsigned_16;
+     timeout_i  : int) return int
+     with Import => True, Convention => C, External_Name => "poll";
 
-  function inner_epoll_close (ephnd_i : handle_type) return int
-    with Import => True, Convention => C, External_Name => "close";
 
-  function inner_epoll_ctl
-    (ephnd_i  : handle_type;
-     op_i     : int;
-     sock_i   : socket_type;
-     event_i  : Address
-    ) return int
-    with Import => True, Convention => C, External_Name => "epoll_ctl";
+  procedure inner_create_addresses
+    (host_i    : Address;
+     service_i : Address;
+     data_i    : Address;
+     data_length_i : Address;
+     addr_family_i : Address_family_label;
+     addr_type_i   : Address_type_label
+    )
+    with Import => True, Convention => C,  External_Name => "create_addresses";
 
-  function inner_epoll_wait
-    (ephnd_i  : handle_type;
-     events_i : Address;
-     maxevents_i  : int;
-     timeout_i    : int
-    ) return int
-    with Import => True, Convention => C, External_Name => "epoll_wait";
-
-end adare_net.sockets.inners;
+end adare_net.base.inners;

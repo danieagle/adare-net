@@ -190,7 +190,7 @@ is
   function get_family_label (a_family : aliased char_array) return Address_family_label
   is
     tmp_addr  : constant Address      := get_address_and_family_address (a_family);
-    tmp_u168  : constant Unsigned_16  := (if Alire_Host_OS /= "freebsd" then a_uint16.To_Pointer (tmp_addr).all
+    tmp_u168  : constant Unsigned_16  := (if Alire_Host_OS /= "freebsd" and Alire_Host_OS /= "macos" then a_uint16.To_Pointer (tmp_addr).all
       else Unsigned_16 (a_uint8.To_Pointer (tmp_addr + 1).all));
   begin
     return get_family_label (Address_family (tmp_u168));
@@ -199,7 +199,7 @@ is
   function get_family_label (a_family : not null char_array_access) return Address_family_label
   is
     tmp_addr  : constant Address      := get_address_and_family_address (a_family);
-    tmp_u168  : constant Unsigned_16  := (if Alire_Host_OS /= "freebsd" then a_uint16.To_Pointer (tmp_addr).all
+    tmp_u168  : constant Unsigned_16  := (if Alire_Host_OS /= "freebsd" and Alire_Host_OS /= "macos" then a_uint16.To_Pointer (tmp_addr).all
       else Unsigned_16 (a_uint8.To_Pointer (tmp_addr + 1).all));
   begin
     return get_family_label (Address_family (tmp_u168));
@@ -221,7 +221,7 @@ is
   function get_family_label (from : socket_addresses) return Address_family_label
   is
     tmp_addr  : constant Address      := get_address_and_family_address (from);
-    tmp_u168  : constant Unsigned_16  := (if Alire_Host_OS /= "freebsd" then a_uint16.To_Pointer (tmp_addr).all
+    tmp_u168  : constant Unsigned_16  := (if Alire_Host_OS /= "freebsd" and Alire_Host_OS /= "macos" then a_uint16.To_Pointer (tmp_addr).all
       else Unsigned_16 (a_uint8.To_Pointer (tmp_addr + 1).all));
   begin
     return get_family_label (Address_family (tmp_u168));
@@ -230,7 +230,7 @@ is
   function get_family_label (from : not null socket_addresses_access) return Address_family_label
   is
     tmp_addr  : constant Address      := get_address_and_family_address (from);
-    tmp_u168  : constant Unsigned_16  := (if Alire_Host_OS /= "freebsd" then a_uint16.To_Pointer (tmp_addr).all
+    tmp_u168  : constant Unsigned_16  := (if Alire_Host_OS /= "freebsd" and Alire_Host_OS /= "macos" then a_uint16.To_Pointer (tmp_addr).all
       else Unsigned_16 (a_uint8.To_Pointer (tmp_addr + 1).all));
   begin
     return get_family_label (Address_family (tmp_u168));
@@ -591,7 +591,7 @@ is
     tmp_addr  := get_address_and_family_address (response.storage.stor);
 
     mi_socket_typ :=
-      inner_socket (int (if Alire_Host_OS /= "freebsd" then a_uint16.To_Pointer (tmp_addr).all
+      inner_socket (int (if Alire_Host_OS /= "freebsd" and Alire_Host_OS /= "macos" then a_uint16.To_Pointer (tmp_addr).all
                         else Unsigned_16 (a_uint8.To_Pointer (tmp_addr + 1).all)), -- family
         int (if proto = tcp then tmp_tcp else tmp_udp), -- type
         get_address_protocol (response.storage.stor) -- protocol
@@ -669,7 +669,7 @@ is
     tmp_addr := get_address_and_family_address (response.storage.stor);
 
     mi_socket_typ :=
-      inner_socket (int (if Alire_Host_OS /= "freebsd" then a_uint16.To_Pointer (tmp_addr).all
+      inner_socket (int (if Alire_Host_OS /= "freebsd" and Alire_Host_OS /= "macos" then a_uint16.To_Pointer (tmp_addr).all
                         else Unsigned_16 (a_uint8.To_Pointer (tmp_addr + 1).all)), -- family
         int (if proto = tcp then tmp_tcp else tmp_udp), -- type
         get_address_protocol (response.storage.stor) -- protocol
@@ -746,7 +746,7 @@ is
     tmp_addr := get_address_and_family_address (response.storage.stor);
 
     mi_socket_typ :=
-      inner_socket (int (if Alire_Host_OS /= "freebsd" then a_uint16.To_Pointer (tmp_addr).all
+      inner_socket (int (if Alire_Host_OS /= "freebsd" and Alire_Host_OS /= "macos" then a_uint16.To_Pointer (tmp_addr).all
                         else Unsigned_16 (a_uint8.To_Pointer (tmp_addr + 1).all)), -- family
         int (if proto = tcp then tmp_tcp else tmp_udp), -- type
         get_address_protocol (response.storage.stor) -- protocol
@@ -824,7 +824,7 @@ is
 
     tmp_addr := get_address_and_family_address (response.storage.stor);
     mi_socket_typ :=
-      inner_socket (int (if Alire_Host_OS /= "freebsd" then a_uint16.To_Pointer (tmp_addr).all
+      inner_socket (int (if Alire_Host_OS /= "freebsd" and Alire_Host_OS /= "macos" then a_uint16.To_Pointer (tmp_addr).all
                         else Unsigned_16 (a_uint8.To_Pointer (tmp_addr + 1).all)), -- family
         int (if proto = tcp then tmp_tcp else tmp_udp), -- type
         get_address_protocol (response.storage.stor) -- protocol
@@ -3776,7 +3776,7 @@ is
     end if;
 
     if mi_family_label = ipv4 then
-      if Alire_Host_OS /= "freebsd" then
+      if Alire_Host_OS /= "freebsd" and Alire_Host_OS /= "macos" then
         b4 :
         declare
           tmp_addr  : constant sockaddr_in  := a_sockaddr_in4.To_Pointer (get_address_and_family_address (sock_address.stor)).all;
@@ -3796,7 +3796,7 @@ is
     end if;
 
     if mi_family_label = ipv6 then
-      if Alire_Host_OS /= "freebsd" then
+      if Alire_Host_OS /= "freebsd" and Alire_Host_OS /= "macos" then
         b6 :
         declare
           tmp_addr  : constant sockaddr_in6  := a_sockaddr_in6.To_Pointer (get_address_and_family_address (sock_address.stor)).all;
@@ -3847,7 +3847,7 @@ is
     end if;
 
     if mi_family_label = ipv4 then
-      if Alire_Host_OS /= "freebsd" then
+      if Alire_Host_OS /= "freebsd" and Alire_Host_OS /= "macos" then
         b4 :
         declare
           tmp_addr  : constant sockaddr_in  := a_sockaddr_in4.To_Pointer (get_address_and_family_address (sock_address.stor)).all;
@@ -3867,7 +3867,7 @@ is
     end if;
 
     if mi_family_label = ipv6 then
-      if Alire_Host_OS /= "freebsd" then
+      if Alire_Host_OS /= "freebsd" and Alire_Host_OS /= "macos" then
         b6 :
         declare
           tmp_addr  : constant sockaddr_in6  := a_sockaddr_in6.To_Pointer (get_address_and_family_address (sock_address.stor)).all;
