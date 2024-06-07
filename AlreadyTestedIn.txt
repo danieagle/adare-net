@@ -9,3 +9,5 @@ v.latest =>
 3) FreeBSD 14.0 AMD64       + alire 1.2.2 + gnat 12.3.0 (external) +
     gcc 12.3.0 (external)   + gprbuild 2024.0.0,1 (external);
 
+4) MacOS Soname "x86_64"    + alire 2.0.1 + gnat 13.2.2 (nativo)   +
+    Apple Clang 15.0.0      + gprbuild 22.0.1 (nativo)

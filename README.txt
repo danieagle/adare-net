@@ -2,7 +2,7 @@
 Adare_Net
 =====================
 
-Version: "Revisited" (2.15.5-dev)
+Version: "Revisited" (2.17.5-dev)
 
 Adare_Net is a small, powerfull, portable and easy to use Ada network lib.
 It supports ipv4 ipv6 udp tcp raw level 2 and raw level 3,
