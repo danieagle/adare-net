@@ -17,7 +17,7 @@ with Interfaces.C; use Interfaces.C;
 
 procedure udp_client_new
 is
-  pragma Unsuppress (All_Checks);
+  pragma Unsuppress (All_Checks); -- just to testing, optional in production code.
 begin
 
   start_adare_net;

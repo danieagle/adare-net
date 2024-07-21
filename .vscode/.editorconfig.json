@@ -1,0 +1,11 @@
+{
+  "[*.md]" : {
+
+    "files.trim_trailing_whitespace": false
+  },
+
+  "[*.mdx]" : {
+
+    "files.trim_trailing_whitespace": false
+  },
+}
