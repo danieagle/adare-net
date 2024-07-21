@@ -1,0 +1,13 @@
+name = "adare_net_examples"
+description = "Adare_Net examples"
+version = "0.1.2-dev"
+
+authors = ["Daniel Norte de Moraes"]
+maintainers = ["Daniel Norte de Moraes <danieagle@tutanota.com>"]
+maintainers-logins = ["danieagle"]
+
+executables = ["tcp_server", "tcp_client", "udp_server", "udp_client"]
+
+[build-switches]
+"*".Ada_Version = "Ada12"
+"*".Style_checks = ["-gnaty2abCefhiklnprstmM135"]

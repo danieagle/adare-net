@@ -1,0 +1,15 @@
+# THIS IS A MACHINE-GENERATED FILE. DO NOT EDIT MANUALLY.
+
+[solution]
+[solution.context]
+solved = true
+[[solution.state]]
+crate = "adare_net"
+fulfilment = "linked"
+pinned = false
+transitivity = "direct"
+versions = "~2.15.5-dev"
+[solution.state.link]
+lockfiled = true
+path = ".."
+

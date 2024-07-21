@@ -91,9 +91,9 @@ For documentation, see Doc/adare_net.pdf
 
 For examples and how compile in your own projects, see:
   src/*.ad{s,b}
-  adare_net_examples/tests1/*.adb
-  adare_net_examples/tcp_new/*.adb
-  adare_net_examples/udp_new/*.adb
+  adare_net_examples_01/tests1/*.adb
+  adare_net_examples_01/tcp_new/*.adb
+  adare_net_examples_01/udp_new/*.adb
 
   Enjoy!!
 

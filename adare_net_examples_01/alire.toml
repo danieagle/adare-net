@@ -1,5 +1,5 @@
-name = "adare_net_examples"
-description = "Adare_Net examples"
+name = "adare_net_examples_01"
+description = "Adare_Net examples 01"
 version = "0.30.9-dev"
 
 authors = ["Daniel Norte de Moraes"]
