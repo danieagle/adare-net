@@ -42,15 +42,16 @@
           - connection refused...
 
 ## Party Start!
+  - Prologue
 
-  - send and receive:
+  - Send and Receive:
 
-    - client part:
+    - Client part:
 
       1.  send to server.
       2.  receive from server.
 
-    - server part:
+    - Server part:
 
       1.  receive from client.
       2.  send to client.
@@ -60,6 +61,11 @@
   1.  close sockets.
   2.  close addresses.
   3.  lib stop.
+
+\
+\
+
+_continues in next page_
 
 ## Appendices:
 
@@ -71,13 +77,17 @@
   
   - How to Discover Network Addresses and Their Characteristics.
   
-  - A working Micro-Version of Embedded and Distributed Database. 
-      
-    It shows the powerfull interaction of: sockets + socket_buffers (and his rewind operations) +  
-    Ada Streams + Ada Streams.Stream_IO (and his file(s) operations) +  
-    'normal' and 'class wide' types.  
+  - A working Micro-Version of Embedded and Distributed Database:
 
-    It serve as a example of the real power of Adare_Net and Ada. Enjoy!! :-D  
+    * Shows The Real Power of Adare_Net and Ada in Live Action 
+    * And demonstrates the powerful interaction between
+
+      * Sockets.
+      * Socket_buffers (and his rewind operations).
+      * Ada Streams.
+      * Ada Streams.Stream_IO and his file(s) operations.
+      * And many Ada types and constructs uses, in live.
+
 
 ### **A2 _Hints for Users of Others Network Ada Libs:_**
 
@@ -89,7 +99,7 @@
   
   * Use Alire.
   * Use a task pool.
-  * Use Ada Class Wide types (Tagged Types) and Stream Socket_Buffer to see the real power of Adare_Net. 
+  * Use Class Wide types (Tagged Types) and Stream Socket_Buffer. 
                                                                                                 
 \
 \
@@ -120,20 +130,12 @@
 \
 \
 \                                                  
-\
-\
-\
 \                                                  
 \
 \
 \
 \
 \                                                  
-\
-\
-\
-\                                                  
-\
 
 # _**Init Adare_Net!**_
 
@@ -148,7 +150,6 @@
 
  
 - _**Server part:**_
-
 
   1. Create a network address and port:
 
@@ -187,6 +188,7 @@
           end if;
 
         end b_address_many;
+
 
         ~~~
 
@@ -364,11 +366,11 @@
 
           end b_server_accept;
 
+
         ~~~
 
-
-
 - _**Client part:**_
+
 
   1. Create a network address and port
 
@@ -401,6 +403,8 @@
             Text_IO.Put_Line ("Failed to discover host addresses.");
             Text_IO.New_Line;
             Text_IO.Put_Line ("last error message => " & string_error);
+            
+            -- exit or "B-Plan".
           end if;
 
         end b_address_many;
@@ -422,8 +426,6 @@
 
         begin
           -- remember, when ok is False, it flag or real error or last address getted.
-
-
           -- way1: get one or more addresses, one address at a time:
 
           ok := get_address (many_addresses, one_address);
@@ -468,9 +470,9 @@
 
         end b_address_one;
 
+
         ~~~
 
-\
 
   2.  Create a presence in network (socket).
 
@@ -551,20 +553,94 @@
 
         ~~~
 
+\
+\
+\
+\
+\
+\
+\
+
+_continue in next page_
 
 # _**Party Start!**_
 
-  - send and receive, client part:
+  - Prologue:
+    
+    ~~~
+    
+      Send has two main variations:
+      
+      send_buffer
+        => data_to_send field:
+          => can be  socket_buffer_access  and  socket_buffer .
+          => if send_buffer is successfull in sending all data
+              in data_to_send field, data_to_send buffer is emptied.
+                              
+      send_stream =>
+        => data_to_send field:
+          => can be  stream_element_array_access  and  Stream_Element_Array .
+          => never change data_to_send field.
+      
+                     
+      Receive has two main variations:
+      
+      receive_buffer => 
+        => data_to_receive field:
+          => can be  socket_buffer_access  and  socket_buffer .
+          => if receive_buffer is successfull in getting all data
+              from sock field, data_to_receive buffer is appended with 
+              the received data.
+                                 
+      receive_stream => 
+        => data_to_receive field:
+          => mode 'out'
+          => can be  stream_element_array_access  and  Stream_Element_Array .
+          => if receive_stream is successfull in getting all data
+             from sock field, it create a fresh new data in
+             data_to_receive field, but not change the old values.
+      
+      
+      From Variations before:
+      
+      receive_{buffer,stream} => 
+        => received_address field:
+          => mode 'out'
+          => can be  socket_address_access  and  socket_address .
+          => if receive_{buffer,stream} is successfull, Its creates a fresh new data in
+             received_address field, but not change the old values.
 
+    ~~~
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+
+_continue in next page_
+
+\
+\
+\
+\
+
+  - Send and Receive, Client part:
+  
     ~~~ada
       
-      b_client_send_and_receive :
+      b_client_send :
       declare
         client_data_to_send_backup  : socket_buffer_access := null;
         client_data_to_send         : socket_buffer_access := new socket_buffer;
-        client_data_to_receive      : socket_buffer_access := new socket_buffer;
         sended_len    : int   := 0;
-        received_len  : int   := 0;
       begin
         String'Output (client_data_to_send, "Hi! Server! how are you? :-D ");
         String'Output (client_data_to_send, "I'm sending to you a unsigned 16bit number ");
@@ -580,11 +656,11 @@
         -- after start  => wait forever or a low value or error
         
         if not
-          send_buffer (sock   => client_socket,
+          send_buffer (sock   => client_socket, -- block
             data_to_send  => client_data_to_send,
             send_count  => sended_len,
-            miliseconds_start_timeout =>  0, -- wait forever for start sending or error
-            miliseconds_next_timeouts =>  0) -- wait forever between sends or error
+            miliseconds_start_timeout =>  0, -- wait until forever for start sending or error
+            miliseconds_next_timeouts =>  0) -- wait until forever between sends or error
         then
         
           Text_IO.New_Line;
@@ -594,7 +670,6 @@
         
           -- exit or "B-Plan".
         end if;
-
         
         -- restart buffer, just example :-D
         
@@ -607,7 +682,7 @@
         -- choose values for start and next
         
         if not
-          send_buffer (sock   => client_socket,
+          send_buffer (sock   => client_socket, -- block
             data_to_send  => client_data_to_send,
             send_count  => sended_len,
             miliseconds_start_timeout =>  4000, -- until maximum of 4 seconds or error
@@ -621,12 +696,89 @@
         
           -- exit or "B-Plan".
         end if;
+      end b_client_send;
+      b_client_receive :
+      declare
+        client_data_to_receive  : socket_buffer_access := new socket_buffer;
+        sender_address  : socket_address_access := null;
+        -- or sender_address  : socket_address;
+        received_len  : int   := 0;
+      begin
         
-      end b_client_send_and_receive;
+        -- way1 
+        -- start        => wait forever or error
+        -- after start  => wait forever or a low value or error
+        
+        if not
+          receive_buffer   (sock  =>  client_socket, -- block
+            data_to_receive   => client_data_to_receive,
+            received_address  => sender_address,
+            receive_count     => received_len,
+            miliseconds_start_timeout =>  0, -- until maximum of forever or error
+            miliseconds_next_timeouts =>  0) -- until maximum of forever between receiving or error
+        then
+        
+          Text_IO.New_Line;
+          Text_IO.Put_Line (" Error while trying receive from remote host:");
+          Text_IO.Put_Line (" received length => " & received_len'image);
+          Text_IO.Put_Line (" last error => " & string_error);
+        
+          -- exit or "B-Plan".
+        end if;
+        
+        -- see client and server src examples to learn how show  messages
+        -- received in  client_data_to_receive  :-)
+        
+        -- Some Info :
+        
+        Text_IO.Put_Line (" All messages received from " & get_address (sender_address) &
+          " and at port := " & get_address_port (sender_address) &
+          " and type => " & get_address_type (sender_address) &
+          " and family type => " & get_family_label (sender_address));       
+
+        -- restart buffer, just example :-D
+        -- 'buffer' without restart will just append data received in Itself.
+        
+        clear (client_data_to_receive);
+
+        -- way2 
+        -- choose values for start and next
+        
+        if not
+          receive_buffer   (sock  =>  client_socket, -- block
+            data_to_receive   => client_data_to_receive,
+            received_address  => sender_address,
+            receive_count     => received_len,
+            miliseconds_start_timeout =>  7000, -- until maximum of 7 seconds or error
+            miliseconds_next_timeouts =>  2000) -- until maximum of 2 seconds between receives or error
+        then
+        
+          Text_IO.New_Line;
+          Text_IO.Put_Line (" Error while trying receive from remote host:");
+          Text_IO.Put_Line (" received length => " & received_len'image);
+          Text_IO.Put_Line (" last error => " & string_error);
+        
+          -- exit or "B-Plan".
+        end if;
+
+
+        -- see client and server src examples to learn how show  messages
+        -- received in  client_data_to_receive  :-)
+        
+        -- Some Info :
+        
+        Text_IO.Put_Line (" All messages received from " & get_address (sender_address) &
+            " and at port := " & get_address_port (sender_address) &
+            " and type => " & get_address_type (sender_address) &
+            " and family type => " & get_family_label (sender_address));       
+
+      end b_client_receive;
                 
     ~~~
-        
-  - receive and send, server part:
+
+\
+
+  - Receive and Send, Server part:
     
     ~~~ada
     

@@ -28,6 +28,8 @@ authors = ["Daniel Norte de Moraes"]
 maintainers = ["Daniel Norte de Moraes <danieagle@zohomail.com>"]
 maintainers-logins = ["danieagle"]
 
+licenses = "Unlicense"
+
 [build-switches]
 "*".Ada_Version = "Ada12"
 "*".Style_checks = ["-gnaty2abCefhiklnprstmM137"]
