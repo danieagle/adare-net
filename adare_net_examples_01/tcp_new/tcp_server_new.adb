@@ -8,7 +8,8 @@
 -- (3.2) Wide class(es) and tagged types
 -- (3.3) And with a more fine treatment, all records, tagged types included, can be endian proof.
 -- (4) Etc. ^^
--- But is yet up to you create a yet better real world champion software with Adare_net and you can do it!! ^^
+-- But is yet up to you create a yet better real world champion software with Adare_net
+-- and you can do it!! ^^
 
 -- Info about this software:
 --

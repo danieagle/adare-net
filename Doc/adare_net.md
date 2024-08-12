@@ -57,10 +57,11 @@
       2.  send to client.
 
 ## Party End!
-
-  1.  close sockets.
-  2.  close addresses.
-  3.  lib stop.
+  
+  1.  Prologue.
+  2.  close sockets.
+  3.  close address(es).
+  4.  lib stop.
 
 \
 \
@@ -142,7 +143,8 @@ _continues in next page_
   * lib start:
 
     * ~~~ada
-      start_adare_net;  -- need be the first operation in the program, and before first use of Adare_Net.
+      start_adare_net;  -- Need be the first operation in the program, and before
+                        -- first use of Adare_Net.
       ~~~
  
 
@@ -161,7 +163,8 @@ _continues in next page_
         declare
           --
           -- 'socket_addresses' and 'socket_addresses_access' types work as circular types and
-          -- rewind is automatic after last address. For user convenience, exist rewind() procedures, too.
+          -- rewind is automatic after last address. For user convenience,
+          -- exist  rewind() procedures, too.
           --
 
           many_addresses :  socket_addresses_access := null;
@@ -174,7 +177,8 @@ _continues in next page_
                                                 -- current host or "::" or "0.0.0.0" .
 
               network_port_or_service => "25000", -- Ignored without 'bind' or connect(),
-                                                  -- Use "0" to choose one free random port automatically.
+                                                  -- Use "0" to choose one free random port
+                                                  -- automatically.
               Addr_family => any, -- ipv4 and ipv6.
               Addr_type => tcp,
               response => many_addresses,
@@ -205,6 +209,7 @@ _continues in next page_
           ok  : Boolean :=  False;
 
         begin
+        
           -- remember, when ok is False, it flag or real error or last address getted.
 
           
@@ -382,7 +387,8 @@ _continues in next page_
         declare
           --
           -- 'socket_addresses' and 'socket_addresses_access' types work as circular types and
-          -- rewind is automatic after last address. For user convenience, exist rewind() procedures, too.
+          -- rewind is automatic after last address. For user convenience,
+          -- exist  rewind()  procedures, too.
           --
 
           many_addresses :  socket_addresses_access := null;
@@ -394,7 +400,8 @@ _continues in next page_
             create_addresses (host_or_ip => "::1", -- just example.
 
               network_port_or_service => "25000", -- Ignored without 'bind' or connect() .
-                                                  -- Use "0" to choose one free random port automatically.
+                                                  -- Use "0" to choose one free random port
+                                                  -- automatically.
               Addr_family => any, -- ipv4 and ipv6
               Addr_type => tcp,
               response => many_addresses,
@@ -499,7 +506,6 @@ _continues in next page_
               -- exit or "B-Plan".
             end if;
 
-
             -- way2: pick the only address:
 
             if not
@@ -555,72 +561,75 @@ _continues in next page_
 
 \
 \
-\
-\
-\
-\
-\
 
 _continue in next page_
 
+\
+\
+
 # _**Party Start!**_
 
-  - Prologue:
+  - _**Prologue**_:
     
     ~~~
     
       Send has two main variations:
       
-      send_buffer
-        => data_to_send field:
-          => can be  socket_buffer_access  and  socket_buffer .
-          => if send_buffer is successfull in sending all data
-              in data_to_send field, data_to_send buffer is emptied.
-                              
-      send_stream =>
-        => data_to_send field:
-          => can be  stream_element_array_access  and  Stream_Element_Array .
-          => never change data_to_send field.
+        send_buffer()
+        
+          => data_to_send  field:
+            => can be  socket_buffer_access  and  socket_buffer .
+            => if  send_buffer()  is successfull in sending all data
+              in  data_to_send  field,  data_to_send  buffer is emptied.
+                                
+        
+        send_stream()
+        
+          => data_to_send  field:
+            => can be  stream_element_array_access  and  Stream_Element_Array .
+            => never change  data_to_send  field.
       
-                     
+  
+  
       Receive has two main variations:
       
-      receive_buffer => 
-        => data_to_receive field:
-          => can be  socket_buffer_access  and  socket_buffer .
-          => if receive_buffer is successfull in getting all data
-              from sock field, data_to_receive buffer is appended with 
-              the received data.
-                                 
-      receive_stream => 
-        => data_to_receive field:
-          => mode 'out'
-          => can be  stream_element_array_access  and  Stream_Element_Array .
-          => if receive_stream is successfull in getting all data
-             from sock field, it create a fresh new data in
-             data_to_receive field, but not change the old values.
-      
+        receive_buffer()
+        
+          => data_to_receive  field:
+            => can be  socket_buffer_access  and  socket_buffer .
+            => if  receive_buffer()  is successfull in getting all data
+                from  sock  field,  data_to_receive  buffer is appended with 
+                the received data.
+                              
+                                  
+        receive_stream()
+        
+          => data_to_receive  field:
+            => mode 'out'
+            => can be  stream_element_array_access  only.
+            => if  receive_stream()  is successfull in getting all data
+              from  sock  field, it create a fresh new data in
+              data_to_receive  field, but not change the old values.
+        
+
       
       From Variations before:
       
-      receive_{buffer,stream} => 
-        => received_address field:
-          => mode 'out'
-          => can be  socket_address_access  and  socket_address .
-          => if receive_{buffer,stream} is successfull, Its creates a fresh new data in
-             received_address field, but not change the old values.
+      
+        receive_{buffer,stream}()
+        
+          => received_address  field:
+            => mode 'out'
+            => can be  socket_address_access  and  socket_address .
+            => if  receive_{buffer,stream}()  are successfull, Its creates
+              a fresh new data in  received_address  field, but not change
+              the old values.
+             
+      Obs.: I'll only show the  buffer  version for next  client  and  server  part,
+            but the  stream  versions are similar.
 
     ~~~
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
+
 \
 \
 
@@ -628,11 +637,8 @@ _continue in next page_
 _continue in next page_
 
 \
-\
-\
-\
 
-  - Send and Receive, Client part:
+  - _**Send and Receive, Client part**_:
   
     ~~~ada
       
@@ -699,9 +705,9 @@ _continue in next page_
       end b_client_send;
       b_client_receive :
       declare
-        client_data_to_receive  : socket_buffer_access := new socket_buffer;
-        sender_address  : socket_address_access := null;
-        -- or sender_address  : socket_address;
+        client_data_to_receive  : socket_buffer_access  := new socket_buffer;
+        sender_address          : socket_address_access := null;
+        -- or sender_address    : socket_address;
         received_len  : int   := 0;
       begin
         
@@ -710,7 +716,7 @@ _continue in next page_
         -- after start  => wait forever or a low value or error
         
         if not
-          receive_buffer   (sock  =>  client_socket, -- block
+          receive_buffer (sock  =>  client_socket, -- block
             data_to_receive   => client_data_to_receive,
             received_address  => sender_address,
             receive_count     => received_len,
@@ -745,7 +751,7 @@ _continue in next page_
         -- choose values for start and next
         
         if not
-          receive_buffer   (sock  =>  client_socket, -- block
+          receive_buffer (sock  =>  client_socket, -- block
             data_to_receive   => client_data_to_receive,
             received_address  => sender_address,
             receive_count     => received_len,
@@ -778,12 +784,294 @@ _continue in next page_
 
 \
 
-  - Receive and Send, Server part:
+  - _**Receive and Send, Server part**_:
     
     ~~~ada
-    
-    ~~~
-    
+      
+      b_server_send :
+      declare
+        server_data_to_send_backup  : socket_buffer_access := null;
+        server_data_to_send         : socket_buffer_access := new socket_buffer;
+        sended_len    : int   := 0;
+      begin
+        String'Output (server_data_to_send, "Hi! I'm fine! :-D ");
+        String'Output (server_data_to_send, "I'm sending to you a unsigned 16bit number, too.");
+        Unsigned_16'Output (server_data_to_send, Unsigned_16 (19));
+        
+        server_data_to_send_backup := get_buffer (server_data_to_send);
+        
+        Text_IO.Put_Line ("Buffer to send size => " &
+          Integer_64'(actual_data_size (server_data_to_send))'image);
+        
+        
+        -- way1 
+        -- start        => wait forever or error
+        -- after start  => wait forever or a low value or error
+        
+        if not
+          send_buffer (sock   => new_socket_accepted, -- block
+            data_to_send  => server_data_to_send,
+            send_count  => sended_len,
+            miliseconds_start_timeout =>  0, -- wait until forever for start sending or error
+            miliseconds_next_timeouts =>  0) -- wait until forever between sends or error
+        then
+        
+          Text_IO.New_Line;
+          Text_IO.Put_Line (" Error while trying send to remote host:");
+          Text_IO.Put_Line (" sended length => " & sended_len'image);
+          Text_IO.Put_Line (" last error => " & string_error);
+        
+          -- exit or "B-Plan".
+        end if;
+        
+        -- restart buffer, just example :-D
+        
+        clear (server_data_to_send);
+        
+        server_data_to_send := get_buffer (server_data_to_send_backup);
+      ~~~
 
+      \
+      \
+      \    
+      
+      _continue in next page_
+      
+      ~~~ada
+        -- way2 
+        -- choose values for start and next
+        
+        if not
+          send_buffer (sock   => new_socket_accepted, -- block
+            data_to_send  => server_data_to_send,
+            send_count  => sended_len,
+            miliseconds_start_timeout =>  4000, -- until maximum of 4 seconds or error
+            miliseconds_next_timeouts =>  2000) -- until maximum of 2 seconds between sends or error
+        then
+        
+          Text_IO.New_Line;
+          Text_IO.Put_Line (" Error while trying send to remote host:");
+          Text_IO.Put_Line (" sended length => " & sended_len'image);
+          Text_IO.Put_Line (" last error => " & string_error);
+        
+          -- exit or "B-Plan".
+        end if;
+      end b_server_send;
+
+
+      b_server_receive :
+      declare
+        server_data_to_receive  : socket_buffer_access  := new socket_buffer;
+        sender_address          : socket_address_access := null;
+        -- or sender_address    : socket_address;
+        received_len  : int   := 0;
+      begin
+        
+        -- way1 
+        -- start        => wait forever or error
+        -- after start  => wait forever or a low value or error
+        
+        if not
+          receive_buffer (sock  =>  new_socket_accepted, -- block
+            data_to_receive   => server_data_to_receive,
+            received_address  => sender_address,
+            receive_count     => received_len,
+            miliseconds_start_timeout =>  0, -- until maximum of forever or error
+            miliseconds_next_timeouts =>  0) -- until maximum of forever between receiving or error
+        then
+        
+          Text_IO.New_Line;
+          Text_IO.Put_Line (" Error while trying receive from remote host:");
+          Text_IO.Put_Line (" received length => " & received_len'image);
+          Text_IO.Put_Line (" last error => " & string_error);
+        
+          -- exit or "B-Plan".
+        end if;
+        
+        -- see client and server src examples to learn how show  messages
+        -- received in  server_data_to_receive  :-)
+        
+        -- Some Info :
+        
+        Text_IO.Put_Line (" All messages received from " & get_address (sender_address) &
+          " and at port := " & get_address_port (sender_address) &
+          " and type => " & get_address_type (sender_address) &
+          " and family type => " & get_family_label (sender_address));       
+
+        -- restart buffer, just example :-D
+        -- 'buffer' without restart will just append data received in Itself.
+        
+        clear (server_data_to_receive);
+
+        -- way2 
+        -- choose values for start and next
+        
+        if not
+          receive_buffer (sock  =>  new_socket_accepted, -- block
+            data_to_receive   => server_data_to_receive,
+            received_address  => sender_address,
+            receive_count     => received_len,
+            miliseconds_start_timeout =>  7000, -- until maximum of 7 seconds or error
+            miliseconds_next_timeouts =>  2000) -- until maximum of 2 seconds between receives or error
+        then
+        
+          Text_IO.New_Line;
+          Text_IO.Put_Line (" Error while trying receive from remote host:");
+          Text_IO.Put_Line (" received length => " & received_len'image);
+          Text_IO.Put_Line (" last error => " & string_error);
+        
+          -- exit or "B-Plan".
+        end if;
+
+
+        -- see client and server src examples to learn how show  messages
+        -- received in  server_data_to_receive  :-)
+        
+        -- Some Info :
+        
+        Text_IO.Put_Line (" All messages received from " & get_address (sender_address) &
+            " and at port := " & get_address_port (sender_address) &
+            " and type => " & get_address_type (sender_address) &
+            " and family type => " & get_family_label (sender_address));       
+
+      end b_server_receive;
+
+
+    ~~~
+
+# _**Party End!**_
+
+  1.  _**Prologue:**_
+  
+      ~~~
+        
+        
+        Sockets can only be closed by the actual user of It, in particular
+          if It was copied to use in another section of App, e.g.: to use it in other task.
+          
+        Address(es) can be cleared/closed all times, but close Its at finishing stage of the
+          App is really optional; The close of Address(es) at running time is more to free memory
+          and can be done at the developer's discretion.
+          
+        p.s.: Enjoy! :-D
+        
+    
+      ~~~
+    
+  2.  _**Close sockets:**_
+  
+      ~~~ada
+      
+        b_server_close_sockets :
+        begin
+          close (socket_server);
+          close (new_socket_accepted);
+        end b_server_close_sockets;
+      
+        b_client_close_sockets :
+        begin
+          close (client_socket);
+        end b_client_close_sockets;
+        
+      ~~~
+  
+  3.  _**Close address(es):**_
+
+      ~~~ada
+      
+        b_server_and_client_close_addrs :
+        begin
+          close (many_addresses);
+          close (one_address);
+        
+        end b_server_and_client_close_addrs
+        
+      ~~~
+
+\
+  
+  4.  _**Lib stop:**_
+  
+      ~~~ada
+      
+        stop_adare_net; -- need be the last operation in the program, and after the last use of Adare_Net.
+      ~~~
+
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+\begin{center}
+\textbf{\emph{Appendices\\
+  in next\\
+    page.}}
+\end{center}
+
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+
+# **_Appendices_**
+
+
+## **A1 _Examples_**
+
+
+  
+  - Full Client and Server TCP/IP.
+  
+    * Server
+      
+      ```{.ada include="../adare_net_examples_01/tcp_new/tcp_server_new.adb"}
+      ```
+      
+    * client
+      
+      ```{.ada include="../adare_net_examples_01/tcp_new/tcp_client_new.adb"}
+      ```
+      
+  - Full Client and Server UDP/IP.
+  
+  - How to Discover Network Addresses and Their Characteristics.
+  
+  - A working Micro-Version of Embedded and Distributed Database:
+
+    TBD 
 
 

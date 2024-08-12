@@ -136,11 +136,6 @@ begin
         goto end_app_label1;
       end if;
 
-      -- if bytes_tmp < 1 then
-      --   Text_IO.Put_Line ("teste 0.6");
-      --   goto end_app_label1;
-      -- end if;
-
       Text_IO.Put_Line (" Successfull sended " & bytes_tmp'Image & " bytes.");
 
       Text_IO.New_Line;
