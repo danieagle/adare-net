@@ -91,7 +91,7 @@ _continues in next page_
 
 
 ### **A2 _Hints for Users of Others Network Ada Libs:_**
-
+  - Prologue.
   - Adasockets.
   - Anet.
   - Gnat-sockets. 
@@ -1073,7 +1073,7 @@ _continue in next page_
   - **Full Client and Server UDP/IP.**
 
     * _**Server UDP/IP**_
-      
+     
       ```{.ada include="../adare_net_examples_01/udp_new/udp_server_new.adb"}
       ```
       
@@ -1083,13 +1083,83 @@ _continue in next page_
       
       ```{.ada include="../adare_net_examples_01/udp_new/udp_client_new.adb"}
       ```
-  \
-  
-  
-  - How to Discover Network Addresses and Their Characteristics.
-  
-  - A working Micro-Version of Embedded and Distributed Database:
 
-    TBD 
+  - **How to Discover Network Addresses and Their Characteristics.**
+  
+    * ```{.ada include="../adare_net_examples_01/tests1/test_get_multi_addresses.adb"}
+      ```
+  
+      \
+      
+  - **A working Micro-Version of Embedded and Distributed Database.**
+  
+      ~~~
+        TBD
+      ~~~
 
+\
+\
+\
+
+_**Continues Next Page**_
+
+
+## **A2 _Hints for Users of Others Network Ada Libs:_**
+
+  - _**Prologue**_
+    
+    ~~~
+      AdaSockets:
+      
+        I'm GrateFull to Samuel Tardieu and AdaSockets, by be the first one 
+          free network lib, yet in the init of Ada95, long before ipv6 existed,
+          with mswindows support and long before gnat-sockets existed.
+        
+        He was also always helpful when I contacted him to fix bugs and add 
+          new features to AdaSockets.
+          
+        As the ages passed I needed IPv6 support and discovered that it was not possible. 
+          An extreme and strenuous rework is necessary to use IPv6 in adasockets,
+            but this would lead to creating a 100% new Adasockets.
+          As the first network lib available in Ada, Adasockets could, who knows?, already 
+            running in nuclear plants, even military embedded systems 
+            and (mybe?) cannot be updated.
+        
+        And the AdaSockets Author don't need ipv6... :-D Bye! ^^
+            
+
+
+
+            Annet and gnat-sockets prologue TBD
+            
+            
+            
+    
+    ~~~
+    
+
+  - _**Adasockets.**_
+    
+    ~~~
+      TBD
+    ~~~
+    \
+  
+  - _**Anet.**_
+   
+    ~~~
+      TBD
+    ~~~
+    \
+  
+  
+  - _**Gnat-sockets.**_
+  
+    
+    ~~~
+      TBD
+    ~~~
+    \
+  
+      
 
