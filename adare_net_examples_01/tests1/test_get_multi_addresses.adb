@@ -12,7 +12,9 @@ begin
   b0 :
   declare
     mi_addresses  : aliased socket_addresses;
+    -- or mi_addresses  : aliased socket_addresses_access
     mi_address    : aliased socket_address;
+    -- or mi_address    : aliased socket_address_access;
   begin
 
     Text_IO.Put_Line (" addresses from google.com ");

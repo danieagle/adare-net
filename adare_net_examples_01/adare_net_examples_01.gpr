@@ -1,7 +1,7 @@
 
 with "config/adare_net_examples_config.gpr";
 
-project adare_net_examples is
+project adare_net_examples_01 is
 
   for Languages use ("Ada");
 
@@ -29,4 +29,4 @@ project adare_net_examples is
   package Install is
   end Install;
 
-end adare_net_examples;
+end adare_net_examples_01;
