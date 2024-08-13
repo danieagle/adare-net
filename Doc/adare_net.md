@@ -1049,24 +1049,42 @@ _continue in next page_
 
 # **_Appendices_**
 
+\
 
-## **A1 _Examples_**
+## **A1 _Examples:_**
 
-
+\
   
-  - Full Client and Server TCP/IP.
+  - **Full Client and Server TCP/IP.**
   
-    * Server
+    * _**Server TCP/IP**_
       
       ```{.ada include="../adare_net_examples_01/tcp_new/tcp_server_new.adb"}
       ```
       
-    * client
+      \
+      
+    * _**Client TCP/IP**_
       
       ```{.ada include="../adare_net_examples_01/tcp_new/tcp_client_new.adb"}
       ```
+  \
+  
+  - **Full Client and Server UDP/IP.**
+
+    * _**Server UDP/IP**_
       
-  - Full Client and Server UDP/IP.
+      ```{.ada include="../adare_net_examples_01/udp_new/udp_server_new.adb"}
+      ```
+      
+      \
+      
+    * _**Client UDP/IP**_
+      
+      ```{.ada include="../adare_net_examples_01/udp_new/udp_client_new.adb"}
+      ```
+  \
+  
   
   - How to Discover Network Addresses and Their Characteristics.
   
