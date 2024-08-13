@@ -8,15 +8,15 @@
 -- (3.2) Wide class(es) and tagged types
 -- (3.3) And with a more fine treatment, all records, tagged types included, can be endian proof.
 -- (4) Etc. ^^
--- But is yet up to you create a yet better real world champion software with Adare_net and you can do it!! ^^
+-- But is yet up to you create a yet better real world champion software with Adare_net
+-- and you can do it!! ^^
 
 -- Info about this software:
 --
 -- udp_server_new is an Adare_net example and work in pair with one or more udp_client_new clients.
 -- the working address can be ipv6 or ipv4. Automatically the first working address will be picked.
 -- mostly common choosen address in server part is "0.0.0.0" or "::" then use localhost or
--- other configured ip address. eg:
--- 127.0.0.1 or ::1  or ? :-) to connect.
+-- other configured ip address. e.g.: 127.0.0.1 or ::1  or ? :-) to connect.
 
 
 with adare_net.base;  use adare_net.base;
@@ -117,18 +117,23 @@ begin
         clear (recv_send_buffer); -- optional, reset all data in buffer
         clear (recv_send_buffer2);  -- optional, reset all data in buffer
 
+
         if pre_message /= null then
           Stream_Element_Array'Write (recv_send_buffer, pre_message.all);
         end if;
 
         Text_IO.New_Line (2);
 
-        Text_IO.Put_Line (" " & this_task_id_str & " remote host connected from [" &
-          get_address (remote_address) & "]:" & get_address_port (remote_address) & " and type => " &
-          get_address_type (remote_address) & " , and family type => " & get_family_label (tmp_socket_address));
+        Text_IO.Put_Line (" " & this_task_id_str &
+          " remote host connected from [" & get_address (remote_address) & "]:" &
+          get_address_port (remote_address) &
+          " and type => " & get_address_type (remote_address) &
+          " , and family type => " & get_family_label (tmp_socket_address));
 
-        Text_IO.Put_Line (" " & this_task_id_str & " will wait until 2 seconds to start receive data.");
-        Text_IO.Put_Line (" " & this_task_id_str & " will wait until 0.5 seconds between continuous receive.");
+        Text_IO.Put_Line (" " & this_task_id_str &
+          " will wait until 2 seconds to start receive data.");
+        Text_IO.Put_Line (" " & this_task_id_str &
+          " will wait until 0.5 seconds between continuous receive.");
 
         if not receive_buffer (sock => task_socket,
           data_to_receive =>  recv_send_buffer,
@@ -139,7 +144,8 @@ begin
         then
           if pre_message = null or else pre_message.all'Length < 1 then
 
-            Text_IO.Put_Line (" " & this_task_id_str & " An error occurred while receiving or the length of message received is zero.");
+            Text_IO.Put_Line (" " & this_task_id_str &
+              " An error occurred while receiving or the length of message received is zero.");
             Text_IO.Put_Line (" " & this_task_id_str & " Nothing to do.");
             Text_IO.Put_Line (" " & this_task_id_str & " Last error message => " & string_error);
             Text_IO.Put_Line (" " & this_task_id_str & " Finishing...");
@@ -175,8 +181,10 @@ begin
 
         end bt1;
 
-        Text_IO.Put_Line (" " & this_task_id_str & " waiting until 2 seconds to start send data to remote host");
-        Text_IO.Put_Line (" " & this_task_id_str & " will wait until 0.5 seconds between continuous send.");
+        Text_IO.Put_Line (" " & this_task_id_str &
+          " waiting until 2 seconds to start send data to remote host");
+        Text_IO.Put_Line (" " & this_task_id_str &
+          " will wait until 0.5 seconds between continuous send.");
 
         if not send_buffer  (sock => task_socket,
           data_to_send  =>  recv_send_buffer2,
@@ -185,7 +193,8 @@ begin
           miliseconds_next_timeouts =>  500) or else size_tmp < 1
         then
 
-          Text_IO.Put_Line (" " & this_task_id_str & " An error occurred while sending data to remote host.");
+          Text_IO.Put_Line (" " & this_task_id_str &
+            " An error occurred while sending data to remote host.");
           Text_IO.Put_Line (" " & this_task_id_str & " Nothing to do.");
           Text_IO.Put_Line (" " & this_task_id_str & " Last error message => " & string_error);
           Text_IO.Put_Line (" " & this_task_id_str & " Finishing...");

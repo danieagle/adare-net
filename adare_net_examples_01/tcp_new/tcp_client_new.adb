@@ -1,6 +1,7 @@
 
 -- This is an over simplified, but complete enough, example of tcp client with Adare_net, :-)
--- but is yet up to you create a real world champion software with Adare_net and you can do it!! ^^
+-- but is yet up to you create a real world champion software with Adare_net
+-- and you can do it!! ^^
 
 -- Info about this software:
 -- Tcp client with Adare_net example. It work in pair with tcp server
@@ -26,7 +27,8 @@ begin
 
     Text_IO.New_Line;
 
-    Text_IO.Put_Line (" Usage: " & Command_Name & " host port ""message1"" ""message2"" ""message_$n"" ");
+    Text_IO.Put_Line (" Usage: " & Command_Name &
+      " host port ""message1"" ""message2"" ""message_$n"" ");
     Text_IO.New_Line;
     Text_IO.Put_Line (" Minimum of 2 messages ");
     Text_IO.New_Line (2);
@@ -150,7 +152,8 @@ begin
         miliseconds_start_timeout =>  5000,
         miliseconds_next_timeouts =>  500) or else bytes_tmp < 1
       then
-        Text_IO.Put_Line (" An error occurred while receiving or the length of message received is zero.");
+        Text_IO.Put_Line (" An error occurred while receiving or the length of " &
+          "message received is zero.");
         Text_IO.Put_Line (" Nothing to do.");
         Text_IO.Put_Line (" Last error message => " & string_error);
         Text_IO.Put_Line (" Finishing.");
@@ -159,7 +162,8 @@ begin
       end if;
 
       Text_IO.Put_Line (" Received message(s) from " & get_address (choosed_addr) &
-        " and at port := " & get_address_port (choosed_addr) & " , type => " & get_address_type (choosed_addr) &
+        " and at port := " & get_address_port (choosed_addr) &
+        " , type => " & get_address_type (choosed_addr) &
         " , family type => " & get_family_label (choosed_addr));
 
       Text_IO.Put_Line (" Messages length " & bytes_tmp'Image & " bytes.");

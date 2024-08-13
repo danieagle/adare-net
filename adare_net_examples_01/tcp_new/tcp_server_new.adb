@@ -86,8 +86,9 @@ begin
 
     Text_IO.New_Line;
 
-    Text_IO.Put_Line (" choosed: host address => " & get_address (tmp_socket_address) & " port => " &
-      get_address_port (tmp_socket_address) & " type => " & get_address_type (tmp_socket_address) &
+    Text_IO.Put_Line (" choosed: host address => " & get_address (tmp_socket_address) &
+      " port => " & get_address_port (tmp_socket_address) &
+      " type => " & get_address_type (tmp_socket_address) &
       " family_type => " & get_family_label (tmp_socket_address));
 
     b1 :
@@ -116,8 +117,6 @@ begin
         message : Unbounded_String := To_Unbounded_String ("");
       begin
 
-        -- Text_IO.Put_Line (" " & this_task_id_str & " all messages showed.");
-
         clear (recv_send_buffer);   -- optional, reset all data in buffer
         clear (recv_send_buffer2);  -- optional, reset all data in buffer
 
@@ -128,8 +127,10 @@ begin
           " type => " & get_address_type (tmp_socket_address) &
           " family_type => " & get_family_label (tmp_socket_address));
 
-        Text_IO.Put_Line (" " & this_task_id_str & " will wait until 2 seconds to start receive data.");
-        Text_IO.Put_Line (" " & this_task_id_str & " will wait until 0.5 seconds between continuous receive.");
+        Text_IO.Put_Line (" " & this_task_id_str &
+          " will wait until 2 seconds to start receive data.");
+        Text_IO.Put_Line (" " & this_task_id_str &
+          " will wait until 0.5 seconds between continuous receive.");
 
         if not receive_buffer (sock => task_sock,
           data_to_receive =>  recv_send_buffer,
@@ -138,7 +139,8 @@ begin
           miliseconds_start_timeout =>  2000,
           miliseconds_next_timeouts =>  500) or else size_tmp < 1
         then
-          Text_IO.Put_Line (" " & this_task_id_str & " An error occurred while receiving or the length of message received is zero.");
+          Text_IO.Put_Line (" " & this_task_id_str & " An error occurred " &
+            "while receiving or the length of message received is zero.");
           Text_IO.Put_Line (" " & this_task_id_str & " Nothing to do.");
           Text_IO.Put_Line (" " & this_task_id_str & " Last error message => " & string_error);
           Text_IO.Put_Line (" " & this_task_id_str & " Finishing...");
@@ -148,7 +150,8 @@ begin
 
         Text_IO.Put_Line (" " & this_task_id_str & " received messages!");
 
-        Text_IO.Put_Line (" " & this_task_id_str & " message length " & size_tmp'Image & " bytes.");
+        Text_IO.Put_Line (" " & this_task_id_str & " message length " &
+          size_tmp'Image & " bytes.");
 
         bt1 :
         begin
@@ -160,7 +163,8 @@ begin
 
             String'Output (recv_send_buffer2, To_String (message));
 
-            Text_IO.Put_Line (" " & this_task_id_str & " message |" & To_String (message) & "|");
+            Text_IO.Put_Line (" " & this_task_id_str & " message |" &
+              To_String (message) & "|");
           end loop loop1;
 
         exception
@@ -171,8 +175,10 @@ begin
 
         end bt1;
 
-        Text_IO.Put_Line (" " & this_task_id_str & " waiting until 2 seconds to start send data to remote host");
-        Text_IO.Put_Line (" " & this_task_id_str & " will wait until 0.5 seconds between continuous send.");
+        Text_IO.Put_Line (" " & this_task_id_str & " waiting until 2 " &
+          "seconds to start send data to remote host");
+        Text_IO.Put_Line (" " & this_task_id_str & " will wait until 0.5 " &
+          "seconds between continuous send.");
 
         if not send_buffer  (sock => task_sock,
           data_to_send  =>  recv_send_buffer2,
@@ -180,7 +186,8 @@ begin
           miliseconds_start_timeout =>  2000,
           miliseconds_next_timeouts =>  500) or else size_tmp < 1
         then
-          Text_IO.Put_Line (" " & this_task_id_str & " An error occurred while sending data to remote host.");
+          Text_IO.Put_Line (" " & this_task_id_str & " An error occurred while " &
+            "sending data to remote host.");
           Text_IO.Put_Line (" " & this_task_id_str & " Nothing to do.");
           Text_IO.Put_Line (" " & this_task_id_str & " Last error message => " & string_error);
           Text_IO.Put_Line (" " & this_task_id_str & " Finishing...");
@@ -218,15 +225,18 @@ begin
 
       loop2 :
       loop
-        if not wait_connection  (sock =>  host_socket,  response  => tmp_received_socket_access,
-          data_received =>  msg_seaa, miliseconds_start_timeout => 20000)
+        if not wait_connection  (sock =>  host_socket,
+                  response  => tmp_received_socket_access,
+                  data_received =>  msg_seaa,
+                  miliseconds_start_timeout => 20000)
         then
           close (host_socket); -- to disable 'listen' too.
 
           Text_IO.New_Line (2);
 
           Text_IO.Put_Line (" Main event 20 seconds Time_out.");
-          Text_IO.Put_Line (" Waiting 5 seconds to allow enough time for working tasks finish.");
+          Text_IO.Put_Line (" Waiting 5 seconds to allow enough time " &
+            "for working tasks finish.");
 
           Text_IO.New_Line (2);
 
