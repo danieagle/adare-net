@@ -1125,8 +1125,7 @@ _**Continues Next Page**_
             running in nuclear plants, even military embedded systems 
             and (mybe?) cannot be updated.
         
-        And the AdaSockets Author don't need ipv6... :-D Bye! ^^
-            
+
 
 
 
