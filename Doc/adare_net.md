@@ -90,11 +90,12 @@ _continues in next page_
       * And many Ada types and constructs uses, in live.
 
 
-### **A2 _Hints for Users of Others Network Ada Libs:_**
-  - Prologue.
-  - Adasockets.
-  - Anet.
-  - Gnat-sockets. 
+### **A2 _Colloquium for users of other Ada network libs:_**
+  - Prologue
+  
+    - Adasockets.
+    - Anet.
+    - Gnat-sockets. 
 
 ### **A3 _Miscellaneous Tips:_**
   
@@ -131,9 +132,6 @@ _continues in next page_
 \
 \
 \                                                  
-\                                                  
-\
-\
 \
 \
 \                                                  
@@ -829,15 +827,7 @@ _continue in next page_
         clear (server_data_to_send);
         
         server_data_to_send := get_buffer (server_data_to_send_backup);
-      ~~~
-
-      \
-      \
-      \    
       
-      _continue in next page_
-      
-      ~~~ada
         -- way2 
         -- choose values for start and next
         
@@ -973,8 +963,13 @@ _continue in next page_
           close (client_socket);
         end b_client_close_sockets;
         
+        
       ~~~
   
+_continues next page_
+
+\
+
   3.  _**Close address(es):**_
 
       ~~~ada
@@ -1091,6 +1086,9 @@ _continue in next page_
   
       \
       
+
+  _**Continues Next Page**_
+
   - **A working Micro-Version of Embedded and Distributed Database.**
   
       ~~~
@@ -1098,67 +1096,85 @@ _continue in next page_
       ~~~
 
 \
+
+
+## **A2 _Colloquium for users of other Ada network libs:_**
+
 \
-\
-
-_**Continues Next Page**_
-
-
-## **A2 _Hints for Users of Others Network Ada Libs:_**
 
   - _**Prologue**_
-    
-    ~~~
-      AdaSockets:
-      
-        I'm GrateFull to Samuel Tardieu and AdaSockets, by be the first one 
-          free network lib, yet in the init of Ada95, long before ipv6 existed,
-          with mswindows support and long before gnat-sockets existed.
+  
+    \
         
-        He was also always helpful when I contacted him to fix bugs and add 
-          new features to AdaSockets.
+    _**If**_ _you've read the entire party and read the examples,_   
+    _You're ready to use Adare_Net. :-) p.s.: Enjoy!! :-D_
+      
+    \
+    
+    
+    * _**AdaSockets:**_
+    
+      ~~~
+        
+          I'm GrateFull to Samuel Tardieu and AdaSockets, by be the first one 
+            free network lib, yet in the init of Ada95, long before ipv6 existed,
+            with mswindows support and long before gnat-sockets existed.
           
-        As the ages passed I needed IPv6 support and discovered that it was not possible. 
-          An extreme and strenuous rework is necessary to use IPv6 in adasockets,
-            but this would lead to creating a 100% new Adasockets.
-          As the first network lib available in Ada, Adasockets could, who knows?, already 
-            running in nuclear plants, even military embedded systems 
-            and (mybe?) cannot be updated.
+          He was also always helpful when I contacted him to fix bugs and add 
+            new features to AdaSockets.
+            
+          As the ages passed I needed IPv6 support and discovered that it was not possible. 
+            An extreme and strenuous rework is necessary to use IPv6 in adasockets,
+              but this would lead to creating a 100% new Adasockets.
+            As the first network lib available in Ada, Adasockets could, who knows?, already 
+              running in nuclear plants, even military embedded systems 
+              and (mybe?) cannot be updated.
+         
+         
+          
+      ~~~
         
-
-
-
-
-            Annet and gnat-sockets prologue TBD
+    * _**LibAnet:**_
+        
+      ~~~
+        
+          I'm use it after using AdaSockets and is a excellent network lib.
             
-            
-            
-    
-    ~~~
-    
-
-  - _**Adasockets.**_
-    
-    ~~~
-      TBD
-    ~~~
-    \
-  
-  - _**Anet.**_
-   
-    ~~~
-      TBD
-    ~~~
-    \
-  
-  
-  - _**Gnat-sockets.**_
-  
-    
-    ~~~
-      TBD
-    ~~~
-    \
-  
+          It have support to ipv6, despite this support being of the 'one or nothing' type.
+          
+          When I was still using it, I had extreme difficulty copying variables of various 
+            types from it, for example, to pass these variables to tasks and processes.
+          
+          Unfortunately there is no support for MSWindows.
+         
+         
+          
+      ~~~
       
+    * _**Gnat-Sockets:**_
+    
+      ~~~
+        
+          I tried use It but I getted a 'program_error exception' when 
+            tried use 'listen' with ipv6.
+              
+          Has support to mostly all OS's where are a version o gnat disponible.
+              
+
+      ~~~
+
+## **A3 _Miscellaneous Tips:_**
+  
+  * Use Alire:
+    
+    Alire is a source package manager for Ada and is a life safer :-)
+    [alire](https://alire.ada.dev/) p.s.: Enjoy!! :-D
+    
+  * Use a task pool.
+  
+    You are free to create one byself, or use a greate one from J.R. Carter [PragmARC](https://github.com/jrcarter/PragmARC)
+  
+  * Use Class Wide types (Tagged Types) and Stream Socket_Buffer.    
+  
+    You can use Tagged Types with Adare_Net, too.    
 
