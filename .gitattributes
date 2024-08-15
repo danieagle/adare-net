@@ -1,0 +1,3 @@
+src/windows/wepoll.c linguist-vendored
+src/windows/wepoll.h linguist-vendored
+Doc/vendors/*        linguist-vendored
